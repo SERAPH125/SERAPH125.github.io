@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- iOS 桌面应用模式支持 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>周金霞男朋友养成计划 V3.0 云同步版 ❤️</title>
+    <!-- 引入 LeanCloud SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <style>
+        /* 
+         * 唯美风格重构 (Aesthetic Style)
+         * 核心设计：Glassmorphism (毛玻璃) + 动态背景 + 柔和渐变
+         */
+        :root {
+            --primary-gradient: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-main: #5e4b56;
+            --text-light: #8e7c88;
+            --accent-pink: #ff9a9e;
+            --accent-blue: #a18cd1;
+            --success: #52b788;
+            --danger: #e63946;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: var(--text-main);
+            /* 动态渐变背景 */
+            background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            display: flex;
+            justify-content: center;
+            align-items: center; /* 垂直居中 */
+            overflow-x: hidden;
+            /* iOS 回弹效果优化 */
+            -webkit-overflow-scrolling: touch;
+            transition: filter 1s ease; /* 画面暗淡过渡效果 */
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 漂浮的背景装饰球 */
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(50px);
+            z-index: -1;
+            animation: float 10s infinite ease-in-out alternate;
+        }
+        .shape-1 {
+            width: 300px; height: 300px;
+            background: #ff9a9e;
+            top: -50px; left: -100px;
+        }
+        .shape-2 {
+            width: 200px; height: 200px;
+            background: #a18cd1;
+            bottom: -50px; right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(20px) rotate(10deg); }
+        }
+
+        .container {
+            width: 90%;
+            max-width: 420px;
+            /* 毛玻璃特效 */
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            box-shadow: var(--shadow);
+            padding: 30px 25px;
+            box-sizing: border-box;
+            position: relative;
+            z-index: 10;
+            margin: 20px 0;
+            transition: height 0.3s ease;
+            /* 适配刘海屏 */
+            margin-top: env(safe-area-inset-top);
+            margin-bottom: env(safe-area-inset-bottom);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .version-tag {
+            font-size: 0.7rem;
+            background: linear-gradient(to right, #ff9a9e, #fecfef);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(255, 154, 158, 0.4);
+        }
+
+        /* 恋爱天数计数器 */
+        .love-days {
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--text-light);
+            margin-top: 8px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .love-days span {
+            color: var(--accent-pink);
+            font-weight: 800;
+            font-size: 1.3rem;
+            margin: 0 4px;
+            font-family: 'Georgia', serif;
+        }
+
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            background: rgba(255,255,255,0.4);
+            border-radius: 20px;
+            padding: 4px;
+            margin-bottom: 25px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 5px; /* 减小内边距以容纳更多按钮 */
+            border: none;
+            background: none;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--accent-pink);
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        /* 页面切换动画 */
+        .page {
+            display: none;
+            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .page.active { display: block; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 分数大卡片 */
+        .score-card {
+            background: linear-gradient(135deg, rgba(255, 154, 158, 0.9), rgba(254, 207, 239, 0.9));
+            color: white;
+            padding: 30px;
+            border-radius: 25px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(255, 154, 158, 0.4);
+            position: relative;
+            overflow: hidden;
+            transition: background 0.5s ease;
+        }
+
+        .score-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
+            animation: shine 8s linear infinite;
+        }
+        @keyframes shine { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .score-content { position: relative; z-index: 2; }
+        
+        .score-title { font-size: 0.9rem; letter-spacing: 2px; opacity: 0.9; text-transform: uppercase; }
+        
+        .score-value {
+            font-size: 4.5rem;
+            font-weight: 800;
+            margin: 10px 0;
+            text-shadow: 2px 4px 10px rgba(0,0,0,0.1);
+            font-family: 'Georgia', serif; /* 更优雅的数字字体 */
+        }
+
+        .rank-badge {
+            background: rgba(255,255,255,0.25);
+            backdrop-filter: blur(4px);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+
+        /* 输入框 */
+        input[type="text"] {
+            width: 100%;
+            padding: 18px;
+            border: 2px solid transparent;
+            background: rgba(255,255,255,0.6);
+            border-radius: 18px;
+            font-size: 1rem;
+            color: var(--text-main);
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        }
+        input[type="text"]:focus {
+            background: white;
+            border-color: #fbc2eb;
+            box-shadow: 0 4px 15px rgba(251, 194, 235, 0.2);
+        }
+
+        /* 按钮组 */
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 18px;
+            border: none;
+            border-radius: 18px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+            /* 解决iOS点击闪烁 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .btn:active { transform: scale(0.96); }
+
+        .btn-add {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #5e4b56;
+            box-shadow: 0 8px 20px rgba(168, 237, 234, 0.3);
+        }
+        
+        .btn-sub {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.3);
+        }
+
+        .btn-random {
+            width: 100%;
+            background: white;
+            color: var(--text-light);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 列表项 (历史 & 商店) */
+        .log-item, .shop-item, .wish-item {
+            background: rgba(255,255,255,0.5);
+            margin-bottom: 12px;
+            padding: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .log-item { justify-content: space-between; }
+        .shop-item { 
+            flex-direction: column; 
+            text-align: center;
+            padding: 20px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        
+        .shop-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .shop-icon { font-size: 2.5rem; margin-bottom: 10px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
+        .shop-price { color: var(--accent-pink); font-weight: bold; margin: 8px 0; }
+        
+        .btn-buy {
+            width: 100%;
+            padding: 10px;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            opacity: 0.9;
+        }
+        .btn-buy:disabled { background: #ddd; opacity: 1; }
+
+        .plus { color: #ff9a9e; }
+        .minus { color: #a18cd1; }
+
+        /* 愿望清单样式 (Pro版) */
+        .progress-card {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            padding: 20px;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 20px rgba(161, 140, 209, 0.3);
+        }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        .progress-bar-bg {
+            background: rgba(255,255,255,0.3);
+            height: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .category-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        .cat-btn {
+            background: rgba(255,255,255,0.5);
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 8px 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cat-btn.active {
+            background: white;
+            border-color: var(--accent-pink);
+            transform: scale(1.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .wish-list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+            padding-bottom: 20px; /* 底部留白 */
+        }
+
+        .wish-item {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            margin-bottom: 0; /* 移除旧样式间距，由 container gap 控制 */
+        }
+        .wish-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        .wish-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+        .wish-icon {
+            font-size: 1.2rem;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .wish-text {
+            font-weight: 500;
+            color: var(--text-main);
+            transition: all 0.3s;
+            flex: 1;
+        }
+        .wish-item.wish-done {
+            background: rgba(255,255,255,0.4);
+            border-style: dashed;
+        }
+        .wish-done .wish-text {
+            text-decoration: line-through;
+            color: var(--text-light);
+            opacity: 0.7;
+        }
+        .wish-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            background: white;
+        }
+        .wish-checkbox.checked {
+            background: var(--accent-pink);
+            border-color: var(--accent-pink);
+        }
+        .wish-checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            display: none;
+        }
+        .wish-checkbox.checked::after {
+            display: block;
+        }
+        .btn-del-wish {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 8px;
+            margin-left: 5px;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+        }
+        .btn-del-wish:hover { opacity: 1; color: var(--danger); }
+
+        .empty-wish {
+            text-align: center;
+            color: var(--text-light);
+            padding: 30px;
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        /* 弹窗美化 */
+        .modal-overlay {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+        }
+        .modal {
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            border: 1px solid white;
+        }
+
+        /* 樱花特效容器 */
+        #sakura-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .petal {
+            position: absolute;
+            background: #ffd1dc;
+            border-radius: 100% 0 100% 0;
+            animation: fall linear infinite;
+        }
+        @keyframes fall {
+            0% { opacity: 0; transform: translateY(-10px) rotate(0deg); }
+            20% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
+        }
+
+        /* 安装指引 (仅在iOS Safari显示) */
+        #ios-install-guide {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 2000;
+            width: 90%;
+            max-width: 360px;
+            text-align: center;
+            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.5);
+            animation: slideUp 0.5s ease;
+        }
+        @keyframes slideUp { from { transform: translate(-50%, 100%); } to { transform: translate(-50%, 0); } }
+        
+        .ios-guide-icon {
+            display: inline-block;
+            vertical-align: middle;
+            margin: 0 5px;
+            font-size: 1.2rem;
+            color: #007aff;
+        }
+
+        /* 云同步设置界面 */
+        .sync-panel {
+            background: rgba(255,255,255,0.6);
+            border-radius: 15px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .sync-status {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .status-dot {
+            width: 10px; height: 10px; border-radius: 50%; background: #ccc;
+        }
+        .status-dot.online { background: var(--success); box-shadow: 0 0 5px var(--success); }
+        .status-dot.offline { background: var(--danger); }
+
+    </style>
+</head>
+<body>
+
+<!-- 背景装饰 -->
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>周金霞男朋友养成计划 <span class="version-tag">V3.0 Cloud</span></h1>
+        <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="app.switchTab('home')">🏠 主页</button>
+        <button class="tab-btn" onclick="app.switchTab('wishlist')">✨ 愿望</button>
+        <button class="tab-btn" onclick="app.switchTab('shop')">🎁 商店</button>
+        <button class="tab-btn" onclick="app.switchTab('settings')">⚙️ 设置</button>
+    </div>
+
+    <!-- 主页 -->
+    <div id="page-home" class="page active">
+        <div class="score-card">
+            <div class="score-content">
+                <div class="score-title">Current Score</div>
+                <div class="score-value" id="score-display">0</div>
+                <div class="rank-badge" id="rank-display">加载中...</div>
+            </div>
+        </div>
+
+        <input type="text" id="reason-input" placeholder="✨ 记录每一个心动瞬间...">
+
+        <div class="action-buttons">
+            <button class="btn btn-add" onclick="app.addScore()">
+                <span>💖</span> 甜蜜加分
+            </button>
+            <button class="btn btn-sub" onclick="app.tryDeductScore()">
+                <span>💔</span> 残忍减分
+            </button>
+        </div>
+
+        <button class="btn btn-random" onclick="app.randomTask()">🎲 随机任务 (赚取积分)</button>
+    </div>
+
+    <!-- 愿望清单 -->
+    <div id="page-wishlist" class="page">
+        <!-- 进度看板 -->
+        <div class="progress-card">
+            <div class="progress-info">
+                <span>❤️ 恋爱成就进度</span>
+                <span id="wish-count">0/0</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="wish-progress" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- 输入区域 -->
+        <div class="wish-input-area">
+            <div class="category-selector" id="category-selector">
+                <button class="cat-btn active" onclick="app.selectCat('💖')" data-cat="💖">💖</button>
+                <button class="cat-btn" onclick="app.selectCat('🍱')" data-cat="🍱">🍱</button>
+                <button class="cat-btn" onclick="app.selectCat('✈️')" data-cat="✈️">✈️</button>
+                <button class="cat-btn" onclick="app.selectCat('🎬')" data-cat="🎬">🎬</button>
+                <button class="cat-btn" onclick="app.selectCat('🎤')" data-cat="🎤">🎤</button>
+                <button class="cat-btn" onclick="app.selectCat('🎁')" data-cat="🎁">🎁</button>
+            </div>
+            <div class="input-group" style="display:flex; gap:10px;">
+                <input type="text" id="wish-input" placeholder="💡 写下想一起做的事..." style="margin-bottom:0;">
+                <button class="btn" style="width:60px; padding:0; background:var(--accent-pink); color:white;" onclick="app.addWish()">+</button>
+            </div>
+        </div>
+
+        <!-- 列表 -->
+        <div id="wish-list" class="wish-list-container">
+            <!-- 愿望列表 -->
+        </div>
+    </div>
+
+    <!-- 商店 -->
+    <div id="page-shop" class="page">
+        <div class="shop-grid" id="shop-list"></div>
+    </div>
+
+    <!-- 设置页 (新增) -->
+    <div id="page-settings" class="page">
+        <h3>☁️ 云同步设置</h3>
+        <p style="font-size:0.9rem; color:#666;">配置云端后，两台手机可实时同步数据。</p>
+        
+        <div class="sync-panel">
+            <div class="sync-status">
+                <div class="status-dot" id="sync-dot"></div>
+                <span id="sync-text">未连接云端</span>
+            </div>
+            
+            <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
+            <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
+            <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px;">🔌 连接云端</button>
+            <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px;">🔄 强制同步</button>
+        </div>
+
+        <h3>📜 历史记录</h3>
+        <div id="log-list"></div>
+    </div>
+    
+    <!-- 历史页 (保留结构，内容移至设置页或独立显示) -->
+    <div id="page-history" class="page" style="display:none;"></div>
+</div>
+
+<!-- 弹窗 -->
+<div class="modal-overlay" id="mercy-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
+    <div class="modal" style="width:80%; max-width:300px; padding:25px; border-radius:20px; text-align:center;">
+        <span style="font-size:3rem; display:block; margin-bottom:15px; animation: bounce 1s infinite;">🥺</span>
+        <h3 id="mercy-title" style="margin:0 0 10px 0; color:var(--text-main);">手下留情鸭！</h3>
+        <p id="mercy-text" style="color:#666; margin-bottom:20px; line-height:1.5;">宝宝我错了...</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="app.forgive()" style="background:linear-gradient(135deg, #a8edea, #fed6e3); color:#5e4b56; border:none; padding:12px; border-radius:12px; font-weight:bold;">💖 原谅他 (不扣分)</button>
+            <button onclick="app.confirmDeduct()" style="background:transparent; border:1px solid #ff9a9e; color:#ff9a9e; padding:10px; border-radius:12px;">💔 必须扣 (残忍)</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="task-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
+    <div class="modal" style="width:80%; max-width:300px; padding:25px; border-radius:20px; text-align:center;">
+        <span style="font-size:3rem; display:block; margin-bottom:15px;">🎁</span>
+        <h3 style="margin:0 0 10px 0;">随机甜蜜任务</h3>
+        <p id="task-text" style="color:#666; margin-bottom:20px;">任务加载中...</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button onclick="app.acceptTask()" style="background:var(--accent-blue); color:white; border:none; padding:12px; border-radius:12px;">💪 接下任务 (+50分)</button>
+            <button onclick="app.closeTask()" style="background:transparent; color:#999; border:none; padding:10px;">下次一定</button>
+        </div>
+    </div>
+</div>
+
+<!-- iOS 安装提示 -->
+<div id="ios-install-guide">
+    点击浏览器底部的 <span class="ios-guide-icon">分享</span> 按钮<br>
+    然后选择 <strong>"添加到主屏幕"</strong> 即可生成图标 ❤️
+    <div style="margin-top:10px; font-size:0.8rem; color:#999; cursor:pointer;" onclick="this.parentElement.style.display='none'">[我知道了]</div>
+</div>
+
+<script>
+    // 核心逻辑
+    const app = {
+        data: { 
+            score: 0, 
+            history: [],
+            wishes: [] 
+        },
+        deductStep: 0,
+        currentCat: '💖',
+        cloudObj: null, // LeanCloud 对象实例
+
+        ranks: [
+            { limit: 0, title: "周金霞的新手男友" },
+            { limit: 100, title: "周金霞的青铜男友" },
+            { limit: 300, title: "周金霞的黄金男友" },
+            { limit: 600, title: "周金霞的钻石男友" },
+            { limit: 1000, title: "周金霞的完美老公" },
+            { limit: 5000, title: "周金霞的家庭帝位" }
+        ],
+
+        mercyLevels: {
+            1: [ 
+                "宝宝，看在我这么可爱的份上，这次就算了吧？🥺",
+                "呜呜呜，扣分会心碎的，亲一口抵消好不好？😚",
+                "我保证下次不敢了！让我给你捏捏肩将功补过吧！💆‍♂️",
+                "你的小可爱正在请求原谅... 进度 99%... ❤️",
+                "糟糕，监测到扣分会引发男友抑郁，建议撤销！⚠️",
+                "不要扣分嘛，我给你学小猫叫？喵~ 🐱",
+                "手下留情！我愿意承包今天的开心！✨",
+                "看我真诚的大眼睛，像是会故意犯错的人吗？👀",
+                "再给一次机会嘛，我一定好好表现！💪",
+                "扣分好痛痛，需要宝宝呼呼才能好~ 🌬️"
+            ],
+            2: [ 
+                "只要不扣分，今晚洗碗、拖地、暖被窝我全包了！🥣",
+                "据算命先生说，今天扣分会影响财运哦，要不改天？🙏",
+                "给个机会嘛长官！小的愿意肉偿... (羞涩) 👉👈",
+                "不要啊！我给你买奶茶行不行？🥤",
+                "扣分事小，气坏身体事大！来，笑一个嘛~ 😄",
+                "暂缓扣分申请已提交，请审批：同意(推荐) / 驳回(需亲一口) 📝",
+                "能不能用一个拥抱来抵消这次扣分？🫂",
+                "如果放过我，周末带你去吃好吃的！🍲",
+                "冷静！冲动是魔鬼，要不先记账上？📒",
+                "老板！再给我打个工的机会吧，不要开除我！💼"
+            ],
+            3: [ 
+                "这是最后的机会了...你真的舍得让你男朋友变成负分罪人吗？😭",
+                "心痛！感觉不会再爱了...除非你不扣分！💔",
+                "警报！如果扣分，你的男朋友可能会哭晕在厕所！🚽",
+                "手下留情！只要不扣，我答应你一个愿望！🌟",
+                "我已经躺平任嘲了，但能不能别扣分？🛌",
+                "苍天啊！大地啊！谁来救救这个可怜的孩子！🌧️",
+                "一旦扣分，你的男朋友将失去快乐机能 1 小时！🤖",
+                "我错了！我真的错了！除了扣分什么都行！🧎‍♂️",
+                "看着我破碎的心，你真的忍心再补一刀吗？🏺",
+                "最后的请求：能不能把扣分换成亲亲？😘"
+            ]
+        },
+
+        tasks: [
+            "给女朋友唱一首情歌 🎤", 
+            "公主抱做3个深蹲 🏋️", 
+            "深情对视1分钟不许笑 💑", 
+            "夸女朋友的三个优点 ✨", 
+            "给女朋友讲个睡前故事 📖",
+            "给女朋友按摩肩膀 5 分钟 💆‍♂️",
+            "模仿女朋友生气的样子（要可爱） 😠",
+            "讲一个冷笑话逗女朋友开心 ❄️",
+            "坦白一件小时候的糗事 🙈",
+            "给女朋友画一幅画像（灵魂画手上线） 🎨",
+            "为女朋友梳头发/吹头发 💇‍♂️",
+            "拍一张女朋友最美的照片 📷",
+            "用方言说“我爱你” 🗣️",
+            "答应女朋友一个小小的无理取闹 😈",
+            "做10个俯卧撑并说“我身体倍儿棒” 💪"
+        ],
+
+        products: [
+            { id: 1, icon: '🥤', name: '请喝奶茶', price: 100 },
+            { id: 2, icon: '💆‍♂️', name: '按摩券(30分)', price: 200 },
+            { id: 3, icon: '🧹', name: '免做家务卡', price: 300 },
+            { id: 4, icon: '🎬', name: '陪看电影', price: 500 },
+            { id: 5, icon: '🍜', name: '煮宵夜', price: 150 },
+            { id: 6, icon: '💄', name: '清空购物车', price: 10000 }
+        ],
+
+        init() {
+            // 用户专属配置 (强制覆盖旧缓存)
+            const presetAppId = "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
+            const presetAppKey = "4gtuHZVj2S6XlF79Av5l7WKz";
+            const presetServerURL = "https://mekxcarj.lc-cn-n1-shared.com";
+            
+            // 强制更新本地存储，防止旧配置干扰
+            localStorage.setItem('lean_app_id', presetAppId);
+            localStorage.setItem('lean_app_key', presetAppKey);
+            localStorage.setItem('lean_server_url', presetServerURL);
+
+            // 自动填充到设置界面
+            document.getElementById('lean-app-id').value = presetAppId;
+            document.getElementById('lean-app-key').value = presetAppKey;
+
+            // 尝试直接连接
+            this.initLeanCloud(presetAppId, presetAppKey, presetServerURL);
+
+            this.render();
+            this.switchTab('home');
+            this.startSakuraLoop();
+            this.updateDays();
+        },
+
+        // 初始化 LeanCloud
+        initLeanCloud(appId, appKey, serverURL) {
+            // 定义辅助函数 createInitialData
+            this.createInitialData = (LoveData) => {
+                const newData = new LoveData();
+                newData.set('content', this.data);
+                newData.save().then((obj) => {
+                    this.cloudObj = obj;
+                    this.updateSyncStatus(true);
+                }).catch(err => {
+                    console.error('Initial save failed', err);
+                    this.updateSyncStatus(false);
+                });
+            };
+
+            try {
+                if(!window.AV) {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7242/ingest/ab838620-680c-47f6-a554-1cae1448ce62',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:initLeanCloud',message:'AV not defined',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
+                    return;
+                }
+                // 使用动态传入的 serverURL
+                AV.init({ appId, appKey, serverURL: serverURL }); 
+                
+                const LoveData = AV.Object.extend('LoveData');
+                const query = new AV.Query('LoveData');
+                
+                // 尝试获取数据
+                query.first().then((data) => {
+                    if (data) {
+                        // 有数据，同步到本地
+                        this.cloudObj = data;
+                        this.data = data.get('content');
+                        this.saveToLocal(); // 缓存到本地
+                        this.render();
+                        this.updateSyncStatus(true);
+                    } else {
+                        // 无数据（空类），创建新数据
+                        this.createInitialData(LoveData);
+                    }
+                }).catch(err => {
+                    // 关键修复：错误码 101 代表 Class 不存在（即新应用），应该创建数据而不是报错
+                    if (err.code === 101) {
+                        this.createInitialData(LoveData);
+                    } else {
+                        console.error(err);
+                        this.updateSyncStatus(false);
+                        this.loadLocalData(); // 真正失败则用本地
+                    }
+                });
+
+            } catch(e) {
+                console.error(e);
+                this.updateSyncStatus(false);
+            }
+        },
+
+        connectCloud() {
+            const appId = document.getElementById('lean-app-id').value.trim();
+            const appKey = document.getElementById('lean-app-key').value.trim();
+            if(!appId || !appKey) return alert('请输入 App ID 和 Key');
+            
+            localStorage.setItem('lean_app_id', appId);
+            localStorage.setItem('lean_app_key', appKey);
+            
+            // 尝试推断 serverURL (仅针对国际版简单处理，复杂情况建议增加输入框)
+            const prefix = appId.substring(0, 8).toLowerCase();
+            const serverURL = `https://${prefix}.api.lncldglobal.com`;
+            localStorage.setItem('lean_server_url', serverURL);
+
+            alert('配置已保存，正在尝试连接...');
+            location.reload(); // 刷新以重连
+        },
+
+        forceSync() {
+            if(!this.cloudObj) return alert('请先连接云端！');
+            this.saveData(); // 触发一次上传
+            alert('正在强制同步...');
+        },
+
+        updateSyncStatus(isOnline) {
+            const dot = document.getElementById('sync-dot');
+            const text = document.getElementById('sync-text');
+            if(isOnline) {
+                dot.className = 'status-dot online';
+                text.innerText = '云端已连接 (实时同步中)';
+            } else {
+                dot.className = 'status-dot offline';
+                text.innerText = '离线模式 (数据未同步)';
+            }
+        },
+
+        updateDays() {
+            const startDate = new Date('2025-08-10T00:00:00');
+            const now = new Date();
+            const diff = now - startDate;
+            let days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            if (days < 0) days = 0;
+            document.getElementById('days-count').innerText = days + 1;
+        },
+
+        startSakuraLoop() {
+            const loop = () => {
+                let delay = 300;
+                if (this.data.score < 0) {
+                    delay = 300 + Math.abs(this.data.score) * 5; 
+                }
+                if (this.data.score > -1000) {
+                    createPetal();
+                    setTimeout(loop, delay);
+                } else {
+                    setTimeout(loop, 2000);
+                }
+            };
+            loop();
+        },
+
+        loadLocalData() {
+            const saved = localStorage.getItem('bf_app_v2'); 
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                this.data = { ...this.data, ...parsed };
+                if(!this.data.wishes) this.data.wishes = [];
+            }
+        },
+
+        saveToLocal() {
+            localStorage.setItem('bf_app_v2', JSON.stringify(this.data));
+        },
+
+        // 保存数据（核心修改：同步到云端）
+        saveData() {
+            this.saveToLocal(); // 先存本地
+            this.render(); // 立即渲染
+
+            // 如果连了云端，同步上去
+            if (this.cloudObj) {
+                this.cloudObj.set('content', this.data);
+                this.cloudObj.save().then(() => {
+                    console.log('云端同步成功');
+                }).catch(err => {
+                    console.error('云端同步失败', err);
+                });
+            }
+        },
+
+        switchTab(tab) {
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.getElementById(`page-${tab}`).classList.add('active');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            if(event && event.target) {
+                // 处理 event.target 可能是 icon 的情况
+                const btn = event.target.tagName === 'BUTTON' ? event.target : event.target.closest('button');
+                if(btn) btn.classList.add('active');
+            }
+        },
+
+        getRank() {
+            if (this.data.score < 0) {
+                if (this.data.score > -100) return "膝盖有点疼的罪人";
+                if (this.data.score > -300) return "跪在搓衣板上的罪人";
+                if (this.data.score > -500) return "睡在门口地垫的罪人";
+                return "已被逐出家门的流浪汉";
+            }
+            let title = this.ranks[0].title;
+            for (let r of this.ranks) {
+                if (this.data.score >= r.limit) title = r.title;
+            }
+            return title;
+        },
+
+        addScore() {
+            const reason = document.getElementById('reason-input').value.trim();
+            if (!reason) return alert('请填写甜蜜理由哦！✨');
+            this.executeChange(10, reason);
+            document.getElementById('reason-input').value = '';
+            this.showToast('加分成功！爱你哟！😘');
+        },
+
+        tryDeductScore() {
+            const reason = document.getElementById('reason-input').value.trim();
+            if (!reason) return alert('请填写扣分理由...🥺');
+            this.deductStep = 1;
+            this.showMercyModal();
+        },
+
+        showMercyModal() {
+            const texts = this.mercyLevels[this.deductStep];
+            const text = texts[Math.floor(Math.random() * texts.length)];
+            document.getElementById('mercy-title').innerText = `求饶 (第 ${this.deductStep}/3 次)`;
+            document.getElementById('mercy-text').innerText = text;
+            document.getElementById('mercy-modal').style.display = 'flex';
+        },
+
+        forgive() {
+            document.getElementById('mercy-modal').style.display = 'none';
+            this.deductStep = 0;
+            this.showToast('谢谢老婆大人开恩！😍');
+        },
+
+        confirmDeduct() {
+            if (this.deductStep < 3) {
+                this.deductStep++;
+                this.showMercyModal();
+            } else {
+                const reason = document.getElementById('reason-input').value.trim();
+                this.executeChange(-10, reason);
+                document.getElementById('mercy-modal').style.display = 'none';
+                document.getElementById('reason-input').value = '';
+                this.deductStep = 0;
+                alert('呜呜呜...真的扣了...心碎了...💔');
+            }
+        },
+
+        executeChange(amount, reason) {
+            this.data.score += amount;
+            this.data.history.unshift({ time: new Date().toLocaleString(), reason, amount });
+            if (this.data.history.length > 50) this.data.history.pop();
+            this.saveData();
+        },
+
+        selectCat(icon) {
+            this.currentCat = icon;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if(btn.dataset.cat === icon) btn.classList.add('active');
+            });
+        },
+
+        addWish() {
+            const input = document.getElementById('wish-input');
+            const text = input.value.trim();
+            if(!text) return alert('愿望内容不能为空哦！💡');
+            
+            this.data.wishes.unshift({
+                id: Date.now(),
+                text: text,
+                icon: this.currentCat,
+                done: false
+            });
+            input.value = '';
+            this.saveData();
+            this.showToast('愿望已添加！一起努力实现吧！✨');
+        },
+
+        toggleWish(id) {
+            const wish = this.data.wishes.find(w => w.id === id);
+            if(wish) {
+                wish.done = !wish.done;
+                this.saveData();
+                if(wish.done) {
+                    createPetal(); createPetal(); createPetal();
+                    this.showToast('太棒了！又完成了一个心愿！🎉');
+                }
+            }
+        },
+
+        deleteWish(id) {
+            if(confirm('确定要删除这个愿望吗？')) {
+                this.data.wishes = this.data.wishes.filter(w => w.id !== id);
+                this.saveData();
+            }
+        },
+
+        render() {
+            document.getElementById('score-display').innerText = this.data.score;
+            document.getElementById('rank-display').innerText = this.getRank();
+            
+            const body = document.body;
+            const scoreCard = document.querySelector('.score-card');
+            const scoreTitle = document.querySelector('.score-title');
+
+            if (this.data.score < 0) {
+                scoreCard.style.background = 'linear-gradient(135deg, #e63946, #000000)';
+                scoreTitle.innerText = "⚠️ 红色警报 ⚠️";
+                let grayLevel = Math.min(1, Math.abs(this.data.score) / 500); 
+                let brightnessLevel = Math.max(0.4, 1 - (Math.abs(this.data.score) / 800));
+                body.style.filter = `grayscale(${grayLevel}) brightness(${brightnessLevel})`;
+            } else {
+                scoreCard.style.background = 'linear-gradient(135deg, rgba(255, 154, 158, 0.9), rgba(254, 207, 239, 0.9))';
+                scoreTitle.innerText = "Current Score";
+                body.style.filter = 'none';
+            }
+
+            // 渲染历史记录（现在在设置页）
+            document.getElementById('log-list').innerHTML = this.data.history.map(item => `
+                <div class="log-item">
+                    <div>
+                        <div style="font-weight:500; color:var(--text-main)">${item.reason}</div>
+                        <div style="font-size:0.8rem; color:var(--text-light)">${item.time}</div>
+                    </div>
+                    <div style="font-weight:bold; font-size:1.1rem" class="${item.amount > 0 ? 'plus' : 'minus'}">
+                        ${item.amount > 0 ? '+' : ''}${item.amount}
+                    </div>
+                </div>
+            `).join('');
+
+            // 渲染商店
+            document.getElementById('shop-list').innerHTML = this.products.map(p => `
+                <div class="shop-item">
+                    <div class="shop-icon">${p.icon}</div>
+                    <div style="font-weight:bold; margin-bottom:5px;">${p.name}</div>
+                    <div class="shop-price">${p.price} 分</div>
+                    <button class="btn-buy" ${this.data.score >= p.price ? '' : 'disabled'} onclick="app.buyProduct(${p.id})">
+                        ${this.data.score >= p.price ? '立即兑换' : '积分不足'}
+                    </button>
+                </div>
+            `).join('');
+
+            // 渲染愿望清单
+            const wishList = document.getElementById('wish-list');
+            if (this.data.wishes.length === 0) {
+                wishList.innerHTML = '<div class="empty-wish">还没有愿望哦，快添加第一个心愿吧！✨</div>';
+            } else {
+                wishList.innerHTML = this.data.wishes.map(w => `
+                    <div class="wish-item ${w.done ? 'wish-done' : ''}">
+                        <div class="wish-content" onclick="app.toggleWish(${w.id})">
+                            <div class="wish-checkbox ${w.done ? 'checked' : ''}"></div>
+                            <div class="wish-icon">${w.icon || '💖'}</div>
+                            <span class="wish-text">${w.text}</span>
+                        </div>
+                        <button class="btn-del-wish" onclick="app.deleteWish(${w.id})">🗑️</button>
+                    </div>
+                `).join('');
+            }
+
+            const total = this.data.wishes.length;
+            const done = this.data.wishes.filter(w => w.done).length;
+            const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+            
+            document.getElementById('wish-count').innerText = `${done}/${total}`;
+            document.getElementById('wish-progress').style.width = `${percent}%`;
+        },
+
+        buyProduct(id) {
+            const p = this.products.find(x => x.id === id);
+            if (this.data.score >= p.price && confirm(`确认兑换 ${p.name} 吗？`)) {
+                this.executeChange(-p.price, `兑换奖励：${p.name}`);
+                this.showToast('兑换成功！快去领奖吧！🎁');
+            }
+        },
+
+        randomTask() {
+            document.getElementById('task-text').innerText = this.tasks[Math.floor(Math.random() * this.tasks.length)];
+            document.getElementById('task-modal').style.display = 'flex';
+        },
+        acceptTask() {
+            this.executeChange(50, '完成随机甜蜜任务');
+            this.closeTask();
+            this.showToast('任务完成！奖励已到账！💪');
+        },
+        closeTask() {
+            document.getElementById('task-modal').style.display = 'none';
+        },
+        
+        showToast(msg) {
+            alert(msg);
+        }
+    };
+
+    // 动态生成桌面图标
+    (function generateIcon() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 180;
+        canvas.height = 180;
+        const ctx = canvas.getContext('2d');
+
+        // 背景
+        const gradient = ctx.createLinearGradient(0, 0, 180, 180);
+        gradient.addColorStop(0, '#ff9a9e');
+        gradient.addColorStop(1, '#fecfef');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.roundRect(0, 0, 180, 180, 40);
+        ctx.fill();
+
+        // 爱心
+        ctx.fillStyle = 'white';
+        ctx.font = '90px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('❤️', 90, 95);
+
+        // 创建 Link 标签 (iOS/Safari)
+        const link = document.createElement('link');
+        link.rel = 'apple-touch-icon';
+        link.href = canvas.toDataURL('image/png');
+        document.head.appendChild(link);
+
+        // 创建 Manifest (Edge/Chrome/Android PWA支持)
+        const manifest = {
+            name: "周金霞男友",
+            short_name: "周金霞男友",
+            start_url: ".",
+            display: "standalone",
+            background_color: "#fff0f3",
+            theme_color: "#ff8fa3",
+            icons: [{
+                src: canvas.toDataURL('image/png'),
+                sizes: "180x180",
+                type: "image/png"
+            }]
+        };
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
+        document.head.appendChild(manifestLink);
+    })();
+
+    // 检测 iOS 并提示添加主屏幕
+    function checkIOSInstall() {
+        // 判断是否是 iOS Safari
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        // 判断是否已经在全屏模式 (PWA模式)
+        const isStandalone = window.navigator.standalone === true;
+
+        if (isIOS && !isStandalone) {
+            // 延迟一点显示，避免打扰
+            setTimeout(() => {
+                document.getElementById('ios-install-guide').style.display = 'block';
+            }, 2000);
+        }
+    }
+    checkIOSInstall();
+
+    // 独立定义樱花特效函数，供内部循环调用
+    function createPetal() {
+        const petal = document.createElement('div');
+        petal.className = 'petal';
+        const size = Math.random() * 10 + 5;
+        petal.style.width = `${size}px`;
+        petal.style.height = `${size}px`;
+        petal.style.left = `${Math.random() * 100}vw`;
+        petal.style.animationDuration = `${Math.random() * 3 + 2}s`;
+        petal.style.opacity = Math.random();
+        document.getElementById('sakura-container').appendChild(petal);
+        
+        setTimeout(() => petal.remove(), 5000);
+    }
+
+    app.init();
+</script>
+</body>
+</html>
