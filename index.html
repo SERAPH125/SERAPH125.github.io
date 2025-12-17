@@ -237,6 +237,47 @@
             display: inline-block;
         }
 
+        /* 每日一句 */
+        .daily-quote {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin: 0 0 20px 0;
+            padding: 15px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 15px;
+            font-style: italic;
+        }
+
+        /* 生理期卡片 */
+        .period-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .period-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
+        .period-info { font-size: 0.9rem; opacity: 0.9; }
+        .period-days { font-size: 2rem; font-weight: bold; margin: 5px 0; }
+
+        /* 历史记录删除按钮 */
+        .btn-del-log {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 0 0 10px;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .btn-del-log:hover { color: var(--danger); opacity: 1; transform: scale(1.1); }
+
         /* 输入框 */
         input[type="text"] {
             width: 100%;
@@ -735,9 +776,11 @@
 
 <div class="container">
     <header>
-        <h1>周金霞男朋友养成计划 <span class="version-tag">V3.0 Cloud</span></h1>
+        <h1>周金霞男朋友养成计划 <span class="version-tag">V3.1</span></h1>
         <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
     </header>
+    
+    <div id="daily-quote" class="daily-quote">加载中...</div>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="app.switchTab('home')">🏠 主页</button>
@@ -754,6 +797,15 @@
                 <div class="score-title">Current Score</div>
                 <div class="score-value" id="score-display">0</div>
                 <div class="rank-badge" id="rank-display">加载中...</div>
+            </div>
+        </div>
+
+        <!-- 生理期卡片 -->
+        <div class="period-card" onclick="app.switchTab('settings')">
+            <h3>🩸 姨妈助手</h3>
+            <div id="period-display">
+                <div class="period-info">上次记录：暂无数据</div>
+                <div class="period-info">请去设置页记录日期哦 ~</div>
             </div>
         </div>
 
@@ -823,6 +875,13 @@
 
     <!-- 设置页 (新增) -->
     <div id="page-settings" class="page">
+        <h3>🩸 生理期记录</h3>
+        <div class="sync-panel">
+            <p style="margin:0 0 10px 0; font-size:0.9rem; color:#666;">记录上一次开始日期，自动推算下次时间。</p>
+            <input type="date" id="period-date-input" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
+            <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:10px;">💾 保存日期</button>
+        </div>
+
         <h3>☁️ 云同步设置</h3>
         <p style="font-size:0.9rem; color:#666;">配置云端后，两台手机可实时同步数据。</p>
         
@@ -918,7 +977,8 @@
             score: 0, 
             history: [],
             wishes: [],
-            album: [] // 新增相册数据
+            album: [], // 新增相册数据
+            periodDate: null // 生理期数据
         },
         deductStep: 0,
         currentCat: '💖',
@@ -1041,6 +1101,8 @@
             // 尝试直接连接
             this.initLeanCloud(presetAppId, presetAppKey, presetServerURL);
 
+            // this.fixHistoryIds(); // 移至数据加载后执行
+            this.showDailyQuote(); // 显示每日一句
             this.render();
             this.switchTab('home');
             this.startSakuraLoop();
@@ -1085,7 +1147,9 @@
                         // 兼容性修复：如果云端是旧数据，补充缺失字段
                         if (!this.data.album) this.data.album = [];
                         if (!this.data.wishes) this.data.wishes = [];
+                        if (!this.data.periodDate) this.data.periodDate = null;
 
+                        this.fixHistoryIds(); // 修复历史记录 ID (确保云端旧数据也有 ID)
                         this.saveToLocal(); // 缓存到本地
                         this.render();
                         this.updateSyncStatus(true);
@@ -1101,6 +1165,8 @@
                         console.error(err);
                         this.updateSyncStatus(false);
                         this.loadLocalData(); // 真正失败则用本地
+                        this.fixHistoryIds(); // 修复本地旧数据 ID
+                        this.render();
                     }
                 });
 
@@ -1275,7 +1341,12 @@
 
         executeChange(amount, reason) {
             this.data.score += amount;
-            this.data.history.unshift({ time: new Date().toLocaleString(), reason, amount });
+            this.data.history.unshift({ 
+                id: Date.now(), 
+                time: new Date().toLocaleString(), 
+                reason, 
+                amount 
+            });
             if (this.data.history.length > 50) this.data.history.pop();
             this.saveData();
         },
@@ -1346,15 +1417,21 @@
             // 渲染历史记录（现在在设置页）
             document.getElementById('log-list').innerHTML = this.data.history.map(item => `
                 <div class="log-item">
-                    <div>
+                    <div style="flex:1;">
                         <div style="font-weight:500; color:var(--text-main)">${item.reason}</div>
                         <div style="font-size:0.8rem; color:var(--text-light)">${item.time}</div>
                     </div>
-                    <div style="font-weight:bold; font-size:1.1rem" class="${item.amount > 0 ? 'plus' : 'minus'}">
-                        ${item.amount > 0 ? '+' : ''}${item.amount}
+                    <div style="display:flex; align-items:center;">
+                        <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" class="${item.amount > 0 ? 'plus' : 'minus'}">
+                            ${item.amount > 0 ? '+' : ''}${item.amount}
+                        </div>
+                        <button class="btn-del-log" onclick="app.deleteLog(${item.id})">🗑️</button>
                     </div>
                 </div>
             `).join('');
+
+            // 渲染生理期
+            this.renderPeriod();
 
             // 渲染商店
             document.getElementById('shop-list').innerHTML = this.products.map(p => `
@@ -1560,6 +1637,117 @@
         
         showToast(msg) {
             alert(msg);
+        },
+
+        // 新增功能：每日一句
+        loveQuotes: [
+            "这是我们相爱的第 N 天，每一天都更爱你一點。",
+            "斯人若彩虹，遇上方知有。",
+            "想和你一起去看春夏秋冬，驻足在每一处风景。",
+            "醒来觉得甚是爱你。",
+            "你的过去我来不及参与，你的未来我奉陪到底。",
+            "海底月是天上月，眼前人是心上人。",
+            "我不要短暂的温存，我要你一世的陪伴。",
+            "喜欢你，是我做过最坚持的事。",
+            "你是我平淡岁月里最耀眼的星辰。",
+            "即使世界荒芜，总有一个人，他会是你的信徒。",
+            "我想牵着你的手，从心动到古稀。",
+            "遇见你，所有星星都落到了我头上。",
+            "一想到你，我的嘴角就忍不住上扬。",
+            "和你在一起的时光，全都很耀眼。",
+            "在这个星球上，你是我最特别的引力。",
+            "想把世界上最好的都给你，却发现世上最好的是你。",
+            "你是我最意外的勇敢，也是我最温暖的归宿。",
+            "春风十里不如你，梦里梦外都是你。",
+            "愿得一心人，白首不相离。",
+            "你是我的今天，以及所有的明天。"
+        ],
+
+        showDailyQuote() {
+            const quote = this.loveQuotes[Math.floor(Math.random() * this.loveQuotes.length)];
+            const el = document.getElementById('daily-quote');
+            if(el) el.innerText = `“ ${quote} ”`;
+        },
+
+        // 修复历史数据 ID
+        fixHistoryIds() {
+            if (this.data.history && this.data.history.length > 0) {
+                this.data.history.forEach((item, index) => {
+                    if (!item.id) item.id = Date.now() + index; // 补全 ID
+                });
+            }
+        },
+
+        // 删除历史记录
+        deleteLog(id) {
+            if(confirm('确定要删除这条记录吗？(分数不会回滚哦)')) {
+                this.data.history = this.data.history.filter(item => item.id !== id);
+                this.saveData();
+                this.render(); // 强制重绘列表
+                this.showToast('记录已删除 🗑️');
+            }
+        },
+
+        // 生理期功能
+        savePeriod() {
+            const date = document.getElementById('period-date-input').value;
+            if(!date) return alert('请选择日期哦！');
+            this.data.periodDate = date;
+            this.saveData();
+            this.showToast('日期已记录！我们会提醒你的 ❤️');
+            this.renderPeriod(); // 立即更新显示
+        },
+
+        renderPeriod() {
+            const display = document.getElementById('period-display');
+            if (!this.data.periodDate) {
+                // 如果没有数据，且在渲染设置页时回显空
+                // document.getElementById('period-date-input').value = ''; 
+                return;
+            }
+
+            // 回显设置页输入框
+            const input = document.getElementById('period-date-input');
+            if(input && !input.value) input.value = this.data.periodDate;
+
+            // 计算逻辑
+            const lastDate = new Date(this.data.periodDate);
+            const today = new Date();
+            // 假设周期 28 天
+            const cycle = 28;
+            
+            // 计算时间差
+            const diffTime = Math.abs(today - lastDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            // 简单推算：如果还在周期内
+            // 比如 1号来的，今天 5号，diff 4天。 下次是 1+28 = 29号。 还有 29-5 = 24天。
+            // 逻辑：下次日期 = 上次日期 + 28天
+            const nextDate = new Date(lastDate);
+            nextDate.setDate(lastDate.getDate() + cycle);
+            
+            const daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+            
+            let msg = '';
+            let color = '';
+
+            if (daysUntil > 0) {
+                msg = `距离下次还剩 <span class="period-days">${daysUntil}</span> 天`;
+                color = '#fff';
+            } else if (daysUntil === 0) {
+                msg = `就是今天！<br>记得多喝热水，注意保暖哦 ❤️`;
+                color = '#ffcccb';
+            } else {
+                msg = `已经推迟 <span class="period-days">${Math.abs(daysUntil)}</span> 天了<br>或者是忘记记录啦？🤔`;
+                color = '#ffd1dc';
+            }
+
+            if(display) {
+                display.innerHTML = `
+                    <div class="period-info">上次记录：${this.data.periodDate}</div>
+                    <div style="margin-top:5px; color:${color}">${msg}</div>
+                `;
+            }
         }
     };
 
