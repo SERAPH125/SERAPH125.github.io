@@ -517,6 +517,141 @@
             border: 1px solid white;
         }
 
+        /* 相册样式 (Album Style) */
+        .album-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding-bottom: 20px;
+        }
+        
+        .polaroid {
+            background: white;
+            padding: 10px 10px 25px 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transform: rotate(-2deg);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            border-radius: 4px;
+        }
+        
+        .polaroid:nth-child(even) {
+            transform: rotate(2deg);
+        }
+        
+        .polaroid:hover {
+            transform: scale(1.05) rotate(0deg);
+            z-index: 5;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        
+        .photo-frame {
+            width: 100%;
+            aspect-ratio: 1/1;
+            overflow: hidden;
+            background: #f0f0f0;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-caption {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* 手写体风格 */
+            font-size: 0.8rem;
+            color: #555;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .photo-date {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 0.6rem;
+            color: #999;
+        }
+
+        .btn-del-photo {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            border: 2px solid white;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .polaroid:hover .btn-del-photo {
+            opacity: 1;
+        }
+
+        .add-photo-card {
+            background: rgba(255,255,255,0.4);
+            border: 2px dashed rgba(255,255,255,0.6);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1/1;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-light);
+        }
+        .add-photo-card:hover {
+            background: rgba(255,255,255,0.6);
+            color: var(--accent-pink);
+            border-color: var(--accent-pink);
+        }
+
+        /* 预览区域 */
+        #photo-preview-area {
+            width: 100%;
+            height: 150px;
+            background: #f8f8f8;
+            border-radius: 10px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 1px solid #eee;
+        }
+        #photo-preview-img {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+
+        /* 大图查看器 */
+        #lightbox-img {
+            max-width: 90%;
+            max-height: 80vh;
+            border-radius: 10px;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            animation: zoomIn 0.3s ease;
+        }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
         /* 樱花特效容器 */
         #sakura-container {
             position: fixed;
@@ -607,6 +742,7 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="app.switchTab('home')">🏠 主页</button>
         <button class="tab-btn" onclick="app.switchTab('wishlist')">✨ 愿望</button>
+        <button class="tab-btn" onclick="app.switchTab('album')">🖼️ 相册</button>
         <button class="tab-btn" onclick="app.switchTab('shop')">🎁 商店</button>
         <button class="tab-btn" onclick="app.switchTab('settings')">⚙️ 设置</button>
     </div>
@@ -670,6 +806,16 @@
         </div>
     </div>
 
+    <!-- 相册 (新增) -->
+    <div id="page-album" class="page">
+        <div class="album-grid" id="album-list">
+            <!-- 动态生成 -->
+        </div>
+        <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#999;">
+            记录每一个心动瞬间 ❤️
+        </div>
+    </div>
+
     <!-- 商店 -->
     <div id="page-shop" class="page">
         <div class="shop-grid" id="shop-list"></div>
@@ -725,6 +871,39 @@
     </div>
 </div>
 
+<!-- 添加照片弹窗 -->
+<div class="modal-overlay" id="add-photo-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
+    <div class="modal" style="width:85%; max-width:320px; padding:20px; border-radius:20px;">
+        <h3 style="text-align:center; margin:0 0 15px 0;">📸 添加美好时光</h3>
+        
+        <input type="text" id="photo-url-input" placeholder="粘贴图片链接 (推荐)" oninput="app.previewUrl()" style="margin-bottom:10px;">
+        
+        <div style="text-align:center; color:#999; font-size:0.8rem; margin-bottom:10px;">- 或者 -</div>
+        
+        <label for="photo-file-input" class="btn" style="background:#f0f0f0; color:#555; margin-bottom:10px; cursor:pointer;">
+            📂 从相册选择 (自动压缩)
+        </label>
+        <input type="file" id="photo-file-input" accept="image/*" style="display:none;" onchange="app.handleFileSelect(this)">
+
+        <div id="photo-preview-area">
+            <span style="color:#ccc; font-size:0.8rem;">图片预览区域</span>
+            <img id="photo-preview-img">
+        </div>
+
+        <input type="text" id="photo-caption" placeholder="写一句甜甜的话吧... (选填)" style="margin-top:10px;">
+        
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="document.getElementById('add-photo-modal').style.display='none'" style="flex:1; padding:12px; border:none; background:#f0f0f0; border-radius:12px;">取消</button>
+            <button onclick="app.confirmAddPhoto()" style="flex:1; padding:12px; border:none; background:var(--accent-pink); color:white; border-radius:12px;">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 大图查看 -->
+<div class="modal-overlay" id="lightbox-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000; justify-content:center; align-items:center; background:rgba(0,0,0,0.85);" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+</div>
+
 <!-- iOS 安装提示 -->
 <div id="ios-install-guide">
     点击浏览器底部的 <span class="ios-guide-icon">分享</span> 按钮<br>
@@ -738,11 +917,13 @@
         data: { 
             score: 0, 
             history: [],
-            wishes: [] 
+            wishes: [],
+            album: [] // 新增相册数据
         },
         deductStep: 0,
         currentCat: '💖',
         cloudObj: null, // LeanCloud 对象实例
+        tempPhotoData: null, // 临时存储上传的图片数据
 
         ranks: [
             { limit: 0, title: "周金霞的新手男友" },
@@ -877,6 +1058,15 @@
                         // 有数据，同步到本地
                         this.cloudObj = data;
                         this.data = data.get('content');
+                        
+                        // #region agent log
+                        fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:initLeanCloud',message:'Cloud data fetched',data:{hasAlbum: !!(this.data && this.data.album)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+                        // #endregion
+
+                        // 兼容性修复：如果云端是旧数据，补充缺失字段
+                        if (!this.data.album) this.data.album = [];
+                        if (!this.data.wishes) this.data.wishes = [];
+
                         this.saveToLocal(); // 缓存到本地
                         this.render();
                         this.updateSyncStatus(true);
@@ -967,11 +1157,19 @@
                 const parsed = JSON.parse(saved);
                 this.data = { ...this.data, ...parsed };
                 if(!this.data.wishes) this.data.wishes = [];
+                if(!this.data.album) this.data.album = [];
             }
         },
 
         saveToLocal() {
-            localStorage.setItem('bf_app_v2', JSON.stringify(this.data));
+            try {
+                localStorage.setItem('bf_app_v2', JSON.stringify(this.data));
+            } catch (e) {
+                // #region agent log
+                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:saveToLocal',message:'LocalStorage Error',data:{error: e.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+                // #endregion
+                alert('本地存储空间已满！请删除一些照片或愿望再试。');
+            }
         },
 
         // 保存数据（核心修改：同步到云端）
@@ -983,8 +1181,14 @@
             if (this.cloudObj) {
                 this.cloudObj.set('content', this.data);
                 this.cloudObj.save().then(() => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:saveData',message:'Cloud sync success',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
+                    // #endregion
                     console.log('云端同步成功');
                 }).catch(err => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:saveData',message:'Cloud sync failed',data:{error: err.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
+                    // #endregion
                     console.error('云端同步失败', err);
                 });
             }
@@ -1177,6 +1381,29 @@
             
             document.getElementById('wish-count').innerText = `${done}/${total}`;
             document.getElementById('wish-progress').style.width = `${percent}%`;
+
+            // 渲染相册
+            const albumList = document.getElementById('album-list');
+            let albumHtml = `
+                <div class="add-photo-card" onclick="app.addPhotoUI()">
+                    <div style="font-size:2rem;">📷</div>
+                    <div style="font-size:0.8rem; margin-top:5px;">添加照片</div>
+                </div>
+            `;
+            
+            if (this.data.album && this.data.album.length > 0) {
+                albumHtml += this.data.album.map(photo => `
+                    <div class="polaroid" onclick="app.showLightbox('${photo.url}')">
+                        <div class="btn-del-photo" onclick="event.stopPropagation(); app.deletePhoto(${photo.id})">×</div>
+                        <div class="photo-frame">
+                            <img src="${photo.url}" class="photo-img" loading="lazy">
+                        </div>
+                        <div class="photo-caption">${photo.caption || '❤️ 美好时光'}</div>
+                        <div class="photo-date">${photo.date}</div>
+                    </div>
+                `).join('');
+            }
+            albumList.innerHTML = albumHtml;
         },
 
         buyProduct(id) {
@@ -1198,6 +1425,152 @@
         },
         closeTask() {
             document.getElementById('task-modal').style.display = 'none';
+        },
+        
+        // 相册功能
+        addPhotoUI() {
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:addPhotoUI',message:'Opening add photo UI',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+            // #endregion
+            document.getElementById('add-photo-modal').style.display = 'flex';
+            this.tempPhotoData = null;
+            document.getElementById('photo-url-input').value = '';
+            document.getElementById('photo-preview-img').style.display = 'none';
+            document.getElementById('photo-caption').value = '';
+        },
+
+        previewUrl() {
+            const url = document.getElementById('photo-url-input').value.trim();
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:previewUrl',message:'URL input changed',data:{urlLength: url.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+            // #endregion
+            if (url) {
+                this.tempPhotoData = url;
+                const img = document.getElementById('photo-preview-img');
+                img.src = url;
+                img.style.display = 'block';
+            }
+        },
+
+        handleFileSelect(input) {
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:handleFileSelect',message:'File selected',data:{files: input.files ? input.files.length : 0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+            // #endregion
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                this.compressImage(file, (base64) => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:handleFileSelect_callback',message:'Compression finished',data:{base64Length: base64 ? base64.length : 0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
+                    this.tempPhotoData = base64;
+                    const img = document.getElementById('photo-preview-img');
+                    img.src = base64;
+                    img.style.display = 'block';
+                    // 清空URL输入，避免冲突
+                    document.getElementById('photo-url-input').value = '';
+                });
+            }
+        },
+
+        // 简单的图片压缩
+        compressImage(file, callback) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image();
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 600; // 限制最大宽度
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // 压缩质量 0.6
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                    callback(dataUrl);
+                };
+            };
+        },
+
+        confirmAddPhoto() {
+            // #region agent log
+            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'Enter confirmAddPhoto',data:{hasAlbum: !!(this.data && this.data.album), albumType: this.data && this.data.album ? typeof this.data.album : 'undefined', isArray: this.data && Array.isArray(this.data.album)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+            // #endregion
+
+            try {
+                if (!this.tempPhotoData) {
+                    // ... (existing retry logic)
+                    const url = document.getElementById('photo-url-input').value.trim();
+                    if (url) this.tempPhotoData = url;
+                    
+                    if (!this.tempPhotoData) return alert('请先输入图片链接或选择图片哦！');
+                }
+                const caption = document.getElementById('photo-caption').value.trim();
+                
+                // 限制本地存储大小预警
+                if (this.tempPhotoData.length > 500000) {
+                     if(!confirm('这张图片可能有点大，会影响同步速度，确定要添加吗？')) return;
+                }
+
+                // Defensive check and fix
+                if (!this.data.album || !Array.isArray(this.data.album)) {
+                     // #region agent log
+                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'Restoring missing album array',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+                    // #endregion
+                    this.data.album = [];
+                }
+
+                this.data.album.unshift({
+                    id: Date.now(),
+                    url: this.tempPhotoData,
+                    caption: caption,
+                    date: new Date().toLocaleDateString()
+                });
+
+                // 限制相册数量，防止 LocalStorage 爆炸
+                if (this.data.album.length > 20) {
+                    this.showToast('相册好像满了 (20张)，旧照片被挤掉了... 😢');
+                    this.data.album.pop();
+                }
+
+                this.saveData();
+                // #region agent log
+                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'Success',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
+                // #endregion
+                document.getElementById('add-photo-modal').style.display = 'none';
+                this.showToast('照片添加成功！美好+1 ❤️');
+            } catch (e) {
+                // #region agent log
+                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'CRASH CAUGHT',data:{error: e.toString(), stack: e.stack},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+                // #endregion
+                console.error(e);
+                alert('出错了：' + e.message);
+            }
+        },
+
+        deletePhoto(id) {
+            if (confirm('确定要删除这张美好回忆吗？🥺')) {
+                this.data.album = this.data.album.filter(p => p.id !== id);
+                this.saveData();
+                this.showToast('照片已删除');
+            }
+        },
+
+        showLightbox(url) {
+            const modal = document.getElementById('lightbox-modal');
+            const img = document.getElementById('lightbox-img');
+            img.src = url;
+            modal.style.display = 'flex';
         },
         
         showToast(msg) {
