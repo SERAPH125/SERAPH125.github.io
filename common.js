@@ -283,10 +283,16 @@ const app = {
         localStorage.setItem('lean_app_key', presetAppKey);
         localStorage.setItem('lean_server_url', presetServerURL);
 
-        // 加载用户身份
+        // 核心修复：强制优先读取本地身份设置，不受云端影响
         const savedRole = localStorage.getItem('user_role');
         if (savedRole) {
             this.currentUser = savedRole;
+            console.log('身份已恢复为本地设置:', this.currentUser);
+        } else {
+            // 如果是第一次打开（无缓存），默认设为 boy 并保存，避免歧义
+            // 或者你希望第一次打开弹窗询问？目前先保持默认 boy
+            this.currentUser = 'boy'; 
+            localStorage.setItem('user_role', 'boy');
         }
 
         // 先加载本地数据，保证界面快速响应
