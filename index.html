@@ -110,7 +110,7 @@
     <!-- 甜度存钱罐 -->
     <div class="sweetness-card">
         <h3>🍬 小周的甜度存钱罐</h3>
-        <div class="sweetness-display"><span id="sweetness-val">0</span> / 100</div>
+        <div class="sweetness-display"><span id="sweetness-val">0</span> 🍬</div>
         <div class="sweetness-progress-bg">
             <div class="sweetness-progress-fill" id="sweetness-bar" style="width: 0%"></div>
         </div>
@@ -233,7 +233,8 @@ Object.assign(app, {
         const sweetBar = document.getElementById('sweetness-bar');
         if(sweetEl) sweetEl.innerText = sweetVal;
         if(sweetBar) {
-            let pct = Math.min(100, (sweetVal / 100) * 100);
+            // 视觉上限调整为1000，方便查看大额目标的进度
+            let pct = Math.min(100, (sweetVal / 1000) * 100);
             sweetBar.style.width = `${pct}%`;
         }
 

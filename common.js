@@ -500,22 +500,9 @@ const app = {
         });
         if(this.data.girlHistory.length > 50) this.data.girlHistory.pop();
         
-        // 自动兑换检查
-        if(this.data.girlSweetness >= 100) {
-            setTimeout(() => {
-                const confirmed = confirm(`🎉 恭喜！周金霞的甜度已爆表！\n\n系统判定：刘智勇需要立刻请喝奶茶一杯（或等值奖励）！\n\n点击【确定】兑换奖励并扣除100甜度\n点击【取消】暂存甜度`);
-                if(confirmed) {
-                    this.data.girlSweetness -= 100;
-                    this.showToast('奖励兑换成功！记得兑现承诺哦~🥤');
-                    this.saveData(); // 保存扣除后的状态
-                } else {
-                    this.saveData(); // 保存未扣除的状态
-                }
-            }, 500);
-        } else {
-            this.showToast(`记录成功！甜度 +${amount} 💕`);
-            this.saveData();
-        }
+        // 自动兑换检查已移除，支持无限积累
+        this.showToast(`记录成功！甜度 +${amount} 💕`);
+        this.saveData();
     }
 };
 
