@@ -107,6 +107,16 @@
         <div id="signin-text-status">等待签到...</div>
     </div>
 
+    <!-- 甜度存钱罐 -->
+    <div class="sweetness-card">
+        <h3>🍬 小周的甜度存钱罐</h3>
+        <div class="sweetness-display"><span id="sweetness-val">0</span> / 100</div>
+        <div class="sweetness-progress-bg">
+            <div class="sweetness-progress-fill" id="sweetness-bar" style="width: 0%"></div>
+        </div>
+        <button class="btn-record-sweet" onclick="app.showSweetModal()">💖 记录心动瞬间</button>
+    </div>
+
     <!-- 生理期卡片 -->
     <div class="period-card" onclick="location.href='settings.html'">
         <h3>🩸 姨妈助手</h3>
@@ -176,6 +186,21 @@
     </div>
 </div>
 
+<!-- 甜度记录弹窗 -->
+<div class="modal-overlay" id="sweet-modal" style="display:none;">
+    <div class="modal">
+        <span style="font-size:3rem; display:block; margin-bottom:15px;">🥰</span>
+        <h3 style="margin:0 0 10px 0;">记录她的可爱瞬间</h3>
+        <input type="text" id="sweet-reason" placeholder="例如：给我带了奶茶..." style="margin-bottom:15px;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+            <button onclick="app.confirmSweet(10)" style="background:#ff9a9e; color:white; border:none; padding:10px; border-radius:12px;">有点可爱 (+10)</button>
+            <button onclick="app.confirmSweet(20)" style="background:#ff8fa3; color:white; border:none; padding:10px; border-radius:12px;">超级贴心 (+20)</button>
+            <button onclick="app.confirmSweet(50)" style="background:#ff758c; color:white; border:none; padding:10px; border-radius:12px;">心动爆击 (+50)</button>
+            <button onclick="app.closeSweetModal()" style="background:transparent; color:#999; border:none; padding:10px;">取消</button>
+        </div>
+    </div>
+</div>
+
 <!-- iOS 安装提示 -->
 <div id="ios-install-guide">
     点击浏览器底部的 <span class="ios-guide-icon">分享</span> 按钮<br>
@@ -202,6 +227,16 @@ Object.assign(app, {
         if (scoreEl) scoreEl.innerText = this.data.score;
         if (rankEl) rankEl.innerText = this.getRank();
         
+        // 渲染甜度
+        const sweetVal = this.data.girlSweetness || 0;
+        const sweetEl = document.getElementById('sweetness-val');
+        const sweetBar = document.getElementById('sweetness-bar');
+        if(sweetEl) sweetEl.innerText = sweetVal;
+        if(sweetBar) {
+            let pct = Math.min(100, (sweetVal / 100) * 100);
+            sweetBar.style.width = `${pct}%`;
+        }
+
         const body = document.body;
         const scoreCard = document.querySelector('.score-card');
         const scoreTitle = document.querySelector('.score-title');
@@ -264,6 +299,28 @@ Object.assign(app, {
         this.executeChange(10, reason);
         document.getElementById('reason-input').value = '';
         this.showToast('加分成功！爱你哟！😘');
+    },
+
+    // 甜度相关方法
+    showSweetModal() {
+        document.getElementById('sweet-modal').style.display = 'flex';
+        document.getElementById('sweet-reason').value = '';
+        document.getElementById('sweet-reason').focus();
+    },
+    
+    closeSweetModal() {
+        document.getElementById('sweet-modal').style.display = 'none';
+    },
+
+    confirmSweet(amount) {
+        let reason = document.getElementById('sweet-reason').value.trim();
+        if(!reason) {
+            if(amount === 10) reason = "今天有点可爱";
+            else if(amount === 20) reason = "超级贴心暖宝宝";
+            else if(amount === 50) reason = "直击心脏的心动";
+        }
+        this.addGirlSweetness(amount, reason);
+        this.closeSweetModal();
     },
 
     tryDeductScore() {

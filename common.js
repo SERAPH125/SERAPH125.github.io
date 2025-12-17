@@ -14,7 +14,10 @@ const app = {
         lastSignInDate_Boy: null,
         lastSignInDate_Girl: null,
         signInStreak: 0,
-        signInLog: [] // { date: '2023-10-01', user: 'boy' }
+        signInLog: [], // { date: '2023-10-01', user: 'boy' }
+        // 甜度系统
+        girlSweetness: 0,
+        girlHistory: []
     },
     currentUser: 'boy', // 默认 'boy', 可切换为 'girl'
     deductStep: 0,
@@ -90,22 +93,36 @@ const app = {
     ],
 
     products: [
-        { id: 1, icon: '🥤', name: '请喝奶茶', price: 100 },
-        { id: 5, icon: '🍜', name: '爱心宵夜', price: 150 },
-        { id: 11, icon: '🛌', name: '周末赖床卡', price: 150 },
-        { id: 2, icon: '💆‍♂️', name: '享受按摩(30分)', price: 200 },
-        { id: 3, icon: '🧹', name: '免做家务卡', price: 300 },
-        { id: 12, icon: '🤐', name: '停止唠叨(30分)', price: 300 },
-        { id: 13, icon: '🍗', name: '大餐点菜权', price: 350 },
-        { id: 14, icon: '🎮', name: '游戏畅玩之夜', price: 400 },
-        { id: 4, icon: '🎬', name: '陪看电影(任选)', price: 500 },
-        { id: 15, icon: '👗', name: '指定穿搭券', price: 600 },
-        { id: 16, icon: '🤝', name: '冷战终止卡', price: 666 },
-        { id: 17, icon: '🎫', name: '无理由原谅卡', price: 888 },
-        { id: 18, icon: '🍺', name: '兄弟局通行证', price: 1200 },
-        { id: 6, icon: '🎁', name: '清空购物车(¥1000内)', price: 5000 },
-        { id: 19, icon: '✈️', name: '周边双人游', price: 10000 },
-        { id: 20, icon: '👑', name: '家庭帝位体验卡(1天)', price: 99999 }
+        // owner: 'boy' (默认) - 男生购买，服务者是女生
+        { id: 1, icon: '🥤', name: '请喝奶茶', price: 100, owner: 'boy' },
+        { id: 5, icon: '🍜', name: '爱心宵夜', price: 150, owner: 'boy' },
+        { id: 11, icon: '🛌', name: '周末赖床卡', price: 150, owner: 'boy' },
+        { id: 2, icon: '💆‍♂️', name: '享受按摩(30min)', price: 200, owner: 'boy' },
+        { id: 3, icon: '🧹', name: '免做家务卡', price: 300, owner: 'boy' },
+        { id: 12, icon: '🤐', name: '停止唠叨(30min)', price: 300, owner: 'boy' },
+        { id: 13, icon: '🍗', name: '大餐点菜权', price: 350, owner: 'boy' },
+        { id: 14, icon: '🎮', name: '游戏畅玩之夜', price: 400, owner: 'boy' },
+        { id: 4, icon: '🎬', name: '陪看电影(任选)', price: 500, owner: 'boy' },
+        { id: 15, icon: '👗', name: '指定穿搭券', price: 600, owner: 'boy' },
+        { id: 16, icon: '🤝', name: '冷战终止卡', price: 666, owner: 'boy' },
+        { id: 17, icon: '🎫', name: '无理由原谅卡', price: 888, owner: 'boy' },
+        { id: 18, icon: '🍺', name: '兄弟局通行证', price: 1200, owner: 'boy' },
+        { id: 6, icon: '🎁', name: '清空购物车(¥1000内)', price: 5000, owner: 'boy' },
+        { id: 19, icon: '✈️', name: '周边双人游', price: 10000, owner: 'boy' },
+        { id: 20, icon: '👑', name: '家庭帝位体验卡(1天)', price: 99999, owner: 'boy' },
+        
+        // owner: 'girl' - 女生购买，服务者是男生 (消耗甜度)
+        { id: 101, icon: '🥤', name: '我要喝奶茶', price: 50, owner: 'girl', desc: '刘智勇立刻点单配送' },
+        { id: 102, icon: '🧧', name: '5.20元红包', price: 100, owner: 'girl', desc: '见者有份，立刻转账' },
+        { id: 103, icon: '💆‍♀️', name: '男友特供按摩', price: 150, owner: 'girl', desc: '享受专业按摩(30min)' },
+        { id: 104, icon: '🛍️', name: '全能拎包侠', price: 200, owner: 'girl', desc: '陪逛2小时不许喊累' },
+        { id: 108, icon: '💇‍♀️', name: '吹头发服务', price: 220, owner: 'girl', desc: '温柔吹干，不许扯痛' },
+        { id: 109, icon: '🐱', name: '学猫叫三声', price: 50, owner: 'girl', desc: '毫无尊严地哄我开心' },
+        { id: 105, icon: '🚗', name: '专属司机服务', price: 300, owner: 'girl', desc: '随叫随到，专车接送' },
+        { id: 110, icon: '🚫', name: '这局不许赢', price: 350, owner: 'girl', desc: '玩游戏时必须让着我' },
+        { id: 111, icon: '📸', name: '专属摄影师', price: 500, owner: 'girl', desc: '拍照直到满意为止' },
+        { id: 107, icon: '🌹', name: '浪漫约会夜', price: 800, owner: 'girl', desc: '刘智勇策划并买单' },
+        { id: 112, icon: '🏰', name: '一日女王卡', price: 1500, owner: 'girl', desc: '今天说什么都得听' }
     ],
 
     loveQuotes: [
@@ -165,7 +182,50 @@ const app = {
             query.first().then((data) => {
                 if (data) {
                     this.cloudObj = data;
-                    this.data = data.get('content');
+                    const remoteData = data.get('content');
+                    
+                    // --- Merge Logic Start ---
+                    // 防止云端旧数据覆盖本地刚刚发生的签到行为
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    let useLocalForAuth = false;
+
+                    // 检查本地是否有新的签到
+                    if (this.data.lastSignInDate_Boy === todayStr && remoteData.lastSignInDate_Boy !== todayStr) {
+                        remoteData.lastSignInDate_Boy = todayStr;
+                        useLocalForAuth = true;
+                    }
+                    if (this.data.lastSignInDate_Girl === todayStr && remoteData.lastSignInDate_Girl !== todayStr) {
+                        remoteData.lastSignInDate_Girl = todayStr;
+                        useLocalForAuth = true;
+                    }
+
+                    // 合并历史记录 (以 ID 为准去重)
+                    const localHistoryIds = new Set(this.data.history.map(h => h.id));
+                    const mergedHistory = [...this.data.history];
+                    if (remoteData.history) {
+                        remoteData.history.forEach(h => {
+                            if (!localHistoryIds.has(h.id)) {
+                                mergedHistory.push(h);
+                            }
+                        });
+                    }
+                    // 按时间倒序
+                    mergedHistory.sort((a, b) => b.id - a.id);
+                    remoteData.history = mergedHistory;
+
+                    // 如果本地有新签到，优先使用本地分数（因为它包含了签到奖励）
+                    if (useLocalForAuth) {
+                        remoteData.score = this.data.score;
+                        // 这里我们信任本地刚刚签到后的状态
+                    }
+                    
+                    this.data = remoteData;
+                    
+                    // 如果发生了合并，立即保存回云端
+                    if (useLocalForAuth) {
+                        this.saveData();
+                    }
+                    // --- Merge Logic End ---
                     
                     // 数据兼容性处理
                     if (!this.data.album) this.data.album = [];
@@ -175,11 +235,14 @@ const app = {
                     // 双人签到数据兼容
                     if (this.data.lastSignInDate_Boy === undefined) this.data.lastSignInDate_Boy = this.data.lastSignInDate || null;
                     if (this.data.lastSignInDate_Girl === undefined) this.data.lastSignInDate_Girl = null;
-                    if (this.data.signInLog === undefined) this.data.signInLog = [];
-                    if (this.data.signInStreak === undefined) this.data.signInStreak = 0;
+                if (this.data.signInLog === undefined) this.data.signInLog = [];
+                if (this.data.signInStreak === undefined) this.data.signInStreak = 0;
+                // 甜度系统兼容
+                if (this.data.girlSweetness === undefined) this.data.girlSweetness = 0;
+                if (this.data.girlHistory === undefined) this.data.girlHistory = [];
 
-                    this.fixHistoryIds();
-                    this.saveToLocal();
+                this.fixHistoryIds();
+                this.saveToLocal();
                     
                     // 数据加载完成后，尝试渲染当前页面
                     if (typeof this.render === 'function') this.render();
@@ -291,6 +354,9 @@ const app = {
                 if (this.data.lastSignInDate_Girl === undefined) this.data.lastSignInDate_Girl = null;
                 if (this.data.signInLog === undefined) this.data.signInLog = [];
                 if (this.data.signInStreak === undefined) this.data.signInStreak = 0;
+                // 甜度系统兼容
+                if (this.data.girlSweetness === undefined) this.data.girlSweetness = 0;
+                if (this.data.girlHistory === undefined) this.data.girlHistory = [];
             } catch(e) {
                 console.error("Local data parse error", e);
             }
@@ -414,6 +480,36 @@ const app = {
     // 多页面兼容函数
     switchTab(tab) {
         // 预留
+    },
+
+    // 增加甜度
+    addGirlSweetness(amount, reason) {
+        this.data.girlSweetness = (this.data.girlSweetness || 0) + amount;
+        if(!this.data.girlHistory) this.data.girlHistory = [];
+        this.data.girlHistory.unshift({
+            id: Date.now(),
+            time: new Date().toLocaleString(),
+            reason,
+            amount
+        });
+        if(this.data.girlHistory.length > 50) this.data.girlHistory.pop();
+        
+        // 自动兑换检查
+        if(this.data.girlSweetness >= 100) {
+            setTimeout(() => {
+                const confirmed = confirm(`🎉 恭喜！周金霞的甜度已爆表！\n\n系统判定：刘智勇需要立刻请喝奶茶一杯（或等值奖励）！\n\n点击【确定】兑换奖励并扣除100甜度\n点击【取消】暂存甜度`);
+                if(confirmed) {
+                    this.data.girlSweetness -= 100;
+                    this.showToast('奖励兑换成功！记得兑现承诺哦~🥤');
+                    this.saveData(); // 保存扣除后的状态
+                } else {
+                    this.saveData(); // 保存未扣除的状态
+                }
+            }, 500);
+        } else {
+            this.showToast(`记录成功！甜度 +${amount} 💕`);
+            this.saveData();
+        }
     }
 };
 

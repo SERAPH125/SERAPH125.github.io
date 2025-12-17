@@ -30,12 +30,17 @@
     </div>
 
     <div class="shop-tabs">
-        <button class="shop-tab-btn active" onclick="app.switchShopTab('mall')" id="tab-mall">🎁 兑换中心</button>
+        <button class="shop-tab-btn active" onclick="app.switchShopTab('mall')" id="tab-mall">🎁 男友兑换</button>
+        <button class="shop-tab-btn" onclick="app.switchShopTab('girl-mall')" id="tab-girl-mall">👑 女王权益</button>
         <button class="shop-tab-btn" onclick="app.switchShopTab('inventory')" id="tab-inventory">🎒 我的背包</button>
     </div>
 
     <div id="view-mall">
         <div class="shop-grid" id="shop-list"></div>
+    </div>
+    
+    <div id="view-girl-mall" style="display: none;">
+        <div class="shop-grid" id="girl-shop-list"></div>
     </div>
 
     <div id="view-inventory" style="display: none;">
@@ -48,7 +53,7 @@
     <div class="modal">
         <span id="use-icon" style="font-size:3rem; display:block; margin-bottom:15px;">🎫</span>
         <h3 style="margin:0 0 10px 0;">使用物品</h3>
-        <p style="color:#666; margin-bottom:20px; line-height:1.5;">确定要使用 <span id="use-name" style="font-weight:bold; color:var(--accent-pink);"></span> 吗？<br><span style="font-size:0.8rem;">(使用后将变为已核销状态)</span></p>
+        <p id="use-modal-text" style="color:#666; margin-bottom:20px; line-height:1.5;">确定要使用 <span id="use-name" style="font-weight:bold; color:var(--accent-pink);"></span> 吗？<br><span style="font-size:0.8rem;">(使用后将变为已核销状态)</span></p>
         <div style="display:flex; gap:10px;">
             <button onclick="document.getElementById('use-modal').style.display='none'" style="flex:1; background:#f0f0f0; border:none; padding:12px; border-radius:12px;">取消</button>
             <button onclick="app.confirmUse()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold;">确认使用</button>
@@ -65,16 +70,36 @@ Object.assign(app, {
     },
 
     render() {
-        // 渲染商店
+        // 渲染男友兑换区 (只显示 owner 为 boy 或 undefined 的)
         const shopList = document.getElementById('shop-list');
         if (shopList) {
-            shopList.innerHTML = this.products.map(p => `
+            shopList.innerHTML = this.products.filter(p => !p.owner || p.owner === 'boy').map(p => `
                 <div class="shop-item">
                     <div class="shop-icon">${p.icon}</div>
                     <div style="font-weight:bold; margin-bottom:5px;">${p.name}</div>
                     <div class="shop-price">${p.price} 分</div>
                     <button class="btn-buy" ${this.data.score >= p.price ? '' : 'disabled'} onclick="app.buyProduct(${p.id})">
                         ${this.data.score >= p.price ? '兑换' : '积分不足'}
+                    </button>
+                </div>
+            `).join('');
+        }
+        
+        // 渲染女王权益区 (只显示 owner 为 girl 的)
+        const girlShopList = document.getElementById('girl-shop-list');
+        if (girlShopList) {
+            const sweetVal = this.data.girlSweetness || 0;
+            girlShopList.innerHTML = this.products.filter(p => p.owner === 'girl').map(p => `
+                <div class="shop-item" style="border-color: #ff9a9e; background: rgba(255,255,255,0.7);">
+                    <div class="shop-icon">${p.icon}</div>
+                    <div style="font-weight:bold; margin-bottom:5px; color:#d6336c;">${p.name}</div>
+                    <div style="font-size:0.75rem; color:#888; margin-bottom:5px;">${p.desc}</div>
+                    <div class="shop-price" style="color: #ff9a9e;">${p.price} 🍬</div>
+                    <button class="btn-buy" 
+                        style="${sweetVal >= p.price ? 'background: linear-gradient(135deg, #ff9a9e, #fecfef);' : 'background:#ddd;'}"
+                        ${sweetVal >= p.price ? '' : 'disabled'} 
+                        onclick="app.buyProduct(${p.id})">
+                        ${sweetVal >= p.price ? '兑换权益' : '甜度不足'}
                     </button>
                 </div>
             `).join('');
@@ -89,14 +114,30 @@ Object.assign(app, {
         } else {
             invList.innerHTML = this.data.inventory.map(item => {
                 const isUsed = item.status === 'used';
+                const isGirlItem = item.owner === 'girl'; // 判断是否是女王权益
+                
+                // 动态样式：女王权益显示粉色背景/边框，男友权益保持默认
+                const itemStyle = isGirlItem 
+                    ? 'border: 2px solid #ff9a9e; background: rgba(255, 235, 238, 0.9);' 
+                    : '';
+                
+                const nameStyle = isGirlItem ? 'color: #d6336c;' : '';
+                
                 return `
-                    <div class="inventory-item ${isUsed ? 'used' : 'unused'}" onclick="${isUsed ? '' : `app.askUseItem(${item.id})`}">
+                    <div class="inventory-item ${isUsed ? 'used' : 'unused'}" 
+                         style="${itemStyle}"
+                         onclick="${isUsed ? '' : `app.askUseItem(${item.id})`}">
                         <div class="inv-icon">${item.icon}</div>
                         <div class="inv-info">
-                            <div class="inv-name">${item.name}</div>
-                            <div class="inv-date">${isUsed ? '使用于: ' + item.useTime : '购买于: ' + item.buyTime}</div>
+                            <div class="inv-name" style="${nameStyle}">
+                                ${isGirlItem ? '👑 ' : ''}${item.name}
+                            </div>
+                            <div class="inv-date">${isUsed ? '使用于: ' + item.useTime : '兑换于: ' + item.buyTime}</div>
                         </div>
-                        ${isUsed ? '<div class="stamp-used"></div>' : '<button class="btn-use">使用</button>'}
+                        ${isUsed ? '<div class="stamp-used"></div>' : 
+                          `<button class="btn-use" style="${isGirlItem ? 'background: linear-gradient(135deg, #ff9a9e, #fecfef);' : ''}">
+                             ${isGirlItem ? '使用' : '使用'}
+                           </button>`}
                     </div>
                 `;
             }).join('');
@@ -108,6 +149,7 @@ Object.assign(app, {
         document.getElementById(`tab-${tab}`).classList.add('active');
         
         document.getElementById('view-mall').style.display = tab === 'mall' ? 'block' : 'none';
+        document.getElementById('view-girl-mall').style.display = tab === 'girl-mall' ? 'block' : 'none';
         document.getElementById('view-inventory').style.display = tab === 'inventory' ? 'block' : 'none';
     },
 
@@ -115,26 +157,45 @@ Object.assign(app, {
         const p = this.products.find(x => x.id === id);
         if (!p) return;
         
-        if (this.data.score < p.price) {
-            return this.showToast('积分不足哦，快去赚积分吧！🥺');
+        // 区分购买逻辑
+        if (p.owner === 'girl') {
+            // 女王权益购买逻辑
+            const sweetVal = this.data.girlSweetness || 0;
+            if (sweetVal < p.price) {
+                return this.showToast('甜度不足哦，快去让他夸夸你！💕');
+            }
+            if (confirm(`确认兑换【${p.name}】吗？\n(消耗 ${p.price} 甜度)`)) {
+                this.data.girlSweetness -= p.price;
+                this.addInventoryItem(p, 'used'); // 权益类商品直接核销或放入背包？建议放入背包
+                this.saveData();
+                this.showToast('兑换成功！快去找他兑现吧！👑');
+            }
+        } else {
+            // 原有男友购买逻辑
+            if (this.data.score < p.price) {
+                return this.showToast('积分不足哦，快去赚积分吧！🥺');
+            }
+            if (confirm(`确认兑换 ${p.name} 吗？\n(消耗 ${p.price} 积分，物品将放入背包)`)) {
+                this.executeChange(-p.price, `购买商品：${p.name}`);
+                this.addInventoryItem(p);
+                this.saveData();
+                this.showToast('兑换成功！已放入背包 🎒');
+            }
         }
-
-        if (confirm(`确认兑换 ${p.name} 吗？\n(消耗 ${p.price} 积分，物品将放入背包)`)) {
-            this.executeChange(-p.price, `购买商品：${p.name}`);
-            
-            this.data.inventory.unshift({
-                id: Date.now(),
-                productId: p.id,
-                name: p.name,
-                icon: p.icon,
-                price: p.price,
-                buyTime: new Date().toLocaleString(),
-                status: 'unused'
-            });
-            
-            this.saveData();
-            this.showToast('兑换成功！已放入背包 🎒');
-        }
+    },
+    
+    addInventoryItem(p, status = 'unused') {
+        if (!this.data.inventory) this.data.inventory = [];
+        this.data.inventory.unshift({
+            id: Date.now(),
+            productId: p.id,
+            name: p.name,
+            icon: p.icon,
+            price: p.price,
+            owner: p.owner || 'boy', // 记录物品归属
+            buyTime: new Date().toLocaleString(),
+            status: status
+        });
     },
 
     askUseItem(itemId) {
@@ -144,6 +205,15 @@ Object.assign(app, {
         this.pendingUseItem = itemId;
         document.getElementById('use-icon').innerText = item.icon;
         document.getElementById('use-name').innerText = item.name;
+        
+        // 针对女王权益显示不同的提示语
+        const modalText = document.getElementById('use-modal-text');
+        if (item.owner === 'girl') {
+            modalText.innerHTML = `确定要行使 <span style="font-weight:bold; color:#d6336c;">${item.name}</span> 权益吗？<br><span style="font-size:0.8rem; color:#888;">(点击确认后，请把手机展示给刘智勇看，让他立刻执行！😤)</span>`;
+        } else {
+            modalText.innerHTML = `确定要使用 <span style="font-weight:bold; color:var(--accent-pink);">${item.name}</span> 吗？<br><span style="font-size:0.8rem; color:#888;">(使用后将变为已核销状态)</span>`;
+        }
+        
         document.getElementById('use-modal').style.display = 'flex';
     },
 
