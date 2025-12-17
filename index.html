@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="周金霞男友">
-    <title>周金霞男朋友养成计划 V3.0 云同步版 ❤️</title>
+    <title>小周的男友养成计划 V3.0 云同步版 ❤️</title>
     <!-- 引入 LeanCloud SDK -->
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <style>
@@ -1619,7 +1619,7 @@
             }
         },
 
-        // 智能图片压缩算法 (升级版)
+        // 简单的图片压缩
         compressImage(file, callback) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -1628,8 +1628,7 @@
                 img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    // 1. 提升分辨率上限：从 600px -> 1024px (更清晰)
-                    const MAX_WIDTH = 1024; 
+                    const MAX_WIDTH = 600; // 限制最大宽度
                     let width = img.width;
                     let height = img.height;
 
@@ -1643,17 +1642,8 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // 2. 优先尝试 WebP 格式 (体积小画质好)
-                    // 质量提升至 0.8 (原为 0.6)
-                    let quality = 0.8;
-                    let dataUrl = canvas.toDataURL('image/webp', quality);
-                    
-                    // 3. 兼容性回退：如果浏览器不支持 WebP (返回了 png)，则强制使用 JPEG
-                    if (dataUrl.indexOf('data:image/webp') === -1) {
-                        // JPEG 格式稍微降低一点质量以平衡体积
-                        dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-                    }
-                    
+                    // 压缩质量 0.6
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                     callback(dataUrl);
                 };
             };
