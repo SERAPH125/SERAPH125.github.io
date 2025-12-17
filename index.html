@@ -1619,7 +1619,7 @@
             }
         },
 
-        // 简单的图片压缩
+        // 智能图片压缩算法 (升级版)
         compressImage(file, callback) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
@@ -1628,7 +1628,8 @@
                 img.src = e.target.result;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; // 限制最大宽度
+                    // 1. 提升分辨率上限：从 600px -> 1024px (更清晰)
+                    const MAX_WIDTH = 1024; 
                     let width = img.width;
                     let height = img.height;
 
@@ -1642,8 +1643,17 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // 压缩质量 0.6
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                    // 2. 优先尝试 WebP 格式 (体积小画质好)
+                    // 质量提升至 0.8 (原为 0.6)
+                    let quality = 0.8;
+                    let dataUrl = canvas.toDataURL('image/webp', quality);
+                    
+                    // 3. 兼容性回退：如果浏览器不支持 WebP (返回了 png)，则强制使用 JPEG
+                    if (dataUrl.indexOf('data:image/webp') === -1) {
+                        // JPEG 格式稍微降低一点质量以平衡体积
+                        dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    }
+                    
                     callback(dataUrl);
                 };
             };
@@ -1678,8 +1688,8 @@
                 });
 
                 // 限制相册数量，防止 LocalStorage 爆炸
-                if (this.data.album.length > 20) {
-                    this.showToast('相册好像满了 (20张)，旧照片被挤掉了... 😢');
+                if (this.data.album.length > 40) {
+                    this.showToast('相册好像满了 (40张)，旧照片被挤掉了... 😢');
                     this.data.album.pop();
                 }
 
