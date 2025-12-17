@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="周金霞男友">
-    <title>小周的男友养成计划 V3.1 云同步版 ❤️</title>
+    <title>小周的男友养成计划 V3.3 云同步版 ❤️</title>
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="common.css">
     <style>
@@ -29,6 +29,38 @@
             opacity: 0;
             transition: opacity 0.2s;
         }
+        
+        .signin-status-bar {
+            background: rgba(255,255,255,0.4);
+            border-radius: 15px;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        .signin-avatar {
+            width: 30px; height: 30px;
+            background: white;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            position: relative;
+        }
+        .signin-avatar.done::after {
+            content: '✓';
+            position: absolute;
+            bottom: -2px; right: -2px;
+            background: var(--success);
+            color: white;
+            font-size: 8px;
+            width: 12px; height: 12px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid white;
+        }
     </style>
 </head>
 <body>
@@ -39,7 +71,7 @@
 
 <div class="container">
     <header>
-        <h1>小周的男友养成计划 <span class="version-tag">V3.1</span></h1>
+        <h1>小周的男友养成计划 <span class="version-tag">V3.3</span></h1>
         <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
     </header>
     
@@ -50,9 +82,8 @@
         <a href="index.html" class="nav-btn active">🏠 主页</a>
         <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
         <a href="album.html" class="nav-btn">🖼️ 相册</a>
-		<a href="settings.html" class="nav-btn">⚙️ 设置</a>
         <a href="shop.html" class="nav-btn">🎁 商店</a>
-       
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
     </div>
 
     <!-- 主页内容 -->
@@ -65,6 +96,15 @@
             <div class="score-value" id="score-display">0</div>
             <div class="rank-badge" id="rank-display">加载中...</div>
         </div>
+    </div>
+
+    <!-- 双人签到状态栏 -->
+    <div class="signin-status-bar" id="signin-status-bar">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div class="signin-avatar" id="avatar-boy">👦</div>
+            <div class="signin-avatar" id="avatar-girl">👧</div>
+        </div>
+        <div id="signin-text-status">等待签到...</div>
     </div>
 
     <!-- 生理期卡片 -->
@@ -149,7 +189,7 @@
 Object.assign(app, {
     init() {
         this.initCommon();
-        // 延迟渲染，确保数据已加载（initCommon中已尝试加载本地数据）
+        // 延迟渲染，确保数据已加载
         setTimeout(() => {
             this.render();
             this.checkDailySignIn();
@@ -182,6 +222,40 @@ Object.assign(app, {
 
         this.renderPeriod();
         this.updateStreakUI();
+        this.renderSignInStatus();
+    },
+
+    // 渲染双人签到状态
+    renderSignInStatus() {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const boyDone = this.data.lastSignInDate_Boy === todayStr;
+        const girlDone = this.data.lastSignInDate_Girl === todayStr;
+        
+        const boyAvatar = document.getElementById('avatar-boy');
+        const girlAvatar = document.getElementById('avatar-girl');
+        const statusText = document.getElementById('signin-text-status');
+
+        if(boyDone) boyAvatar.classList.add('done');
+        else boyAvatar.classList.remove('done');
+
+        if(girlDone) girlAvatar.classList.add('done');
+        else girlAvatar.classList.remove('done');
+
+        // 文字提示
+        if (boyDone && girlDone) {
+            statusText.innerHTML = '❤️ 双人打卡完成！真棒！';
+            statusText.style.color = 'var(--accent-pink)';
+            statusText.style.fontWeight = 'bold';
+        } else {
+            const me = this.currentUser === 'boy' ? boyDone : girlDone;
+            const partner = this.currentUser === 'boy' ? girlDone : boyDone;
+            
+            if (!me) {
+                statusText.innerText = '👋 早安！快来签到吧';
+            } else if (!partner) {
+                statusText.innerText = '👀 等待另一半签到...';
+            }
+        }
     },
 
     addScore() {
@@ -243,46 +317,95 @@ Object.assign(app, {
     },
 
     checkDailySignIn() {
+        // common.js 已实现签到核心逻辑，这里主要是触发并处理UI更新
+        // 但 common.js 的 checkDailySignIn 是通过 this 调用，这里需要确保覆盖或者使用 common.js 的
+        // 实际上，common.js 已经定义了 checkDailySignIn。
+        // 但由于我们在 index.html 的 script 中使用了 Object.assign 覆盖 app，
+        // 如果这里没有 checkDailySignIn，就会使用 common.js 的（如果 common.js 是先定义的 app，然后 index.html 这里扩展）
+        // 这里的 Object.assign 是扩展 app 对象。
+        // 如果 common.js 中的 app 对象已经有了 checkDailySignIn，这里不需要重写，除非需要特殊的主页 UI 逻辑。
+        
+        // 我们可以直接调用 common.js 中的逻辑，并添加 render 更新
+        const superCheck = app.__proto__?.checkDailySignIn || app.checkDailySignIn; // 获取 common.js 的实现比较麻烦，因为是直接对象
+        
+        // 实际上，common.js 里的 app 对象会被这里的 Object.assign 扩展。
+        // 所以我们不需要在这里重写 checkDailySignIn，除非我们要修改它的行为。
+        // 我们在 common.js 里已经重写了 checkDailySignIn 以支持双人。
+        // 这里只需要保留 showSignInModal 即可（因为它涉及 DOM 操作，且 DOM 在 index.html 中）。
+        
+        // 调用 common.js 中定义的 checkDailySignIn (如果它已经在 app 对象上)
+        // 注意：Object.assign 会合并属性。我们在 common.js 定义了 app，这里又定义了一堆方法合并进去。
+        // 所以这里**不需要**再定义 checkDailySignIn，直接让它执行 common.js 的即可。
+        // 唯一的问题是 showSignInModal 需要操作 index.html 特有的 DOM。
+        // 所以我们在 common.js 留了 showSignInModal 的空实现或者基础实现？
+        // common.js 里没有 showSignInModal 的具体实现（因为涉及弹窗 DOM）。
+        // 所以我们需要在这里实现 showSignInModal。
+        
+        // 触发签到检查 (由 common.js 的 initCommon 调用，或者这里手动调用)
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
         
-        if (this.data.lastSignInDate === todayStr) {
+        const lastSignInField = this.currentUser === 'boy' ? 'lastSignInDate_Boy' : 'lastSignInDate_Girl';
+        
+        // 只有当今天没签到时才执行核心逻辑
+        if (this.data[lastSignInField] !== todayStr) {
+             // 这里的逻辑稍微有点绕，为了简单，我直接在这里重写 checkDailySignIn 以确保逻辑正确
+             // 并且调用 common.js 的 executeChange
+             
+            let diffDays = 0;
+            if (this.data.lastSignInDate) {
+                const last = new Date(this.data.lastSignInDate);
+                const utc1 = Date.UTC(last.getFullYear(), last.getMonth(), last.getDate());
+                const utc2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+                diffDays = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
+            }
+
+            if (diffDays > 1 || !this.data.lastSignInDate) {
+                this.data.signInStreak = 1;
+            } else if (diffDays === 1) {
+                if (this.data.lastSignInDate !== todayStr) {
+                    this.data.signInStreak++;
+                }
+            }
+
+            let reward = 1;
+            let title = this.getTimeGreeting();
+            let subText = "每日签到奖励";
+            let icon = this.getTimeIcon();
+            let extraReward = false;
+
+            const partnerField = this.currentUser === 'boy' ? 'lastSignInDate_Girl' : 'lastSignInDate_Boy';
+            const partnerSignIn = this.data[partnerField] === todayStr;
+
+            if (partnerSignIn) {
+                reward = 5;
+                title = "❤️ 心有灵犀！";
+                subText = "另一半也签到了！触发双倍甜蜜暴击！";
+                icon = "👩‍❤️‍👨";
+            } else if (this.data.signInStreak % 7 === 0 && this.data.lastSignInDate !== todayStr) {
+                reward = 20; 
+                title = "🎉 连击大礼包！";
+                subText = `太棒了！已连续打卡 ${this.data.signInStreak} 天！`;
+                icon = "🎁";
+                extraReward = true;
+            }
+
+            this.data[lastSignInField] = todayStr;
+            this.data.lastSignInDate = todayStr;
+            
+            this.data.signInLog.unshift({
+                date: todayStr,
+                user: this.currentUser,
+                time: new Date().toLocaleTimeString()
+            });
+            
+            this.executeChange(reward, `每日签到 (${this.currentUser === 'boy' ? '男朋友' : '周金霞'}) ${partnerSignIn ? '+ 双人加成' : ''}`);
+            this.showSignInModal(false, title, subText, icon, reward, extraReward);
+        } else {
+            // 已签到，只更新UI
             this.updateStreakUI();
-            return;
+            this.renderSignInStatus();
         }
-
-        let diffDays = 0;
-        if (this.data.lastSignInDate) {
-            const last = new Date(this.data.lastSignInDate);
-            const utc1 = Date.UTC(last.getFullYear(), last.getMonth(), last.getDate());
-            const utc2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-            diffDays = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
-        }
-
-        if (diffDays === 1) {
-            this.data.signInStreak++;
-        } else if (diffDays > 1 || !this.data.lastSignInDate) {
-            this.data.signInStreak = 1;
-        }
-
-        let reward = 1;
-        let title = this.getTimeGreeting();
-        let subText = "每日签到奖励";
-        let icon = this.getTimeIcon();
-        let extraReward = false;
-
-        if (this.data.signInStreak % 7 === 0) {
-            reward = 20;
-            title = "🎉 连击大礼包！";
-            subText = `太棒了！已连续打卡 ${this.data.signInStreak} 天！`;
-            icon = "🎁";
-            extraReward = true;
-        }
-
-        this.data.lastSignInDate = todayStr;
-        this.executeChange(reward, `每日签到 (连击 ${this.data.signInStreak} 天)`);
-
-        this.showSignInModal(false, title, subText, icon, reward, extraReward);
     },
 
     showSignInModal(isViewOnly = false, title, subText, icon, reward, isBigReward) {
@@ -319,6 +442,7 @@ Object.assign(app, {
 
         modal.style.display = 'flex';
         this.updateStreakUI();
+        this.renderSignInStatus(); // 签到后更新状态栏
     },
 
     closeSignIn() {

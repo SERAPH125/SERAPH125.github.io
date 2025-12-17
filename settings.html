@@ -9,6 +9,36 @@
     <title>设置 - 小周的男友养成计划 ❤️</title>
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="common.css">
+    <style>
+        .role-switch-container {
+            display: flex;
+            background: rgba(255,255,255,0.5);
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .role-option {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            color: var(--text-light);
+        }
+        .role-option.active {
+            background: white;
+            color: var(--accent-pink);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .role-icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
 <div class="bg-shape shape-1"></div>
@@ -17,7 +47,7 @@
 
 <div class="container">
     <header>
-        <h1>⚙️ 设置 <span class="version-tag">V3.1</span></h1>
+        <h1>⚙️ 设置 <span class="version-tag">V3.3</span></h1>
         <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
     </header>
 
@@ -27,6 +57,18 @@
         <a href="album.html" class="nav-btn">🖼️ 相册</a>
         <a href="shop.html" class="nav-btn">🎁 商店</a>
         <a href="settings.html" class="nav-btn active">⚙️ 设置</a>
+    </div>
+
+    <h3>👤 身份切换</h3>
+    <div class="role-switch-container">
+        <div class="role-option" id="role-boy" onclick="app.switchUserRole('boy')">
+            <span class="role-icon">👦</span>
+            我是男朋友
+        </div>
+        <div class="role-option" id="role-girl" onclick="app.switchUserRole('girl')">
+            <span class="role-icon">👧</span>
+            我是周金霞
+        </div>
     </div>
 
     <h3>🩸 生理期记录</h3>
@@ -72,6 +114,15 @@ Object.assign(app, {
     },
 
     render() {
+        // 渲染角色状态
+        document.getElementById('role-boy').classList.remove('active');
+        document.getElementById('role-girl').classList.remove('active');
+        if (this.currentUser === 'boy') {
+            document.getElementById('role-boy').classList.add('active');
+        } else {
+            document.getElementById('role-girl').classList.add('active');
+        }
+
         // 渲染历史记录
         const logList = document.getElementById('log-list');
         if (logList) {
@@ -124,4 +175,3 @@ app.init();
 </script>
 </body>
 </html>
-

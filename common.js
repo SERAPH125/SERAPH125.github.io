@@ -10,9 +10,13 @@ const app = {
         album: [],
         periodDate: null,
         inventory: [],
-        lastSignInDate: null,
-        signInStreak: 0
+        // 签到相关升级
+        lastSignInDate_Boy: null,
+        lastSignInDate_Girl: null,
+        signInStreak: 0,
+        signInLog: [] // { date: '2023-10-01', user: 'boy' }
     },
+    currentUser: 'boy', // 默认 'boy', 可切换为 'girl'
     deductStep: 0,
     currentCat: '💖',
     cloudObj: null,
@@ -80,9 +84,9 @@ const app = {
         "给女朋友画一幅画像（灵魂画手上线） 🎨",
         "为女朋友梳头发/吹头发 💇‍♂️",
         "拍一张女朋友最美的照片 📷",
-        "用方言说“我爱你” 🗣️",
+        "用方言说\"我爱你\" 🗣️",
         "答应女朋友一个小小的无理取闹 😈",
-        "做10个俯卧撑并说“我身体倍儿棒” 💪"
+        "做10个俯卧撑并说\"我身体倍儿棒\" 💪"
     ],
 
     products: [
@@ -160,7 +164,10 @@ const app = {
                     if (!this.data.wishes) this.data.wishes = [];
                     if (!this.data.periodDate) this.data.periodDate = null;
                     if (!this.data.inventory) this.data.inventory = [];
-                    if (this.data.lastSignInDate === undefined) this.data.lastSignInDate = null;
+                    // 双人签到数据兼容
+                    if (this.data.lastSignInDate_Boy === undefined) this.data.lastSignInDate_Boy = this.data.lastSignInDate || null;
+                    if (this.data.lastSignInDate_Girl === undefined) this.data.lastSignInDate_Girl = null;
+                    if (this.data.signInLog === undefined) this.data.signInLog = [];
                     if (this.data.signInStreak === undefined) this.data.signInStreak = 0;
 
                     this.fixHistoryIds();
@@ -205,6 +212,12 @@ const app = {
         localStorage.setItem('lean_app_key', presetAppKey);
         localStorage.setItem('lean_server_url', presetServerURL);
 
+        // 加载用户身份
+        const savedRole = localStorage.getItem('user_role');
+        if (savedRole) {
+            this.currentUser = savedRole;
+        }
+
         // 先加载本地数据，保证界面快速响应
         this.loadLocalData();
         this.fixHistoryIds();
@@ -215,6 +228,15 @@ const app = {
         
         this.startSakuraLoop();
         this.showDailyQuote();
+    },
+
+    // 切换用户角色
+    switchUserRole(role) {
+        this.currentUser = role;
+        localStorage.setItem('user_role', role);
+        this.showToast(`身份已切换为：${role === 'boy' ? '男朋友' : '周金霞'}`);
+        // 刷新页面以应用新身份
+        setTimeout(() => location.reload(), 500);
     },
 
     // 更新恋爱天数
@@ -256,8 +278,11 @@ const app = {
                 if(!this.data.wishes) this.data.wishes = [];
                 if(!this.data.album) this.data.album = [];
                 if(!this.data.inventory) this.data.inventory = [];
-                if(this.data.lastSignInDate === undefined) this.data.lastSignInDate = null;
-                if(this.data.signInStreak === undefined) this.data.signInStreak = 0;
+                // 双人签到兼容
+                if (this.data.lastSignInDate_Boy === undefined) this.data.lastSignInDate_Boy = this.data.lastSignInDate || null;
+                if (this.data.lastSignInDate_Girl === undefined) this.data.lastSignInDate_Girl = null;
+                if (this.data.signInLog === undefined) this.data.signInLog = [];
+                if (this.data.signInStreak === undefined) this.data.signInStreak = 0;
             } catch(e) {
                 console.error("Local data parse error", e);
             }
@@ -378,10 +403,9 @@ const app = {
         if(el) el.innerText = `" ${quote} "`;
     },
 
-    // 多页面兼容函数：实际上在HTML中通过<a>跳转，这里只做预留
+    // 多页面兼容函数
     switchTab(tab) {
-        // 多页面应用不需要JS切换显示隐藏
-        // 可以在这里处理导航高亮（虽然CSS已经处理了）
+        // 预留
     }
 };
 
