@@ -1001,6 +1001,29 @@
         ],
 
         init() {
+            // #region agent log
+            setTimeout(() => {
+                const tabs = document.querySelector('.tabs');
+                const buttons = document.querySelectorAll('.tab-btn');
+                const btnWidths = Array.from(buttons).map(b => b.offsetWidth);
+                const totalBtnWidth = btnWidths.reduce((a, b) => a + b, 0);
+                
+                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+                    location:'index.html:init_layout_check',
+                    message:'Tabs layout metrics',
+                    data:{
+                        containerWidth: tabs ? tabs.clientWidth : 0,
+                        scrollWidth: tabs ? tabs.scrollWidth : 0,
+                        totalBtnWidth: totalBtnWidth,
+                        btnCount: buttons.length,
+                        windowWidth: window.innerWidth,
+                        btns: Array.from(buttons).map(b => b.innerText)
+                    },
+                    timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'Layout'
+                })}).catch(()=>{});
+            }, 1000);
+            // #endregion
+
             // 用户专属配置 (强制覆盖旧缓存)
             const presetAppId = "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
             const presetAppKey = "4gtuHZVj2S6XlF79Av5l7WKz";
@@ -1059,10 +1082,6 @@
                         this.cloudObj = data;
                         this.data = data.get('content');
                         
-                        // #region agent log
-                        fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:initLeanCloud',message:'Cloud data fetched',data:{hasAlbum: !!(this.data && this.data.album)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
-                        // #endregion
-
                         // 兼容性修复：如果云端是旧数据，补充缺失字段
                         if (!this.data.album) this.data.album = [];
                         if (!this.data.wishes) this.data.wishes = [];
@@ -1165,9 +1184,6 @@
             try {
                 localStorage.setItem('bf_app_v2', JSON.stringify(this.data));
             } catch (e) {
-                // #region agent log
-                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:saveToLocal',message:'LocalStorage Error',data:{error: e.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
-                // #endregion
                 alert('本地存储空间已满！请删除一些照片或愿望再试。');
             }
         },
@@ -1181,14 +1197,8 @@
             if (this.cloudObj) {
                 this.cloudObj.set('content', this.data);
                 this.cloudObj.save().then(() => {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:saveData',message:'Cloud sync success',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-                    // #endregion
                     console.log('云端同步成功');
                 }).catch(err => {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:saveData',message:'Cloud sync failed',data:{error: err.toString()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
-                    // #endregion
                     console.error('云端同步失败', err);
                 });
             }
@@ -1429,9 +1439,6 @@
         
         // 相册功能
         addPhotoUI() {
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:addPhotoUI',message:'Opening add photo UI',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-            // #endregion
             document.getElementById('add-photo-modal').style.display = 'flex';
             this.tempPhotoData = null;
             document.getElementById('photo-url-input').value = '';
@@ -1441,9 +1448,6 @@
 
         previewUrl() {
             const url = document.getElementById('photo-url-input').value.trim();
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:previewUrl',message:'URL input changed',data:{urlLength: url.length},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
-            // #endregion
             if (url) {
                 this.tempPhotoData = url;
                 const img = document.getElementById('photo-preview-img');
@@ -1453,15 +1457,9 @@
         },
 
         handleFileSelect(input) {
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:handleFileSelect',message:'File selected',data:{files: input.files ? input.files.length : 0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-            // #endregion
             if (input.files && input.files[0]) {
                 const file = input.files[0];
                 this.compressImage(file, (base64) => {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:handleFileSelect_callback',message:'Compression finished',data:{base64Length: base64 ? base64.length : 0},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-                    // #endregion
                     this.tempPhotoData = base64;
                     const img = document.getElementById('photo-preview-img');
                     img.src = base64;
@@ -1503,10 +1501,6 @@
         },
 
         confirmAddPhoto() {
-            // #region agent log
-            fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'Enter confirmAddPhoto',data:{hasAlbum: !!(this.data && this.data.album), albumType: this.data && this.data.album ? typeof this.data.album : 'undefined', isArray: this.data && Array.isArray(this.data.album)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-            // #endregion
-
             try {
                 if (!this.tempPhotoData) {
                     // ... (existing retry logic)
@@ -1524,9 +1518,6 @@
 
                 // Defensive check and fix
                 if (!this.data.album || !Array.isArray(this.data.album)) {
-                     // #region agent log
-                    fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'Restoring missing album array',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-                    // #endregion
                     this.data.album = [];
                 }
 
@@ -1544,15 +1535,9 @@
                 }
 
                 this.saveData();
-                // #region agent log
-                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'Success',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A'})}).catch(()=>{});
-                // #endregion
                 document.getElementById('add-photo-modal').style.display = 'none';
                 this.showToast('照片添加成功！美好+1 ❤️');
             } catch (e) {
-                // #region agent log
-                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:confirmAddPhoto',message:'CRASH CAUGHT',data:{error: e.toString(), stack: e.stack},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
-                // #endregion
                 console.error(e);
                 alert('出错了：' + e.message);
             }
