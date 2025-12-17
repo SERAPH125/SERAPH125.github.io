@@ -615,14 +615,50 @@
         }
 
         .photo-date {
-            position: absolute;
-            bottom: 5px;
-            right: 10px;
             font-size: 0.6rem;
             color: #999;
         }
 
-        .btn-del-photo {
+        /* 照片元信息容器 (新加) */
+        .photo-meta {
+            display: flex;
+            flex-direction: column; /* 垂直排列 */
+            align-items: flex-start; /* 左对齐 */
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px dashed #eee;
+            gap: 2px;
+        }
+        .photo-meta .photo-date {
+            align-self: flex-end; /* 日期靠右 */
+            position: static; /* 移除绝对定位 */
+        }
+            flex-direction: column; /* 垂直排列 */
+            align-items: flex-start; /* 左对齐 */
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px dashed #eee;
+            gap: 2px;
+        }
+        .photo-meta .photo-date {
+            align-self: flex-end; /* 日期靠右 */
+            position: static; /* 移除绝对定位 */
+        }
+
+        /* 照片上的地点徽章 */
+        .location-badge {
+            font-size: 0.65rem;
+            color: var(--accent-blue);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            position: static; /* 移除绝对定位 */
+        }
             position: absolute;
             top: -5px;
             right: -5px;
@@ -712,6 +748,28 @@
             0% { opacity: 0; transform: translateY(-10px) rotate(0deg); }
             20% { opacity: 1; }
             100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
+        }
+
+        /* 足迹概览 - 已移除功能但保留样式占位防止报错（如果需要完全移除可以删掉这些样式） */
+        /* 
+        .footprint-card { ... }
+        .footprint-count { ... }
+        .footprint-tags { ... }
+        .location-tag { ... }
+        */
+
+        /* 照片上的地点徽章 - 配合 Flexbox 布局 */
+        .location-badge {
+            font-size: 0.65rem;
+            color: var(--accent-blue);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            max-width: 60%; /* 允许占据空间 */
         }
 
         /* 安装指引 (仅在iOS Safari显示) */
@@ -949,7 +1007,8 @@
             <img id="photo-preview-img">
         </div>
 
-        <input type="text" id="photo-caption" placeholder="写一句甜甜的话吧... (选填)" style="margin-top:10px;">
+        <input type="text" id="photo-location" placeholder="📍 在哪里拍的？(例如: 上海·外滩)" style="margin-top:10px;">
+        <input type="text" id="photo-caption" placeholder="📝 写一句甜甜的话吧... (选填)" style="margin-top:10px;">
         
         <div style="display:flex; gap:10px; margin-top:15px;">
             <button onclick="document.getElementById('add-photo-modal').style.display='none'" style="flex:1; padding:12px; border:none; background:#f0f0f0; border-radius:12px;">取消</button>
@@ -1478,7 +1537,13 @@
                 </div>
             `;
             
+            // 提取足迹
+            const locations = new Set();
             if (this.data.album && this.data.album.length > 0) {
+                this.data.album.forEach(p => {
+                    if(p.location) locations.add(p.location);
+                });
+
                 albumHtml += this.data.album.map(photo => `
                     <div class="polaroid" onclick="app.showLightbox('${photo.url}')">
                         <div class="btn-del-photo" onclick="event.stopPropagation(); app.deletePhoto(${photo.id})">×</div>
@@ -1486,11 +1551,18 @@
                             <img src="${photo.url}" class="photo-img" loading="lazy">
                         </div>
                         <div class="photo-caption">${photo.caption || '❤️ 美好时光'}</div>
-                        <div class="photo-date">${photo.date}</div>
+                        <div class="photo-meta">
+                            ${photo.location ? `<div class="location-badge">📍 ${photo.location}</div>` : '<div></div>'}
+                            <div class="photo-date">${photo.date}</div>
+                        </div>
                     </div>
                 `).join('');
             }
             albumList.innerHTML = albumHtml;
+
+            // 渲染足迹墙 - 隐藏
+            // document.getElementById('location-count').innerText = locations.size;
+            // ... (rest hidden)
         },
 
         buyProduct(id) {
