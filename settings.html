@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>设置 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>⚙️ 设置 <span class="version-tag">V3.1</span></h1>
+        <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="album.html" class="nav-btn">🖼️ 相册</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+        <a href="settings.html" class="nav-btn active">⚙️ 设置</a>
+    </div>
+
+    <h3>🩸 生理期记录</h3>
+    <div class="sync-panel">
+        <p style="margin:0 0 10px 0; font-size:0.9rem; color:#666;">记录上一次开始日期，自动推算下次时间。</p>
+        <input type="date" id="period-date-input" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
+        <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:10px;">💾 保存日期</button>
+    </div>
+
+    <h3>☁️ 云同步设置</h3>
+    <p style="font-size:0.9rem; color:#666;">配置云端后，两台手机可实时同步数据。</p>
+    
+    <div class="sync-panel">
+        <div class="sync-status">
+            <div class="status-dot" id="sync-dot"></div>
+            <span id="sync-text">未连接云端</span>
+        </div>
+        
+        <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
+        <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
+        <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px;">🔌 连接云端</button>
+        <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px;">🔄 强制同步</button>
+    </div>
+
+    <h3>📜 历史记录</h3>
+    <div id="log-list"></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+Object.assign(app, {
+    init() {
+        this.initCommon();
+        const presetAppId = "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
+        const presetAppKey = "4gtuHZVj2S6XlF79Av5l7WKz";
+        
+        const appIdEl = document.getElementById('lean-app-id');
+        const appKeyEl = document.getElementById('lean-app-key');
+        if (appIdEl) appIdEl.value = presetAppId;
+        if (appKeyEl) appKeyEl.value = presetAppKey;
+        
+        this.render();
+    },
+
+    render() {
+        // 渲染历史记录
+        const logList = document.getElementById('log-list');
+        if (logList) {
+            logList.innerHTML = this.data.history.map(item => `
+                <div class="log-item">
+                    <div style="flex:1;">
+                        <div style="font-weight:500; color:var(--text-main)">${item.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                        <div style="font-size:0.8rem; color:var(--text-light)">${item.time}</div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" class="${item.amount > 0 ? 'plus' : 'minus'}">
+                            ${item.amount > 0 ? '+' : ''}${item.amount}
+                        </div>
+                        <button class="btn-del-log" onclick="app.deleteLog(${item.id})">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染生理期
+        this.renderPeriod();
+    },
+
+    deleteLog(id) {
+        if(confirm('确定要删除这条记录吗？(分数不会回滚哦)')) {
+            this.data.history = this.data.history.filter(item => item.id !== id);
+            this.saveData();
+            this.showToast('记录已删除 🗑️');
+        }
+    },
+
+    savePeriod() {
+        const date = document.getElementById('period-date-input').value;
+        if(!date) return alert('请选择日期哦！');
+        this.data.periodDate = date;
+        this.saveData();
+        this.showToast('日期已记录！我们会提醒你的 ❤️');
+        this.renderPeriod();
+    },
+
+    renderPeriod() {
+        const input = document.getElementById('period-date-input');
+        if(input && this.data.periodDate && !input.value) {
+            input.value = this.data.periodDate;
+        }
+    }
+});
+
+app.init();
+</script>
+</body>
+</html>
+

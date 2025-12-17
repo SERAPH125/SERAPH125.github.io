@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>愿望清单 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>✨ 愿望清单 <span class="version-tag">V3.1</span></h1>
+        <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn active">✨ 愿望</a>
+        <a href="album.html" class="nav-btn">🖼️ 相册</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
+    </div>
+
+    <div class="progress-card">
+        <div class="progress-info">
+            <span>❤️ 恋爱成就进度</span>
+            <span id="wish-count">0/0</span>
+        </div>
+        <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="wish-progress" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <div class="category-selector" id="category-selector">
+        <button class="cat-btn active" onclick="app.selectCat('💖')" data-cat="💖">💖</button>
+        <button class="cat-btn" onclick="app.selectCat('🍱')" data-cat="🍱">🍱</button>
+        <button class="cat-btn" onclick="app.selectCat('✈️')" data-cat="✈️">✈️</button>
+        <button class="cat-btn" onclick="app.selectCat('🎬')" data-cat="🎬">🎬</button>
+        <button class="cat-btn" onclick="app.selectCat('🎤')" data-cat="🎤">🎤</button>
+        <button class="cat-btn" onclick="app.selectCat('🎁')" data-cat="🎁">🎁</button>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:20px;">
+        <input type="text" id="wish-input" placeholder="💡 写下想一起做的事..." style="margin-bottom:0; flex:1;">
+        <button class="btn" style="width:60px; padding:0; background:var(--accent-pink); color:white;" onclick="app.addWish()">+</button>
+    </div>
+
+    <div id="wish-list" class="wish-list-container"></div>
+</div>
+
+<script src="common.js"></script>
+<script>
+Object.assign(app, {
+    init() {
+        this.initCommon();
+        this.render();
+    },
+
+    render() {
+        const wishList = document.getElementById('wish-list');
+        if (!wishList) return;
+        
+        if (this.data.wishes.length === 0) {
+            wishList.innerHTML = '<div class="empty-wish">还没有愿望哦，快添加第一个心愿吧！✨</div>';
+        } else {
+            wishList.innerHTML = this.data.wishes.map(w => `
+                <div class="wish-item ${w.done ? 'wish-done' : ''}">
+                    <div class="wish-content" onclick="app.toggleWish(${w.id})">
+                        <div class="wish-checkbox ${w.done ? 'checked' : ''}"></div>
+                        <div class="wish-icon">${w.icon || '💖'}</div>
+                        <span class="wish-text">${w.text}</span>
+                    </div>
+                    <button class="btn-del-wish" onclick="app.deleteWish(${w.id})">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        const total = this.data.wishes.length;
+        const done = this.data.wishes.filter(w => w.done).length;
+        const percent = total === 0 ? 0 : Math.round((done / total) * 100);
+        
+        const countEl = document.getElementById('wish-count');
+        const progressEl = document.getElementById('wish-progress');
+        if (countEl) countEl.innerText = `${done}/${total}`;
+        if (progressEl) progressEl.style.width = `${percent}%`;
+    },
+
+    selectCat(icon) {
+        this.currentCat = icon;
+        document.querySelectorAll('.cat-btn').forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.dataset.cat === icon) btn.classList.add('active');
+        });
+    },
+
+    addWish() {
+        const input = document.getElementById('wish-input');
+        const text = input.value.trim();
+        if(!text) return alert('愿望内容不能为空哦！💡');
+        
+        this.data.wishes.unshift({
+            id: Date.now(),
+            text: text,
+            icon: this.currentCat,
+            done: false
+        });
+        input.value = '';
+        this.saveData();
+        this.showToast('愿望已添加！一起努力实现吧！✨');
+    },
+
+    toggleWish(id) {
+        const wish = this.data.wishes.find(w => w.id === id);
+        if(wish) {
+            wish.done = !wish.done;
+            this.saveData();
+            if(wish.done) {
+                createPetal(); createPetal(); createPetal();
+                this.showToast('太棒了！又完成了一个心愿！🎉');
+            }
+        }
+    },
+
+    deleteWish(id) {
+        if(confirm('确定要删除这个愿望吗？')) {
+            this.data.wishes = this.data.wishes.filter(w => w.id !== id);
+            this.saveData();
+        }
+    }
+});
+
+app.init();
+</script>
+</body>
+</html>
+

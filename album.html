@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>温馨相册 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>🖼️ 温馨相册 <span class="version-tag">V3.1</span></h1>
+        <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="album.html" class="nav-btn active">🖼️ 相册</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
+    </div>
+
+    <div class="album-grid" id="album-list"></div>
+    <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#999;">
+        记录每一个心动瞬间 ❤️
+    </div>
+</div>
+
+<!-- 添加照片弹窗 -->
+<div class="modal-overlay" id="add-photo-modal" style="display:none;">
+    <div class="modal" style="width:85%; max-width:320px; padding:20px;">
+        <h3 style="text-align:center; margin:0 0 15px 0;">📸 添加美好时光</h3>
+        <input type="text" id="photo-url-input" placeholder="粘贴图片链接 (推荐)" oninput="app.previewUrl()" style="margin-bottom:10px;">
+        <div style="text-align:center; color:#999; font-size:0.8rem; margin-bottom:10px;">- 或者 -</div>
+        <label for="photo-file-input" class="btn" style="background:#f0f0f0; color:#555; margin-bottom:10px; cursor:pointer;">
+            📂 从相册选择 (自动压缩)
+        </label>
+        <input type="file" id="photo-file-input" accept="image/*" style="display:none;" onchange="app.handleFileSelect(this)">
+        <div id="photo-preview-area">
+            <span style="color:#ccc; font-size:0.8rem;">图片预览区域</span>
+            <img id="photo-preview-img">
+        </div>
+        <input type="text" id="photo-location" placeholder="📍 在哪里拍的？(例如: 上海·外滩)" style="margin-top:10px;">
+        <input type="text" id="photo-caption" placeholder="📝 写一句甜甜的话吧... (选填)" style="margin-top:10px;">
+        <div style="display:flex; gap:10px; margin-top:15px;">
+            <button onclick="document.getElementById('add-photo-modal').style.display='none'" style="flex:1; padding:12px; border:none; background:#f0f0f0; border-radius:12px;">取消</button>
+            <button onclick="app.confirmAddPhoto()" style="flex:1; padding:12px; border:none; background:var(--accent-pink); color:white; border-radius:12px;">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 大图查看 -->
+<div class="modal-overlay" id="lightbox-modal" style="display:none; background:rgba(0,0,0,0.85);" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" onclick="event.stopPropagation()">
+</div>
+
+<script src="common.js"></script>
+<script>
+Object.assign(app, {
+    init() {
+        this.initCommon();
+        this.render();
+    },
+
+    render() {
+        const albumList = document.getElementById('album-list');
+        if (!albumList) return;
+        
+        let albumHtml = `
+            <div class="add-photo-card" onclick="app.addPhotoUI()">
+                <div style="font-size:2rem;">📷</div>
+                <div style="font-size:0.8rem; margin-top:5px;">添加照片</div>
+            </div>
+        `;
+        
+        if (this.data.album && this.data.album.length > 0) {
+            albumHtml += this.data.album.map(photo => `
+                <div class="polaroid" onclick="app.showLightbox('${photo.url.replace(/'/g, "\\'")}')">
+                    <div class="btn-del-photo" onclick="event.stopPropagation(); app.deletePhoto(${photo.id})">×</div>
+                    <div class="photo-frame">
+                        <img src="${photo.url.replace(/"/g, '&quot;')}" class="photo-img" loading="lazy">
+                    </div>
+                    <div class="photo-caption">${(photo.caption || '❤️ 美好时光').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
+                    <div class="photo-meta">
+                        ${photo.location ? `<div class="location-badge">📍 ${photo.location.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : '<div></div>'}
+                        <div class="photo-date">${photo.date || ''}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        albumList.innerHTML = albumHtml;
+    },
+
+    addPhotoUI() {
+        document.getElementById('add-photo-modal').style.display = 'flex';
+        this.tempPhotoData = null;
+        document.getElementById('photo-url-input').value = '';
+        document.getElementById('photo-preview-img').style.display = 'none';
+        document.getElementById('photo-caption').value = '';
+        document.getElementById('photo-location').value = '';
+    },
+
+    previewUrl() {
+        const url = document.getElementById('photo-url-input').value.trim();
+        if (url) {
+            this.tempPhotoData = url;
+            const img = document.getElementById('photo-preview-img');
+            img.src = url;
+            img.style.display = 'block';
+        }
+    },
+
+    handleFileSelect(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            this.compressImage(file, (base64) => {
+                this.tempPhotoData = base64;
+                const img = document.getElementById('photo-preview-img');
+                img.src = base64;
+                img.style.display = 'block';
+                document.getElementById('photo-url-input').value = '';
+            });
+        }
+    },
+
+    compressImage(file, callback) {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 600;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+                callback(dataUrl);
+            };
+        };
+    },
+
+    confirmAddPhoto() {
+        try {
+            if (!this.tempPhotoData) {
+                const url = document.getElementById('photo-url-input').value.trim();
+                if (url) this.tempPhotoData = url;
+                if (!this.tempPhotoData) return alert('请先输入图片链接或选择图片哦！');
+            }
+            const caption = document.getElementById('photo-caption').value.trim();
+            const location = document.getElementById('photo-location').value.trim();
+            
+            if (this.tempPhotoData.length > 500000) {
+                if(!confirm('这张图片可能有点大，会影响同步速度，确定要添加吗？')) return;
+            }
+
+            if (!this.data.album || !Array.isArray(this.data.album)) {
+                this.data.album = [];
+            }
+
+            this.data.album.unshift({
+                id: Date.now(),
+                url: this.tempPhotoData,
+                caption: caption,
+                location: location,
+                date: new Date().toLocaleDateString()
+            });
+
+            if (this.data.album.length > 40) {
+                this.showToast('相册好像满了 (40张)，旧照片被挤掉了... 😢');
+                this.data.album.pop();
+            }
+
+            this.saveData();
+            document.getElementById('add-photo-modal').style.display = 'none';
+            this.showToast('照片添加成功！美好+1 ❤️');
+        } catch (e) {
+            console.error(e);
+            alert('出错了：' + e.message);
+        }
+    },
+
+    deletePhoto(id) {
+        if (confirm('确定要删除这张美好回忆吗？🥺')) {
+            this.data.album = this.data.album.filter(p => p.id !== id);
+            this.saveData();
+            this.showToast('照片已删除');
+        }
+    },
+
+    showLightbox(url) {
+        const modal = document.getElementById('lightbox-modal');
+        const img = document.getElementById('lightbox-img');
+        img.src = url;
+        modal.style.display = 'flex';
+    }
+});
+
+app.init();
+</script>
+</body>
+</html>
+

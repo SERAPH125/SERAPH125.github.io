@@ -3,662 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- iOS 桌面应用模式支持 -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="周金霞男友">
-    <title>小周的男友养成计划 V3.0 云同步版 ❤️</title>
-    <!-- 引入 LeanCloud SDK -->
+    <title>小周的男友养成计划 V3.1 云同步版 ❤️</title>
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
     <style>
-        /* 
-         * 唯美风格重构 (Aesthetic Style)
-         * 核心设计：Glassmorphism (毛玻璃) + 动态背景 + 柔和渐变
-         */
-        :root {
-            --primary-gradient: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
-            --glass-bg: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --text-main: #5e4b56;
-            --text-light: #8e7c88;
-            --accent-pink: #ff9a9e;
-            --accent-blue: #a18cd1;
-            --success: #52b788;
-            --danger: #e63946;
-            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            color: var(--text-main);
-            /* 动态渐变背景 */
-            background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* 垂直居中 */
-            overflow-x: hidden;
-            /* iOS 回弹效果优化 */
-            -webkit-overflow-scrolling: touch;
-            transition: filter 1s ease; /* 画面暗淡过渡效果 */
-        }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        /* 漂浮的背景装饰球 */
-        .bg-shape {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(50px);
-            z-index: -1;
-            animation: float 10s infinite ease-in-out alternate;
-        }
-        .shape-1 {
-            width: 300px; height: 300px;
-            background: #ff9a9e;
-            top: -50px; left: -100px;
-        }
-        .shape-2 {
-            width: 200px; height: 200px;
-            background: #a18cd1;
-            bottom: -50px; right: -50px;
-            animation-delay: -5s;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0) rotate(0deg); }
-            100% { transform: translateY(20px) rotate(10deg); }
-        }
-
-        .container {
-            width: 90%;
-            max-width: 420px;
-            /* 毛玻璃特效 */
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 30px;
-            box-shadow: var(--shadow);
-            padding: 30px 25px;
-            box-sizing: border-box;
-            position: relative;
-            z-index: 10;
-            margin: 20px 0;
-            transition: height 0.3s ease;
-            /* 适配刘海屏 */
-            margin-top: env(safe-area-inset-top);
-            margin-bottom: env(safe-area-inset-bottom);
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 25px;
-        }
-
-        h1 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--text-main);
-            margin: 0;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .version-tag {
-            font-size: 0.7rem;
-            background: linear-gradient(to right, #ff9a9e, #fecfef);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            box-shadow: 0 2px 5px rgba(255, 154, 158, 0.4);
-        }
-
-        /* 恋爱天数计数器 */
-        .love-days {
-            text-align: center;
-            font-size: 0.95rem;
-            color: var(--text-light);
-            margin-top: 8px;
-            margin-bottom: 5px;
-            font-weight: 500;
-        }
-        .love-days span {
-            color: var(--accent-pink);
-            font-weight: 800;
-            font-size: 1.3rem;
-            margin: 0 4px;
-            font-family: 'Georgia', serif;
-        }
-
-        /* 标签页 */
-        .tabs {
-            display: flex;
-            background: rgba(255,255,255,0.4);
-            border-radius: 20px;
-            padding: 4px;
-            margin-bottom: 25px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 12px 5px; /* 减小内边距以容纳更多按钮 */
-            border: none;
-            background: none;
-            border-radius: 16px;
-            font-size: 0.9rem;
-            color: var(--text-light);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            white-space: nowrap;
-        }
-
-        .tab-btn.active {
-            background: white;
-            color: var(--accent-pink);
-            font-weight: 600;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-
-        /* 页面切换动画 */
-        .page {
-            display: none;
-            animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .page.active { display: block; }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* 分数大卡片 */
-        .score-card {
-            background: linear-gradient(135deg, rgba(255, 154, 158, 0.9), rgba(254, 207, 239, 0.9));
-            color: white;
-            padding: 30px;
-            border-radius: 25px;
-            text-align: center;
-            margin-bottom: 30px;
-            box-shadow: 0 15px 35px rgba(255, 154, 158, 0.4);
-            position: relative;
-            overflow: hidden;
-            transition: background 0.5s ease;
-        }
-
-        .score-card::after {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
-            animation: shine 8s linear infinite;
-        }
-        @keyframes shine { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        .score-content { position: relative; z-index: 2; }
-        
-        .score-title { font-size: 0.9rem; letter-spacing: 2px; opacity: 0.9; text-transform: uppercase; }
-        
-        .score-value {
-            font-size: 4.5rem;
-            font-weight: 800;
-            margin: 10px 0;
-            text-shadow: 2px 4px 10px rgba(0,0,0,0.1);
-            font-family: 'Georgia', serif; /* 更优雅的数字字体 */
-        }
-
-        .rank-badge {
-            background: rgba(255,255,255,0.25);
-            backdrop-filter: blur(4px);
-            padding: 8px 20px;
-            border-radius: 30px;
-            font-size: 0.9rem;
-            border: 1px solid rgba(255,255,255,0.4);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            display: inline-block;
-        }
-
-        /* 每日一句 */
-        .daily-quote {
-            text-align: center;
-            font-size: 0.9rem;
-            color: var(--text-light);
-            margin: 0 0 20px 0;
-            padding: 15px;
-            background: rgba(255,255,255,0.4);
-            border-radius: 15px;
-            font-style: italic;
-        }
-
-        /* 生理期卡片 */
-        .period-card {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            text-align: center;
-            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        .period-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; }
-        .period-info { font-size: 0.9rem; opacity: 0.9; }
-        .period-days { font-size: 2rem; font-weight: bold; margin: 5px 0; }
-
-        /* 历史记录删除按钮 */
-        .btn-del-log {
-            background: none;
-            border: none;
-            color: var(--text-light);
-            font-size: 1.2rem;
-            cursor: pointer;
-            padding: 0 0 0 10px;
-            opacity: 0.5;
-            transition: all 0.2s;
-        }
-        .btn-del-log:hover { color: var(--danger); opacity: 1; transform: scale(1.1); }
-
-        /* 输入框 */
-        input[type="text"] {
-            width: 100%;
-            padding: 18px;
-            border: 2px solid transparent;
-            background: rgba(255,255,255,0.6);
-            border-radius: 18px;
-            font-size: 1rem;
-            color: var(--text-main);
-            margin-bottom: 20px;
-            outline: none;
-            transition: all 0.3s;
-            box-sizing: border-box;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
-        }
-        input[type="text"]:focus {
-            background: white;
-            border-color: #fbc2eb;
-            box-shadow: 0 4px 15px rgba(251, 194, 235, 0.2);
-        }
-
-        /* 按钮组 */
-        .action-buttons {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .btn {
-            padding: 18px;
-            border: none;
-            border-radius: 18px;
-            font-size: 1.05rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            position: relative;
-            overflow: hidden;
-            /* 解决iOS点击闪烁 */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .btn:active { transform: scale(0.96); }
-
-        .btn-add {
-            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-            color: #5e4b56;
-            box-shadow: 0 8px 20px rgba(168, 237, 234, 0.3);
-        }
-        
-        .btn-sub {
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%);
-            color: white;
-            box-shadow: 0 8px 20px rgba(255, 154, 158, 0.3);
-        }
-
-        .btn-random {
-            width: 100%;
-            background: white;
-            color: var(--text-light);
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-
-        /* 列表项 (历史 & 商店) */
-        .log-item, .shop-item, .wish-item {
-            background: rgba(255,255,255,0.5);
-            margin-bottom: 12px;
-            padding: 15px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            transition: all 0.2s;
-            border: 1px solid rgba(255,255,255,0.3);
-        }
-        .log-item { justify-content: space-between; }
-        .shop-item { 
-            flex-direction: column; 
-            text-align: center;
-            padding: 20px;
-            height: 100%;
-            box-sizing: border-box;
-        }
-        
-        .shop-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .shop-icon { font-size: 2.5rem; margin-bottom: 10px; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.1)); }
-        .shop-price { color: var(--accent-pink); font-weight: bold; margin: 8px 0; }
-        
-        .btn-buy {
-            width: 100%;
-            padding: 10px;
-            background: var(--text-main);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            opacity: 0.9;
-        }
-        .btn-buy:disabled { background: #ddd; opacity: 1; }
-
-        .plus { color: #ff9a9e; }
-        .minus { color: #a18cd1; }
-
-        /* 愿望清单样式 (Pro版) */
-        .progress-card {
-            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
-            padding: 20px;
-            border-radius: 20px;
-            color: white;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 20px rgba(161, 140, 209, 0.3);
-        }
-        .progress-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-        .progress-bar-bg {
-            background: rgba(255,255,255,0.3);
-            height: 10px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        .progress-bar-fill {
-            height: 100%;
-            background: white;
-            border-radius: 10px;
-            width: 0%;
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .category-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-            overflow-x: auto;
-            padding-bottom: 5px;
-        }
-        .cat-btn {
-            background: rgba(255,255,255,0.5);
-            border: 1px solid transparent;
-            border-radius: 12px;
-            padding: 8px 12px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .cat-btn.active {
-            background: white;
-            border-color: var(--accent-pink);
-            transform: scale(1.1);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .wish-list-container {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-top: 20px;
-            padding-bottom: 20px; /* 底部留白 */
-        }
-
-        .wish-item {
-            background: rgba(255,255,255,0.8);
-            backdrop-filter: blur(10px);
-            padding: 15px;
-            border-radius: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s;
-            border: 1px solid rgba(255,255,255,0.5);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            margin-bottom: 0; /* 移除旧样式间距，由 container gap 控制 */
-        }
-        .wish-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-        .wish-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            flex: 1;
-        }
-        .wish-icon {
-            font-size: 1.2rem;
-            width: 36px;
-            height: 36px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        .wish-text {
-            font-weight: 500;
-            color: var(--text-main);
-            transition: all 0.3s;
-            flex: 1;
-        }
-        .wish-item.wish-done {
-            background: rgba(255,255,255,0.4);
-            border-style: dashed;
-        }
-        .wish-done .wish-text {
-            text-decoration: line-through;
-            color: var(--text-light);
-            opacity: 0.7;
-        }
-        .wish-checkbox {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid var(--accent-pink);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            flex-shrink: 0;
-            background: white;
-        }
-        .wish-checkbox.checked {
-            background: var(--accent-pink);
-            border-color: var(--accent-pink);
-        }
-        .wish-checkbox::after {
-            content: '✓';
-            color: white;
-            font-size: 14px;
-            display: none;
-        }
-        .wish-checkbox.checked::after {
-            display: block;
-        }
-        .btn-del-wish {
-            background: none;
-            border: none;
-            color: var(--text-light);
-            font-size: 1.1rem;
-            cursor: pointer;
-            padding: 8px;
-            margin-left: 5px;
-            opacity: 0.4;
-            transition: opacity 0.2s;
-        }
-        .btn-del-wish:hover { opacity: 1; color: var(--danger); }
-
-        .empty-wish {
-            text-align: center;
-            color: var(--text-light);
-            padding: 30px;
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-
-        /* 弹窗美化 */
-        .modal-overlay {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(8px);
-        }
-        .modal {
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
-            border: 1px solid white;
-        }
-
-        /* 相册样式 (Album Style) */
-        .album-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            padding-bottom: 20px;
-        }
-        
-        .polaroid {
-            background: white;
-            padding: 10px 10px 25px 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transform: rotate(-2deg);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            border-radius: 4px;
-        }
-        
-        .polaroid:nth-child(even) {
-            transform: rotate(2deg);
-        }
-        
-        .polaroid:hover {
-            transform: scale(1.05) rotate(0deg);
-            z-index: 5;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-        
-        .photo-frame {
-            width: 100%;
-            aspect-ratio: 1/1;
-            overflow: hidden;
-            background: #f0f0f0;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .photo-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .photo-caption {
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* 手写体风格 */
-            font-size: 0.8rem;
-            color: #555;
-            text-align: center;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .photo-date {
-            font-size: 0.6rem;
-            color: #999;
-        }
-
-        /* 照片元信息容器 (新加) */
-        .photo-meta {
-            display: flex;
-            flex-direction: column; /* 垂直排列 */
-            align-items: flex-start; /* 左对齐 */
-            margin-top: 8px;
-            padding-top: 5px;
-            border-top: 1px dashed #eee;
-            gap: 2px;
-        }
-        .photo-meta .photo-date {
-            align-self: flex-end; /* 日期靠右 */
-            position: static; /* 移除绝对定位 */
-        }
-            flex-direction: column; /* 垂直排列 */
-            align-items: flex-start; /* 左对齐 */
-            margin-top: 8px;
-            padding-top: 5px;
-            border-top: 1px dashed #eee;
-            gap: 2px;
-        }
-        .photo-meta .photo-date {
-            align-self: flex-end; /* 日期靠右 */
-            position: static; /* 移除绝对定位 */
-        }
-
-        /* 照片上的地点徽章 */
-        .location-badge {
-            font-size: 0.65rem;
-            color: var(--accent-blue);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            max-width: 100%;
-            position: static; /* 移除绝对定位 */
-        }
+        /* 主页特定样式 */
+        .btn-del-photo {
             position: absolute;
             top: -5px;
             right: -5px;
@@ -676,406 +29,9 @@
             opacity: 0;
             transition: opacity 0.2s;
         }
-
-        .polaroid:hover .btn-del-photo {
-            opacity: 1;
-        }
-
-        .add-photo-card {
-            background: rgba(255,255,255,0.4);
-            border: 2px dashed rgba(255,255,255,0.6);
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            aspect-ratio: 1/1;
-            cursor: pointer;
-            transition: all 0.3s;
-            color: var(--text-light);
-        }
-        .add-photo-card:hover {
-            background: rgba(255,255,255,0.6);
-            color: var(--accent-pink);
-            border-color: var(--accent-pink);
-        }
-
-        /* 预览区域 */
-        #photo-preview-area {
-            width: 100%;
-            height: 150px;
-            background: #f8f8f8;
-            border-radius: 10px;
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            border: 1px solid #eee;
-        }
-        #photo-preview-img {
-            max-width: 100%;
-            max-height: 100%;
-            display: none;
-        }
-
-        /* 大图查看器 */
-        #lightbox-img {
-            max-width: 90%;
-            max-height: 80vh;
-            border-radius: 10px;
-            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
-            animation: zoomIn 0.3s ease;
-        }
-        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        /* 樱花特效容器 */
-        #sakura-container {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-        .petal {
-            position: absolute;
-            background: #ffd1dc;
-            border-radius: 100% 0 100% 0;
-            animation: fall linear infinite;
-        }
-        @keyframes fall {
-            0% { opacity: 0; transform: translateY(-10px) rotate(0deg); }
-            20% { opacity: 1; }
-            100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
-        }
-
-        /* 足迹概览 - 已移除功能但保留样式占位防止报错（如果需要完全移除可以删掉这些样式） */
-        /* 
-        .footprint-card { ... }
-        .footprint-count { ... }
-        .footprint-tags { ... }
-        .location-tag { ... }
-        */
-
-        /* 照片上的地点徽章 - 配合 Flexbox 布局 */
-        .location-badge {
-            font-size: 0.65rem;
-            color: var(--accent-blue);
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            max-width: 60%; /* 允许占据空间 */
-        }
-
-        /* 安装指引 (仅在iOS Safari显示) */
-        #ios-install-guide {
-            display: none;
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.9);
-            backdrop-filter: blur(10px);
-            padding: 15px 20px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-            z-index: 2000;
-            width: 90%;
-            max-width: 360px;
-            text-align: center;
-            font-size: 0.9rem;
-            border: 1px solid rgba(255,255,255,0.5);
-            animation: slideUp 0.5s ease;
-        }
-        @keyframes slideUp { from { transform: translate(-50%, 100%); } to { transform: translate(-50%, 0); } }
-        
-        .ios-guide-icon {
-            display: inline-block;
-            vertical-align: middle;
-            margin: 0 5px;
-            font-size: 1.2rem;
-            color: #007aff;
-        }
-
-        /* 云同步设置界面 */
-        .sync-panel {
-            background: rgba(255,255,255,0.6);
-            border-radius: 15px;
-            padding: 15px;
-            margin-top: 20px;
-            border: 1px solid rgba(255,255,255,0.5);
-        }
-        .sync-status {
-            font-size: 0.9rem;
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .status-dot {
-            width: 10px; height: 10px; border-radius: 50%; background: #ccc;
-        }
-        .status-dot.online { background: var(--success); box-shadow: 0 0 5px var(--success); }
-            .status-dot.offline { background: var(--danger); }
-
-        /* --- V3.1 背包系统样式 Start --- */
-        
-        /* 商店内部 Tab */
-        .shop-tabs {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .shop-tab-btn {
-            padding: 8px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.5);
-            background: rgba(255,255,255,0.3);
-            color: var(--text-light);
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .shop-tab-btn.active {
-            background: white;
-            color: var(--accent-pink);
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            border-color: white;
-        }
-
-        /* 背包列表容器 */
-        .inventory-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        /* 物品卡片 */
-        .inventory-item {
-            background: rgba(255, 255, 255, 0.85);
-            border-radius: 16px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255,255,255,0.6);
-            cursor: pointer;
-        }
-
-        /* 未使用状态：可以点击，有浮动感 */
-        .inventory-item.unused:active {
-            transform: scale(0.98);
-        }
-        .inventory-item.unused {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-        }
-        .inventory-item.unused::before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 5px;
-            background: linear-gradient(to bottom, #a18cd1, #fbc2eb);
-        }
-
-        /* 已使用状态：变灰，沉底 */
-        .inventory-item.used {
-            background: rgba(255, 255, 255, 0.4);
-            opacity: 0.8;
-            filter: grayscale(0.6);
-            cursor: default;
-            border-style: dashed;
-        }
-
-        .inv-icon {
-            font-size: 2.2rem;
-            margin-right: 15px;
-            background: white;
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-            flex-shrink: 0;
-        }
-
-        .inv-info { flex: 1; }
-        .inv-name { font-weight: bold; font-size: 1.05rem; color: var(--text-main); margin-bottom: 4px; }
-        .inv-date { font-size: 0.75rem; color: var(--text-light); }
-
-        .inv-action {
-            font-size: 0.85rem;
-            padding: 6px 12px;
-            border-radius: 20px;
-            background: var(--text-main);
-            color: white;
-            border: none;
-            opacity: 0; /* 默认隐藏按钮，点击卡片整体触发，或者保留按钮视觉 */
-        }
-        
-        .btn-use {
-            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
-            color: white;
-            border: none;
-            padding: 6px 15px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(161, 140, 209, 0.3);
-            transition: transform 0.2s;
-        }
-        .btn-use:active { transform: scale(0.9); }
-
-        /* 已核销印章 */
-        .stamp-used {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%) rotate(-15deg);
-            border: 3px solid var(--text-light);
-            color: var(--text-light);
-            font-size: 1rem;
-            font-weight: 900;
-            padding: 5px 10px;
-            border-radius: 8px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            opacity: 0.6;
-            mask-image: url('data:image/svg+xml;utf8,<svg ...>'); /* 模拟做旧效果太复杂，直接用CSS border */
-            z-index: 10;
-            pointer-events: none;
-        }
-        .stamp-used::after {
-            content: 'USED';
-            display: block;
-        }
-
-        /* 空状态 */
-        .empty-hint {
-            text-align: center;
-            color: var(--text-light);
-            padding: 40px 0;
-            font-size: 0.9rem;
-            opacity: 0.7;
-        }
-
-        /* --- V3.3 签到系统样式 Start --- */
-        .signin-header {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .signin-icon {
-            font-size: 4rem;
-            display: block;
-            margin-bottom: 10px;
-            animation: bounce 2s infinite;
-        }
-        .signin-title {
-            font-size: 1.5rem;
-            color: var(--text-main);
-            margin: 0;
-        }
-        .signin-subtitle {
-            color: var(--text-light);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-        
-        .streak-container {
-            background: rgba(255,255,255,0.5);
-            border-radius: 15px;
-            padding: 15px;
-            margin: 20px 0;
-            text-align: center;
-        }
-        .streak-count {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #ff9f43;
-            font-family: 'Georgia', serif;
-        }
-        .streak-label {
-            font-size: 0.8rem;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .signin-reward {
-            font-size: 1.2rem;
-            color: var(--accent-pink);
-            font-weight: bold;
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .streak-dots {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .streak-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: #ddd;
-            transition: all 0.3s;
-        }
-        .streak-dot.active {
-            background: #ff9f43;
-            box-shadow: 0 0 5px #ff9f43;
-        }
-        
-        /* 签到按钮特效 */
-        .btn-signin {
-            background: linear-gradient(to right, #ff9f43, #ff6b6b);
-            color: white;
-            width: 100%;
-            padding: 15px;
-            border-radius: 15px;
-            border: none;
-            font-size: 1.1rem;
-            font-weight: bold;
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .btn-signin:active { transform: scale(0.95); }
-
-        /* 主页连击徽章 */
-        .home-streak-badge {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(4px);
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            border: 1px solid rgba(255,255,255,0.4);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            z-index: 10;
-        }
-        /* --- V3.3 签到系统样式 End --- */
-
     </style>
 </head>
 <body>
-
 <!-- 背景装饰 -->
 <div class="bg-shape shape-1"></div>
 <div class="bg-shape shape-2"></div>
@@ -1089,147 +45,54 @@
     
     <div id="daily-quote" class="daily-quote">加载中...</div>
 
-    <div class="tabs">
-        <button class="tab-btn active" onclick="app.switchTab('home')">🏠 主页</button>
-        <button class="tab-btn" onclick="app.switchTab('wishlist')">✨ 愿望</button>
-        <button class="tab-btn" onclick="app.switchTab('album')">🖼️ 相册</button>
-        <button class="tab-btn" onclick="app.switchTab('shop')">🎁 商店</button>
-        <button class="tab-btn" onclick="app.switchTab('settings')">⚙️ 设置</button>
+    <!-- 导航栏 -->
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn active">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="album.html" class="nav-btn">🖼️ 相册</a>
+		<a href="settings.html" class="nav-btn">⚙️ 设置</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+       
     </div>
 
-    <div id="page-home" class="page active">
-        <div class="score-card">
-            <!-- 连击徽章 -->
-            <div class="home-streak-badge" id="home-streak" onclick="app.showSignInModal(true)">
-                <span>🔥</span> <span id="streak-num">0</span> 天
-            </div>
-
-            <div class="score-content">
-                <div class="score-title">Current Score</div>
-                <div class="score-value" id="score-display">0</div>
-                <div class="rank-badge" id="rank-display">加载中...</div>
-            </div>
+    <!-- 主页内容 -->
+    <div class="score-card">
+        <div class="home-streak-badge" id="home-streak" onclick="app.showSignInModal(true)">
+            <span>🔥</span> <span id="streak-num">0</span> 天
         </div>
-
-        <!-- 生理期卡片 -->
-        <div class="period-card" onclick="app.switchTab('settings')">
-            <h3>🩸 姨妈助手</h3>
-            <div id="period-display">
-                <div class="period-info">上次记录：暂无数据</div>
-                <div class="period-info">请去设置页记录日期哦 ~</div>
-            </div>
-        </div>
-
-        <input type="text" id="reason-input" placeholder="✨ 记录每一个心动瞬间...">
-
-        <div class="action-buttons">
-            <button class="btn btn-add" onclick="app.addScore()">
-                <span>💖</span> 甜蜜加分
-            </button>
-            <button class="btn btn-sub" onclick="app.tryDeductScore()">
-                <span>💔</span> 残忍减分
-            </button>
-        </div>
-
-        <button class="btn btn-random" onclick="app.randomTask()">🎲 随机任务 (赚取积分)</button>
-    </div>
-
-    <!-- 愿望清单 -->
-    <div id="page-wishlist" class="page">
-        <!-- 进度看板 -->
-        <div class="progress-card">
-            <div class="progress-info">
-                <span>❤️ 恋爱成就进度</span>
-                <span id="wish-count">0/0</span>
-            </div>
-            <div class="progress-bar-bg">
-                <div class="progress-bar-fill" id="wish-progress" style="width: 0%"></div>
-            </div>
-        </div>
-
-        <!-- 输入区域 -->
-        <div class="wish-input-area">
-            <div class="category-selector" id="category-selector">
-                <button class="cat-btn active" onclick="app.selectCat('💖')" data-cat="💖">💖</button>
-                <button class="cat-btn" onclick="app.selectCat('🍱')" data-cat="🍱">🍱</button>
-                <button class="cat-btn" onclick="app.selectCat('✈️')" data-cat="✈️">✈️</button>
-                <button class="cat-btn" onclick="app.selectCat('🎬')" data-cat="🎬">🎬</button>
-                <button class="cat-btn" onclick="app.selectCat('🎤')" data-cat="🎤">🎤</button>
-                <button class="cat-btn" onclick="app.selectCat('🎁')" data-cat="🎁">🎁</button>
-            </div>
-            <div class="input-group" style="display:flex; gap:10px;">
-                <input type="text" id="wish-input" placeholder="💡 写下想一起做的事..." style="margin-bottom:0;">
-                <button class="btn" style="width:60px; padding:0; background:var(--accent-pink); color:white;" onclick="app.addWish()">+</button>
-            </div>
-        </div>
-
-        <!-- 列表 -->
-        <div id="wish-list" class="wish-list-container">
-            <!-- 愿望列表 -->
+        <div class="score-content">
+            <div class="score-title">Current Score</div>
+            <div class="score-value" id="score-display">0</div>
+            <div class="rank-badge" id="rank-display">加载中...</div>
         </div>
     </div>
 
-    <!-- 相册 (新增) -->
-    <div id="page-album" class="page">
-        <div class="album-grid" id="album-list">
-            <!-- 动态生成 -->
-        </div>
-        <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#999;">
-            记录每一个心动瞬间 ❤️
-        </div>
-    </div>
-
-    <!-- 商店 -->
-    <div id="page-shop" class="page">
-        <div class="shop-tabs">
-            <button class="shop-tab-btn active" onclick="app.switchShopTab('mall')" id="tab-mall">🎁 兑换中心</button>
-            <button class="shop-tab-btn" onclick="app.switchShopTab('inventory')" id="tab-inventory">🎒 我的背包</button>
-        </div>
-
-        <div id="view-mall">
-            <div class="shop-grid" id="shop-list"></div>
-        </div>
-
-        <div id="view-inventory" style="display: none;">
-            <div class="inventory-list" id="inventory-list"></div>
+    <!-- 生理期卡片 -->
+    <div class="period-card" onclick="location.href='settings.html'">
+        <h3>🩸 姨妈助手</h3>
+        <div id="period-display">
+            <div class="period-info">上次记录：暂无数据</div>
+            <div class="period-info">请去设置页记录日期哦 ~</div>
         </div>
     </div>
 
-    <!-- 设置页 (新增) -->
-    <div id="page-settings" class="page">
-        <h3>🩸 生理期记录</h3>
-        <div class="sync-panel">
-            <p style="margin:0 0 10px 0; font-size:0.9rem; color:#666;">记录上一次开始日期，自动推算下次时间。</p>
-            <input type="date" id="period-date-input" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
-            <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:10px;">💾 保存日期</button>
-        </div>
+    <input type="text" id="reason-input" placeholder="✨ 记录每一个心动瞬间...">
 
-        <h3>☁️ 云同步设置</h3>
-        <p style="font-size:0.9rem; color:#666;">配置云端后，两台手机可实时同步数据。</p>
-        
-        <div class="sync-panel">
-            <div class="sync-status">
-                <div class="status-dot" id="sync-dot"></div>
-                <span id="sync-text">未连接云端</span>
-            </div>
-            
-            <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
-            <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
-            <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px;">🔌 连接云端</button>
-            <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px;">🔄 强制同步</button>
-        </div>
-
-        <h3>📜 历史记录</h3>
-        <div id="log-list"></div>
+    <div class="action-buttons">
+        <button class="btn btn-add" onclick="app.addScore()">
+            <span>💖</span> 甜蜜加分
+        </button>
+        <button class="btn btn-sub" onclick="app.tryDeductScore()">
+            <span>💔</span> 残忍减分
+        </button>
     </div>
-    
-    <!-- 历史页 (保留结构，内容移至设置页或独立显示) -->
-    <div id="page-history" class="page" style="display:none;"></div>
+
+    <button class="btn btn-random" onclick="app.randomTask()">🎲 随机任务 (赚取积分)</button>
 </div>
 
-<!-- 弹窗 -->
-<div class="modal-overlay" id="mercy-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
-    <div class="modal" style="width:80%; max-width:300px; padding:25px; border-radius:20px; text-align:center;">
+<!-- 求饶弹窗 -->
+<div class="modal-overlay" id="mercy-modal" style="display:none;">
+    <div class="modal">
         <span style="font-size:3rem; display:block; margin-bottom:15px; animation: bounce 1s infinite;">🥺</span>
         <h3 id="mercy-title" style="margin:0 0 10px 0; color:var(--text-main);">手下留情鸭！</h3>
         <p id="mercy-text" style="color:#666; margin-bottom:20px; line-height:1.5;">宝宝我错了...</p>
@@ -1240,45 +103,29 @@
     </div>
 </div>
 
-<div class="modal-overlay" id="use-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
-    <div class="modal" style="width:80%; max-width:300px; padding:25px; border-radius:20px; text-align:center;">
-        <span id="use-icon" style="font-size:3rem; display:block; margin-bottom:15px;">🎫</span>
-        <h3 style="margin:0 0 10px 0;">使用物品</h3>
-        <p style="color:#666; margin-bottom:20px; line-height:1.5;">确定要使用 <span id="use-name" style="font-weight:bold; color:var(--accent-pink); user-select:none;"></span> 吗？<br><span style="font-size:0.8rem;">(使用后将变为已核销状态)</span></p>
-        <div style="display:flex; gap:10px;">
-            <button onclick="document.getElementById('use-modal').style.display='none'" style="flex:1; background:#f0f0f0; border:none; padding:12px; border-radius:12px;">取消</button>
-            <button onclick="app.confirmUse()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold;">确认使用</button>
-        </div>
-    </div>
-</div>
-
 <!-- 签到弹窗 -->
-<div class="modal-overlay" id="signin-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000; justify-content:center; align-items:center;">
-    <div class="modal" style="width:85%; max-width:340px; padding:30px 20px; border-radius:25px; background: rgba(255,255,255,0.95);">
+<div class="modal-overlay" id="signin-modal" style="display:none;">
+    <div class="modal" style="width:85%; max-width:340px; padding:30px 20px;">
         <div class="signin-header">
             <span class="signin-icon" id="signin-icon">☀️</span>
             <h2 class="signin-title" id="signin-title">早安！</h2>
             <div class="signin-subtitle" id="signin-text">新的一天也要开心哦~</div>
         </div>
-
         <div class="streak-container">
             <div class="streak-label">Current Streak</div>
             <div class="streak-count"><span id="signin-streak">1</span> DAYS</div>
-            <div class="streak-dots" id="streak-dots">
-                <!-- 动态生成 -->
-            </div>
+            <div class="streak-dots" id="streak-dots"></div>
         </div>
-
         <div class="signin-reward" id="signin-reward-text">
             <span>💎</span> 积分 +1
         </div>
-
         <button class="btn-signin" onclick="app.closeSignIn()">开启美好一天 ✨</button>
     </div>
 </div>
 
-<div class="modal-overlay" id="task-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
-    <div class="modal" style="width:80%; max-width:300px; padding:25px; border-radius:20px; text-align:center;">
+<!-- 随机任务弹窗 -->
+<div class="modal-overlay" id="task-modal" style="display:none;">
+    <div class="modal">
         <span style="font-size:3rem; display:block; margin-bottom:15px;">🎁</span>
         <h3 style="margin:0 0 10px 0;">随机甜蜜任务</h3>
         <p id="task-text" style="color:#666; margin-bottom:20px;">任务加载中...</p>
@@ -1289,40 +136,6 @@
     </div>
 </div>
 
-<!-- 添加照片弹窗 -->
-<div class="modal-overlay" id="add-photo-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:999; justify-content:center; align-items:center;">
-    <div class="modal" style="width:85%; max-width:320px; padding:20px; border-radius:20px;">
-        <h3 style="text-align:center; margin:0 0 15px 0;">📸 添加美好时光</h3>
-        
-        <input type="text" id="photo-url-input" placeholder="粘贴图片链接 (推荐)" oninput="app.previewUrl()" style="margin-bottom:10px;">
-        
-        <div style="text-align:center; color:#999; font-size:0.8rem; margin-bottom:10px;">- 或者 -</div>
-        
-        <label for="photo-file-input" class="btn" style="background:#f0f0f0; color:#555; margin-bottom:10px; cursor:pointer;">
-            📂 从相册选择 (自动压缩)
-        </label>
-        <input type="file" id="photo-file-input" accept="image/*" style="display:none;" onchange="app.handleFileSelect(this)">
-
-        <div id="photo-preview-area">
-            <span style="color:#ccc; font-size:0.8rem;">图片预览区域</span>
-            <img id="photo-preview-img">
-        </div>
-
-        <input type="text" id="photo-location" placeholder="📍 在哪里拍的？(例如: 上海·外滩)" style="margin-top:10px;">
-        <input type="text" id="photo-caption" placeholder="📝 写一句甜甜的话吧... (选填)" style="margin-top:10px;">
-        
-        <div style="display:flex; gap:10px; margin-top:15px;">
-            <button onclick="document.getElementById('add-photo-modal').style.display='none'" style="flex:1; padding:12px; border:none; background:#f0f0f0; border-radius:12px;">取消</button>
-            <button onclick="app.confirmAddPhoto()" style="flex:1; padding:12px; border:none; background:var(--accent-pink); color:white; border-radius:12px;">保存</button>
-        </div>
-    </div>
-</div>
-
-<!-- 大图查看 -->
-<div class="modal-overlay" id="lightbox-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; z-index:2000; justify-content:center; align-items:center; background:rgba(0,0,0,0.85);" onclick="this.style.display='none'">
-    <img id="lightbox-img" src="" onclick="event.stopPropagation()">
-</div>
-
 <!-- iOS 安装提示 -->
 <div id="ios-install-guide">
     点击浏览器底部的 <span class="ios-guide-icon">分享</span> 按钮<br>
@@ -1330,469 +143,30 @@
     <div style="margin-top:10px; font-size:0.8rem; color:#999; cursor:pointer;" onclick="this.parentElement.style.display='none'">[我知道了]</div>
 </div>
 
+<script src="common.js"></script>
 <script>
-    // 核心逻辑
-    const app = {
-        data: { 
-            score: 0, 
-            history: [],
-            wishes: [],
-            album: [], // 新增相册数据
-            periodDate: null, // 生理期数据
-            inventory: [], // 新增背包数据
-            lastSignInDate: null, // 上次签到日期 (YYYY-MM-DD)
-            signInStreak: 0 // 连续签到天数
-        },
-        deductStep: 0,
-        currentCat: '💖',
-        cloudObj: null, // LeanCloud 对象实例
-        tempPhotoData: null, // 临时存储上传的图片数据
-        pendingUseItem: null, // 待使用的物品ID
-
-        ranks: [
-            { limit: 0, title: "周金霞的新手男友" },
-            { limit: 100, title: "周金霞的青铜男友" },
-            { limit: 300, title: "周金霞的黄金男友" },
-            { limit: 600, title: "周金霞的钻石男友" },
-            { limit: 1000, title: "周金霞的完美老公" },
-            { limit: 5000, title: "周金霞的家庭帝位" }
-        ],
-
-        mercyLevels: {
-            1: [ 
-                "宝宝，看在我这么可爱的份上，这次就算了吧？🥺",
-                "呜呜呜，扣分会心碎的，亲一口抵消好不好？😚",
-                "我保证下次不敢了！让我给你捏捏肩将功补过吧！💆‍♂️",
-                "你的小可爱正在请求原谅... 进度 99%... ❤️",
-                "糟糕，监测到扣分会引发男友抑郁，建议撤销！⚠️",
-                "不要扣分嘛，我给你学小猫叫？喵~ 🐱",
-                "手下留情！我愿意承包今天的开心！✨",
-                "看我真诚的大眼睛，像是会故意犯错的人吗？👀",
-                "再给一次机会嘛，我一定好好表现！💪",
-                "扣分好痛痛，需要宝宝呼呼才能好~ 🌬️"
-            ],
-            2: [ 
-                "只要不扣分，今晚洗碗、拖地、暖被窝我全包了！🥣",
-                "据算命先生说，今天扣分会影响财运哦，要不改天？🙏",
-                "给个机会嘛长官！小的愿意肉偿... (羞涩) 👉👈",
-                "不要啊！我给你买奶茶行不行？🥤",
-                "扣分事小，气坏身体事大！来，笑一个嘛~ 😄",
-                "暂缓扣分申请已提交，请审批：同意(推荐) / 驳回(需亲一口) 📝",
-                "能不能用一个拥抱来抵消这次扣分？🫂",
-                "如果放过我，周末带你去吃好吃的！🍲",
-                "冷静！冲动是魔鬼，要不先记账上？📒",
-                "老板！再给我打个工的机会吧，不要开除我！💼"
-            ],
-            3: [ 
-                "这是最后的机会了...你真的舍得让你男朋友变成负分罪人吗？😭",
-                "心痛！感觉不会再爱了...除非你不扣分！💔",
-                "警报！如果扣分，你的男朋友可能会哭晕在厕所！🚽",
-                "手下留情！只要不扣，我答应你一个愿望！🌟",
-                "我已经躺平任嘲了，但能不能别扣分？🛌",
-                "苍天啊！大地啊！谁来救救这个可怜的孩子！🌧️",
-                "一旦扣分，你的男朋友将失去快乐机能 1 小时！🤖",
-                "我错了！我真的错了！除了扣分什么都行！🧎‍♂️",
-                "看着我破碎的心，你真的忍心再补一刀吗？🏺",
-                "最后的请求：能不能把扣分换成亲亲？😘"
-            ]
-        },
-
-        tasks: [
-            "给女朋友唱一首情歌 🎤", 
-            "公主抱做3个深蹲 🏋️", 
-            "深情对视1分钟不许笑 💑", 
-            "夸女朋友的三个优点 ✨", 
-            "给女朋友讲个睡前故事 📖",
-            "给女朋友按摩肩膀 5 分钟 💆‍♂️",
-            "模仿女朋友生气的样子（要可爱） 😠",
-            "讲一个冷笑话逗女朋友开心 ❄️",
-            "坦白一件小时候的糗事 🙈",
-            "给女朋友画一幅画像（灵魂画手上线） 🎨",
-            "为女朋友梳头发/吹头发 💇‍♂️",
-            "拍一张女朋友最美的照片 📷",
-            "用方言说“我爱你” 🗣️",
-            "答应女朋友一个小小的无理取闹 😈",
-            "做10个俯卧撑并说“我身体倍儿棒” 💪"
-        ],
-
-        products: [
-            // 基础福利
-            { id: 1, icon: '🥤', name: '请喝奶茶', price: 100 },
-            { id: 5, icon: '🍜', name: '爱心宵夜', price: 150 },
-            { id: 11, icon: '🛌', name: '周末赖床卡', price: 150 },
-            { id: 2, icon: '💆‍♂️', name: '享受按摩(30分)', price: 200 },
-            
-            // 进阶特权
-            { id: 3, icon: '🧹', name: '免做家务卡', price: 300 },
-            { id: 12, icon: '🤐', name: '停止唠叨(30分)', price: 300 },
-            { id: 13, icon: '🍗', name: '大餐点菜权', price: 350 },
-            { id: 14, icon: '🎮', name: '游戏畅玩之夜', price: 400 },
-            
-            // 尊贵享受
-            { id: 4, icon: '🎬', name: '陪看电影(任选)', price: 500 },
-            { id: 15, icon: '👗', name: '指定穿搭券', price: 600 },
-            { id: 16, icon: '🤝', name: '冷战终止卡', price: 666 },
-            { id: 17, icon: '🎫', name: '无理由原谅卡', price: 888 },
-            
-            // 顶级奢华
-            { id: 18, icon: '🍺', name: '兄弟局通行证', price: 1200 },
-            { id: 6, icon: '🎁', name: '清空购物车(¥1000内)', price: 5000 },
-            { id: 19, icon: '✈️', name: '周边双人游', price: 10000 },
-            { id: 20, icon: '👑', name: '家庭帝位体验卡(1天)', price: 99999 }
-        ],
-
-        init() {
-            // #region agent log
-            setTimeout(() => {
-                const tabs = document.querySelector('.tabs');
-                const buttons = document.querySelectorAll('.tab-btn');
-                const btnWidths = Array.from(buttons).map(b => b.offsetWidth);
-                const totalBtnWidth = btnWidths.reduce((a, b) => a + b, 0);
-                
-                fetch('http://127.0.0.1:7245/ingest/dcc52a86-70cb-4578-9d8a-c5e13c34f4ae',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-                    location:'index.html:init_layout_check',
-                    message:'Tabs layout metrics',
-                    data:{
-                        containerWidth: tabs ? tabs.clientWidth : 0,
-                        scrollWidth: tabs ? tabs.scrollWidth : 0,
-                        totalBtnWidth: totalBtnWidth,
-                        btnCount: buttons.length,
-                        windowWidth: window.innerWidth,
-                        btns: Array.from(buttons).map(b => b.innerText)
-                    },
-                    timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'Layout'
-                })}).catch(()=>{});
-            }, 1000);
-            // #endregion
-
-            // 用户专属配置 (强制覆盖旧缓存)
-            const presetAppId = "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
-            const presetAppKey = "4gtuHZVj2S6XlF79Av5l7WKz";
-            const presetServerURL = "https://mekxcarj.lc-cn-n1-shared.com";
-            
-            // 强制更新本地存储，防止旧配置干扰
-            localStorage.setItem('lean_app_id', presetAppId);
-            localStorage.setItem('lean_app_key', presetAppKey);
-            localStorage.setItem('lean_server_url', presetServerURL);
-
-            // 自动填充到设置界面
-            document.getElementById('lean-app-id').value = presetAppId;
-            document.getElementById('lean-app-key').value = presetAppKey;
-
-            // 尝试直接连接
-            this.initLeanCloud(presetAppId, presetAppKey, presetServerURL);
-
-            // this.fixHistoryIds(); // 移至数据加载后执行
-            this.showDailyQuote(); // 显示每日一句
+// 主页特定功能
+Object.assign(app, {
+    init() {
+        this.initCommon();
+        // 延迟渲染，确保数据已加载（initCommon中已尝试加载本地数据）
+        setTimeout(() => {
             this.render();
-            this.switchTab('home');
-            this.startSakuraLoop();
-            this.updateDays();
-            
-            // 延迟检查签到，让用户先看到主界面
-            setTimeout(() => {
-                this.checkDailySignIn();
-            }, 800);
-        },
+            this.checkDailySignIn();
+        }, 100);
+    },
 
-        // 初始化 LeanCloud
-        initLeanCloud(appId, appKey, serverURL) {
-            // 定义辅助函数 createInitialData
-            this.createInitialData = (LoveData) => {
-                const newData = new LoveData();
-                newData.set('content', this.data);
-                newData.save().then((obj) => {
-                    this.cloudObj = obj;
-                    this.updateSyncStatus(true);
-                }).catch(err => {
-                    console.error('Initial save failed', err);
-                    this.updateSyncStatus(false);
-                });
-            };
+    render() {
+        const scoreEl = document.getElementById('score-display');
+        const rankEl = document.getElementById('rank-display');
+        if (scoreEl) scoreEl.innerText = this.data.score;
+        if (rankEl) rankEl.innerText = this.getRank();
+        
+        const body = document.body;
+        const scoreCard = document.querySelector('.score-card');
+        const scoreTitle = document.querySelector('.score-title');
 
-            try {
-                if(!window.AV) {
-                    // #region agent log
-                    fetch('http://127.0.0.1:7242/ingest/ab838620-680c-47f6-a554-1cae1448ce62',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'index.html:initLeanCloud',message:'AV not defined',data:{},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-                    // #endregion
-                    return;
-                }
-                // 使用动态传入的 serverURL
-                AV.init({ appId, appKey, serverURL: serverURL }); 
-                
-                const LoveData = AV.Object.extend('LoveData');
-                const query = new AV.Query('LoveData');
-                
-                // 尝试获取数据
-                query.first().then((data) => {
-                    if (data) {
-                        // 有数据，同步到本地
-                        this.cloudObj = data;
-                        this.data = data.get('content');
-                        
-                        // 兼容性修复：如果云端是旧数据，补充缺失字段
-                        if (!this.data.album) this.data.album = [];
-                        if (!this.data.wishes) this.data.wishes = [];
-                        if (!this.data.periodDate) this.data.periodDate = null;
-                        if (!this.data.inventory) this.data.inventory = []; // 修复背包字段
-
-                        this.fixHistoryIds(); // 修复历史记录 ID (确保云端旧数据也有 ID)
-                        this.saveToLocal(); // 缓存到本地
-                        this.render();
-                        this.updateSyncStatus(true);
-                    } else {
-                        // 无数据（空类），创建新数据
-                        this.createInitialData(LoveData);
-                    }
-                }).catch(err => {
-                    // 关键修复：错误码 101 代表 Class 不存在（即新应用），应该创建数据而不是报错
-                    if (err.code === 101) {
-                        this.createInitialData(LoveData);
-                    } else {
-                        console.error(err);
-                        this.updateSyncStatus(false);
-                        this.loadLocalData(); // 真正失败则用本地
-                        this.fixHistoryIds(); // 修复本地旧数据 ID
-                        this.render();
-                    }
-                });
-
-            } catch(e) {
-                console.error(e);
-                this.updateSyncStatus(false);
-            }
-        },
-
-        connectCloud() {
-            const appId = document.getElementById('lean-app-id').value.trim();
-            const appKey = document.getElementById('lean-app-key').value.trim();
-            if(!appId || !appKey) return alert('请输入 App ID 和 Key');
-            
-            localStorage.setItem('lean_app_id', appId);
-            localStorage.setItem('lean_app_key', appKey);
-            
-            // 尝试推断 serverURL (仅针对国际版简单处理，复杂情况建议增加输入框)
-            const prefix = appId.substring(0, 8).toLowerCase();
-            const serverURL = `https://${prefix}.api.lncldglobal.com`;
-            localStorage.setItem('lean_server_url', serverURL);
-
-            alert('配置已保存，正在尝试连接...');
-            location.reload(); // 刷新以重连
-        },
-
-        forceSync() {
-            if(!this.cloudObj) return alert('请先连接云端！');
-            this.saveData(); // 触发一次上传
-            alert('正在强制同步...');
-        },
-
-        updateSyncStatus(isOnline) {
-            const dot = document.getElementById('sync-dot');
-            const text = document.getElementById('sync-text');
-            if(isOnline) {
-                dot.className = 'status-dot online';
-                text.innerText = '云端已连接 (实时同步中)';
-            } else {
-                dot.className = 'status-dot offline';
-                text.innerText = '离线模式 (数据未同步)';
-            }
-        },
-
-        updateDays() {
-            const startDate = new Date('2025-08-10T00:00:00');
-            const now = new Date();
-            const diff = now - startDate;
-            let days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            if (days < 0) days = 0;
-            document.getElementById('days-count').innerText = days + 1;
-        },
-
-        startSakuraLoop() {
-            const loop = () => {
-                let delay = 300;
-                if (this.data.score < 0) {
-                    delay = 300 + Math.abs(this.data.score) * 5; 
-                }
-                if (this.data.score > -1000) {
-                    createPetal();
-                    setTimeout(loop, delay);
-                } else {
-                    setTimeout(loop, 2000);
-                }
-            };
-            loop();
-        },
-
-        loadLocalData() {
-            const saved = localStorage.getItem('bf_app_v2'); 
-            if (saved) {
-                const parsed = JSON.parse(saved);
-                this.data = { ...this.data, ...parsed };
-                if(!this.data.wishes) this.data.wishes = [];
-                if(!this.data.album) this.data.album = [];
-                if(!this.data.inventory) this.data.inventory = [];
-                // 确保签到数据存在
-                if(this.data.lastSignInDate === undefined) this.data.lastSignInDate = null;
-                if(this.data.signInStreak === undefined) this.data.signInStreak = 0;
-            }
-        },
-
-        saveToLocal() {
-            try {
-                localStorage.setItem('bf_app_v2', JSON.stringify(this.data));
-            } catch (e) {
-                alert('本地存储空间已满！请删除一些照片或愿望再试。');
-            }
-        },
-
-        // 保存数据（核心修改：同步到云端）
-        saveData() {
-            this.saveToLocal(); // 先存本地
-            this.render(); // 立即渲染
-
-            // 如果连了云端，同步上去
-            if (this.cloudObj) {
-                this.cloudObj.set('content', this.data);
-                this.cloudObj.save().then(() => {
-                    console.log('云端同步成功');
-                }).catch(err => {
-                    console.error('云端同步失败', err);
-                });
-            }
-        },
-
-        switchTab(tab) {
-            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-            document.getElementById(`page-${tab}`).classList.add('active');
-            
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            if(event && event.target) {
-                // 处理 event.target 可能是 icon 的情况
-                const btn = event.target.tagName === 'BUTTON' ? event.target : event.target.closest('button');
-                if(btn) btn.classList.add('active');
-            }
-        },
-
-        getRank() {
-            if (this.data.score < 0) {
-                if (this.data.score > -100) return "膝盖有点疼的罪人";
-                if (this.data.score > -300) return "跪在搓衣板上的罪人";
-                if (this.data.score > -500) return "睡在门口地垫的罪人";
-                return "已被逐出家门的流浪汉";
-            }
-            let title = this.ranks[0].title;
-            for (let r of this.ranks) {
-                if (this.data.score >= r.limit) title = r.title;
-            }
-            return title;
-        },
-
-        addScore() {
-            const reason = document.getElementById('reason-input').value.trim();
-            if (!reason) return alert('请填写甜蜜理由哦！✨');
-            this.executeChange(10, reason);
-            document.getElementById('reason-input').value = '';
-            this.showToast('加分成功！爱你哟！😘');
-        },
-
-        tryDeductScore() {
-            const reason = document.getElementById('reason-input').value.trim();
-            if (!reason) return alert('请填写扣分理由...🥺');
-            this.deductStep = 1;
-            this.showMercyModal();
-        },
-
-        showMercyModal() {
-            const texts = this.mercyLevels[this.deductStep];
-            const text = texts[Math.floor(Math.random() * texts.length)];
-            document.getElementById('mercy-title').innerText = `求饶 (第 ${this.deductStep}/3 次)`;
-            document.getElementById('mercy-text').innerText = text;
-            document.getElementById('mercy-modal').style.display = 'flex';
-        },
-
-        forgive() {
-            document.getElementById('mercy-modal').style.display = 'none';
-            this.deductStep = 0;
-            this.showToast('谢谢老婆大人开恩！😍');
-        },
-
-        confirmDeduct() {
-            if (this.deductStep < 3) {
-                this.deductStep++;
-                this.showMercyModal();
-            } else {
-                const reason = document.getElementById('reason-input').value.trim();
-                this.executeChange(-10, reason);
-                document.getElementById('mercy-modal').style.display = 'none';
-                document.getElementById('reason-input').value = '';
-                this.deductStep = 0;
-                alert('呜呜呜...真的扣了...心碎了...💔');
-            }
-        },
-
-        executeChange(amount, reason) {
-            this.data.score += amount;
-            this.data.history.unshift({ 
-                id: Date.now(), 
-                time: new Date().toLocaleString(), 
-                reason, 
-                amount 
-            });
-            if (this.data.history.length > 50) this.data.history.pop();
-            this.saveData();
-        },
-
-        selectCat(icon) {
-            this.currentCat = icon;
-            document.querySelectorAll('.cat-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if(btn.dataset.cat === icon) btn.classList.add('active');
-            });
-        },
-
-        addWish() {
-            const input = document.getElementById('wish-input');
-            const text = input.value.trim();
-            if(!text) return alert('愿望内容不能为空哦！💡');
-            
-            this.data.wishes.unshift({
-                id: Date.now(),
-                text: text,
-                icon: this.currentCat,
-                done: false
-            });
-            input.value = '';
-            this.saveData();
-            this.showToast('愿望已添加！一起努力实现吧！✨');
-        },
-
-        toggleWish(id) {
-            const wish = this.data.wishes.find(w => w.id === id);
-            if(wish) {
-                wish.done = !wish.done;
-                this.saveData();
-                if(wish.done) {
-                    createPetal(); createPetal(); createPetal();
-                    this.showToast('太棒了！又完成了一个心愿！🎉');
-                }
-            }
-        },
-
-        deleteWish(id) {
-            if(confirm('确定要删除这个愿望吗？')) {
-                this.data.wishes = this.data.wishes.filter(w => w.id !== id);
-                this.saveData();
-            }
-        },
-
-        render() {
-            document.getElementById('score-display').innerText = this.data.score;
-            document.getElementById('rank-display').innerText = this.getRank();
-            
-            const body = document.body;
-            const scoreCard = document.querySelector('.score-card');
-            const scoreTitle = document.querySelector('.score-title');
-
+        if (scoreCard && scoreTitle) {
             if (this.data.score < 0) {
                 scoreCard.style.background = 'linear-gradient(135deg, #e63946, #000000)';
                 scoreTitle.innerText = "⚠️ 红色警报 ⚠️";
@@ -1804,637 +178,219 @@
                 scoreTitle.innerText = "Current Score";
                 body.style.filter = 'none';
             }
+        }
 
-            // 渲染历史记录（现在在设置页）
-            document.getElementById('log-list').innerHTML = this.data.history.map(item => `
-                <div class="log-item">
-                    <div style="flex:1;">
-                        <div style="font-weight:500; color:var(--text-main)">${item.reason}</div>
-                        <div style="font-size:0.8rem; color:var(--text-light)">${item.time}</div>
-                    </div>
-                    <div style="display:flex; align-items:center;">
-                        <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" class="${item.amount > 0 ? 'plus' : 'minus'}">
-                            ${item.amount > 0 ? '+' : ''}${item.amount}
-                        </div>
-                        <button class="btn-del-log" onclick="app.deleteLog(${item.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
+        this.renderPeriod();
+        this.updateStreakUI();
+    },
 
-            // 渲染生理期
-            this.renderPeriod();
+    addScore() {
+        const reason = document.getElementById('reason-input').value.trim();
+        if (!reason) return alert('请填写甜蜜理由哦！✨');
+        this.executeChange(10, reason);
+        document.getElementById('reason-input').value = '';
+        this.showToast('加分成功！爱你哟！😘');
+    },
 
-            // 渲染商店
-            document.getElementById('shop-list').innerHTML = this.products.map(p => `
-                <div class="shop-item">
-                    <div class="shop-icon">${p.icon}</div>
-                    <div style="font-weight:bold; margin-bottom:5px;">${p.name}</div>
-                    <div class="shop-price">${p.price} 分</div>
-                    <button class="btn-buy" ${this.data.score >= p.price ? '' : 'disabled'} onclick="app.buyProduct(${p.id})">
-                        ${this.data.score >= p.price ? '兑换' : '积分不足'}
-                    </button>
-                </div>
-            `).join('');
+    tryDeductScore() {
+        const reason = document.getElementById('reason-input').value.trim();
+        if (!reason) return alert('请填写扣分理由...🥺');
+        this.deductStep = 1;
+        this.showMercyModal();
+    },
 
-            // 渲染背包
-            const invList = document.getElementById('inventory-list');
-            if (!this.data.inventory || this.data.inventory.length === 0) {
-                invList.innerHTML = '<div class="empty-hint">背包空空如也<br>快去商店兑换奖励吧！🎁</div>';
-            } else {
-                invList.innerHTML = this.data.inventory.map(item => {
-                    const isUsed = item.status === 'used';
-                    return `
-                    <div class="inventory-item ${isUsed ? 'used' : 'unused'}" onclick="${isUsed ? '' : `app.askUseItem(${item.id})`}">
-                        <div class="inv-icon">${item.icon}</div>
-                        <div class="inv-info">
-                            <div class="inv-name">${item.name}</div>
-                            <div class="inv-date">${isUsed ? '使用于: ' + item.useTime : '购买于: ' + item.buyTime}</div>
-                        </div>
-                        ${isUsed ? '<div class="stamp-used"></div>' : '<button class="inv-action btn-use">使用</button>'}
-                    </div>
-                    `;
-                }).join('');
-            }
+    showMercyModal() {
+        const texts = this.mercyLevels[this.deductStep];
+        const text = texts[Math.floor(Math.random() * texts.length)];
+        document.getElementById('mercy-title').innerText = `求饶 (第 ${this.deductStep}/3 次)`;
+        document.getElementById('mercy-text').innerText = text;
+        document.getElementById('mercy-modal').style.display = 'flex';
+    },
 
-            // 渲染愿望清单
-            const wishList = document.getElementById('wish-list');
-            if (this.data.wishes.length === 0) {
-                wishList.innerHTML = '<div class="empty-wish">还没有愿望哦，快添加第一个心愿吧！✨</div>';
-            } else {
-                wishList.innerHTML = this.data.wishes.map(w => `
-                    <div class="wish-item ${w.done ? 'wish-done' : ''}">
-                        <div class="wish-content" onclick="app.toggleWish(${w.id})">
-                            <div class="wish-checkbox ${w.done ? 'checked' : ''}"></div>
-                            <div class="wish-icon">${w.icon || '💖'}</div>
-                            <span class="wish-text">${w.text}</span>
-                        </div>
-                        <button class="btn-del-wish" onclick="app.deleteWish(${w.id})">🗑️</button>
-                    </div>
-                `).join('');
-            }
+    forgive() {
+        document.getElementById('mercy-modal').style.display = 'none';
+        this.deductStep = 0;
+        this.showToast('谢谢老婆大人开恩！😍');
+    },
 
-            const total = this.data.wishes.length;
-            const done = this.data.wishes.filter(w => w.done).length;
-            const percent = total === 0 ? 0 : Math.round((done / total) * 100);
-            
-            document.getElementById('wish-count').innerText = `${done}/${total}`;
-            document.getElementById('wish-progress').style.width = `${percent}%`;
+    confirmDeduct() {
+        if (this.deductStep < 3) {
+            this.deductStep++;
+            this.showMercyModal();
+        } else {
+            const reason = document.getElementById('reason-input').value.trim();
+            this.executeChange(-10, reason);
+            document.getElementById('mercy-modal').style.display = 'none';
+            document.getElementById('reason-input').value = '';
+            this.deductStep = 0;
+            alert('呜呜呜...真的扣了...心碎了...💔');
+        }
+    },
 
-            // 渲染相册
-            const albumList = document.getElementById('album-list');
-            let albumHtml = `
-                <div class="add-photo-card" onclick="app.addPhotoUI()">
-                    <div style="font-size:2rem;">📷</div>
-                    <div style="font-size:0.8rem; margin-top:5px;">添加照片</div>
-                </div>
-            `;
-            
-            // 提取足迹
-            const locations = new Set();
-            if (this.data.album && this.data.album.length > 0) {
-                this.data.album.forEach(p => {
-                    if(p.location) locations.add(p.location);
-                });
+    randomTask() {
+        document.getElementById('task-text').innerText = this.tasks[Math.floor(Math.random() * this.tasks.length)];
+        document.getElementById('task-modal').style.display = 'flex';
+    },
 
-                albumHtml += this.data.album.map(photo => `
-                    <div class="polaroid" onclick="app.showLightbox('${photo.url}')">
-                        <div class="btn-del-photo" onclick="event.stopPropagation(); app.deletePhoto(${photo.id})">×</div>
-                        <div class="photo-frame">
-                            <img src="${photo.url}" class="photo-img" loading="lazy">
-                        </div>
-                        <div class="photo-caption">${photo.caption || '❤️ 美好时光'}</div>
-                        <div class="photo-meta">
-                            ${photo.location ? `<div class="location-badge">📍 ${photo.location}</div>` : '<div></div>'}
-                            <div class="photo-date">${photo.date}</div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            albumList.innerHTML = albumHtml;
+    acceptTask() {
+        this.executeChange(50, '完成随机甜蜜任务');
+        this.closeTask();
+        this.showToast('任务完成！奖励已到账！💪');
+    },
 
-            // 渲染足迹墙 - 隐藏
-            // document.getElementById('location-count').innerText = locations.size;
-            // ... (rest hidden)
-        },
+    closeTask() {
+        document.getElementById('task-modal').style.display = 'none';
+    },
 
-        switchShopTab(tab) {
-            document.querySelectorAll('.shop-tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(`tab-${tab}`).classList.add('active');
-            
-            document.getElementById('view-mall').style.display = tab === 'mall' ? 'block' : 'none';
-            document.getElementById('view-inventory').style.display = tab === 'inventory' ? 'block' : 'none';
-        },
-
-        buyProduct(id) {
-            const p = this.products.find(x => x.id === id);
-            if (!p) return;
-            
-            if (this.data.score < p.price) {
-                return this.showToast('积分不足哦，快去赚积分吧！🥺');
-            }
-
-            if (confirm(`确认兑换 ${p.name} 吗？\n(消耗 ${p.price} 积分，物品将放入背包)`)) {
-                // 扣分
-                this.executeChange(-p.price, `购买商品：${p.name}`);
-                
-                // 入包
-                this.data.inventory.unshift({
-                    id: Date.now(),
-                    productId: p.id,
-                    name: p.name,
-                    icon: p.icon,
-                    price: p.price,
-                    buyTime: new Date().toLocaleString(),
-                    status: 'unused' // unused, used
-                });
-                
-                this.saveData();
-                this.showToast('兑换成功！已放入背包 🎒');
-            }
-        },
-
-        askUseItem(itemId) {
-            const item = this.data.inventory.find(i => i.id === itemId);
-            if (!item || item.status === 'used') return;
-            
-            this.pendingUseItem = itemId;
-            document.getElementById('use-icon').innerText = item.icon;
-            document.getElementById('use-name').innerText = item.name;
-            document.getElementById('use-modal').style.display = 'flex';
-        },
-
-        confirmUse() {
-            if (!this.pendingUseItem) return;
-            
-            const item = this.data.inventory.find(i => i.id === this.pendingUseItem);
-            if (item) {
-                item.status = 'used';
-                item.useTime = new Date().toLocaleString();
-                this.saveData();
-                this.showToast('使用成功！要开心哦 ❤️');
-            }
-            
-            document.getElementById('use-modal').style.display = 'none';
-            this.pendingUseItem = null;
-        },
-
-        // --- 签到系统逻辑 Start ---
-        checkDailySignIn() {
-            const now = new Date();
-            const todayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-            
-            // 如果今天已经签到过，直接更新 UI 显示连击天数
-            if (this.data.lastSignInDate === todayStr) {
-                this.updateStreakUI();
-                return;
-            }
-
-            // 计算日期差
-            let diffDays = 0;
-            if (this.data.lastSignInDate) {
-                const last = new Date(this.data.lastSignInDate);
-                // 这里用 UTC 时间防止时区问题导致计算错误
-                const utc1 = Date.UTC(last.getFullYear(), last.getMonth(), last.getDate());
-                const utc2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-                diffDays = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
-            }
-
-            // 连击逻辑
-            if (diffDays === 1) {
-                // 昨天签到了，连击+1
-                this.data.signInStreak++;
-            } else if (diffDays > 1 || !this.data.lastSignInDate) {
-                // 断签或第一次，重置为1
-                this.data.signInStreak = 1;
-            }
-            // diffDays === 0 的情况上面已经拦截了
-
-            // 基础奖励
-            let reward = 1;
-            let title = this.getTimeGreeting();
-            let subText = "每日签到奖励";
-            let icon = this.getTimeIcon();
-            let extraReward = false;
-
-            // 连击奖励 (每7天大奖)
-            if (this.data.signInStreak % 7 === 0) {
-                reward = 20; // 连击奖励 +20
-                title = "🎉 连击大礼包！";
-                subText = `太棒了！已连续打卡 ${this.data.signInStreak} 天！`;
-                icon = "🎁";
-                extraReward = true;
-            }
-
-            // 执行加分
-            this.data.lastSignInDate = todayStr;
-            this.executeChange(reward, `每日签到 (连击 ${this.data.signInStreak} 天)`);
-            // executeChange 内部会自动 saveData
-
-            // 弹出窗口
-            this.showSignInModal(false, title, subText, icon, reward, extraReward);
-        },
-
-        showSignInModal(isViewOnly = false, title, subText, icon, reward, isBigReward) {
-            const modal = document.getElementById('signin-modal');
-            const streak = this.data.signInStreak;
-            
-            // 如果是查看模式 (点击主页徽章)
-            if (isViewOnly) {
-                document.getElementById('signin-title').innerText = `已连续打卡 ${streak} 天`;
-                document.getElementById('signin-text').innerText = "坚持就是胜利，加油！💪";
-                document.getElementById('signin-icon').innerText = "🔥";
-                document.getElementById('signin-reward-text').style.display = 'none';
-            } else {
-                document.getElementById('signin-title').innerText = title;
-                document.getElementById('signin-text').innerText = subText;
-                document.getElementById('signin-icon').innerText = icon;
-                const rewardEl = document.getElementById('signin-reward-text');
-                rewardEl.style.display = 'flex';
-                rewardEl.innerHTML = isBigReward 
-                    ? `<span>🎁</span> 连击奖励 +${reward} 分` 
-                    : `<span>💎</span> 积分 +${reward}`;
-            }
-
-            // 渲染连击圆点 (展示最近7天的进度)
-            const dotsContainer = document.getElementById('streak-dots');
-            let dotsHtml = '';
-            // 显示当前周期的进度 (1-7)
-            let currentCycle = streak % 7; 
-            if (currentCycle === 0 && streak > 0) currentCycle = 7;
-            
-            for (let i = 1; i <= 7; i++) {
-                const isActive = i <= currentCycle;
-                dotsHtml += `<div class="streak-dot ${isActive ? 'active' : ''}"></div>`;
-            }
-            dotsContainer.innerHTML = dotsHtml;
-            document.getElementById('signin-streak').innerText = streak;
-
-            modal.style.display = 'flex';
+    checkDailySignIn() {
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        
+        if (this.data.lastSignInDate === todayStr) {
             this.updateStreakUI();
-        },
-
-        closeSignIn() {
-            document.getElementById('signin-modal').style.display = 'none';
-            createPetal(); createPetal(); createPetal(); // 撒花庆祝
-        },
-
-        updateStreakUI() {
-            const el = document.getElementById('home-streak');
-            if(el) {
-                document.getElementById('streak-num').innerText = this.data.signInStreak;
-            }
-        },
-
-        getTimeGreeting() {
-            const hour = new Date().getHours();
-            if (hour < 6) return "凌晨好！🌙";
-            if (hour < 9) return "早安！☀️";
-            if (hour < 12) return "上午好！☕";
-            if (hour < 14) return "午安！🍱";
-            if (hour < 18) return "下午好！🍵";
-            if (hour < 22) return "晚上好！✨";
-            return "晚安！💤";
-        },
-
-        getTimeIcon() {
-            const hour = new Date().getHours();
-            if (hour < 6) return "🌌";
-            if (hour < 18) return "☀️";
-            return "🌙";
-        },
-        // --- 签到系统逻辑 End ---
-
-        randomTask() {
-            document.getElementById('task-text').innerText = this.tasks[Math.floor(Math.random() * this.tasks.length)];
-            document.getElementById('task-modal').style.display = 'flex';
-        },
-        acceptTask() {
-            this.executeChange(50, '完成随机甜蜜任务');
-            this.closeTask();
-            this.showToast('任务完成！奖励已到账！💪');
-        },
-        closeTask() {
-            document.getElementById('task-modal').style.display = 'none';
-        },
-        
-        // 相册功能
-        addPhotoUI() {
-            document.getElementById('add-photo-modal').style.display = 'flex';
-            this.tempPhotoData = null;
-            document.getElementById('photo-url-input').value = '';
-            document.getElementById('photo-preview-img').style.display = 'none';
-            document.getElementById('photo-caption').value = '';
-        },
-
-        previewUrl() {
-            const url = document.getElementById('photo-url-input').value.trim();
-            if (url) {
-                this.tempPhotoData = url;
-                const img = document.getElementById('photo-preview-img');
-                img.src = url;
-                img.style.display = 'block';
-            }
-        },
-
-        handleFileSelect(input) {
-            if (input.files && input.files[0]) {
-                const file = input.files[0];
-                this.compressImage(file, (base64) => {
-                    this.tempPhotoData = base64;
-                    const img = document.getElementById('photo-preview-img');
-                    img.src = base64;
-                    img.style.display = 'block';
-                    // 清空URL输入，避免冲突
-                    document.getElementById('photo-url-input').value = '';
-                });
-            }
-        },
-
-        // 简单的图片压缩
-        compressImage(file, callback) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (e) => {
-                const img = new Image();
-                img.src = e.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 600; // 限制最大宽度
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // 压缩质量 0.6
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                    callback(dataUrl);
-                };
-            };
-        },
-
-        confirmAddPhoto() {
-            try {
-                if (!this.tempPhotoData) {
-                    // ... (existing retry logic)
-                    const url = document.getElementById('photo-url-input').value.trim();
-                    if (url) this.tempPhotoData = url;
-                    
-                    if (!this.tempPhotoData) return alert('请先输入图片链接或选择图片哦！');
-                }
-                const caption = document.getElementById('photo-caption').value.trim();
-                
-                // 限制本地存储大小预警
-                if (this.tempPhotoData.length > 500000) {
-                     if(!confirm('这张图片可能有点大，会影响同步速度，确定要添加吗？')) return;
-                }
-
-                // Defensive check and fix
-                if (!this.data.album || !Array.isArray(this.data.album)) {
-                    this.data.album = [];
-                }
-
-                this.data.album.unshift({
-                    id: Date.now(),
-                    url: this.tempPhotoData,
-                    caption: caption,
-                    date: new Date().toLocaleDateString()
-                });
-
-                // 限制相册数量，防止 LocalStorage 爆炸
-                if (this.data.album.length > 40) {
-                    this.showToast('相册好像满了 (40张)，旧照片被挤掉了... 😢');
-                    this.data.album.pop();
-                }
-
-                this.saveData();
-                document.getElementById('add-photo-modal').style.display = 'none';
-                this.showToast('照片添加成功！美好+1 ❤️');
-            } catch (e) {
-                console.error(e);
-                alert('出错了：' + e.message);
-            }
-        },
-
-        deletePhoto(id) {
-            if (confirm('确定要删除这张美好回忆吗？🥺')) {
-                this.data.album = this.data.album.filter(p => p.id !== id);
-                this.saveData();
-                this.showToast('照片已删除');
-            }
-        },
-
-        showLightbox(url) {
-            const modal = document.getElementById('lightbox-modal');
-            const img = document.getElementById('lightbox-img');
-            img.src = url;
-            modal.style.display = 'flex';
-        },
-        
-        showToast(msg) {
-            alert(msg);
-        },
-
-        // 新增功能：每日一句
-        loveQuotes: [
-            "这是我们相爱的第 N 天，每一天都更爱你一點。",
-            "斯人若彩虹，遇上方知有。",
-            "想和你一起去看春夏秋冬，驻足在每一处风景。",
-            "醒来觉得甚是爱你。",
-            "你的过去我来不及参与，你的未来我奉陪到底。",
-            "海底月是天上月，眼前人是心上人。",
-            "我不要短暂的温存，我要你一世的陪伴。",
-            "喜欢你，是我做过最坚持的事。",
-            "你是我平淡岁月里最耀眼的星辰。",
-            "即使世界荒芜，总有一个人，他会是你的信徒。",
-            "我想牵着你的手，从心动到古稀。",
-            "遇见你，所有星星都落到了我头上。",
-            "一想到你，我的嘴角就忍不住上扬。",
-            "和你在一起的时光，全都很耀眼。",
-            "在这个星球上，你是我最特别的引力。",
-            "想把世界上最好的都给你，却发现世上最好的是你。",
-            "你是我最意外的勇敢，也是我最温暖的归宿。",
-            "春风十里不如你，梦里梦外都是你。",
-            "愿得一心人，白首不相离。",
-            "你是我的今天，以及所有的明天。"
-        ],
-
-        showDailyQuote() {
-            const quote = this.loveQuotes[Math.floor(Math.random() * this.loveQuotes.length)];
-            const el = document.getElementById('daily-quote');
-            if(el) el.innerText = `“ ${quote} ”`;
-        },
-
-        // 修复历史数据 ID
-        fixHistoryIds() {
-            if (this.data.history && this.data.history.length > 0) {
-                this.data.history.forEach((item, index) => {
-                    if (!item.id) item.id = Date.now() + index; // 补全 ID
-                });
-            }
-        },
-
-        // 删除历史记录
-        deleteLog(id) {
-            if(confirm('确定要删除这条记录吗？(分数不会回滚哦)')) {
-                this.data.history = this.data.history.filter(item => item.id !== id);
-                this.saveData();
-                this.render(); // 强制重绘列表
-                this.showToast('记录已删除 🗑️');
-            }
-        },
-
-        // 生理期功能
-        savePeriod() {
-            const date = document.getElementById('period-date-input').value;
-            if(!date) return alert('请选择日期哦！');
-            this.data.periodDate = date;
-            this.saveData();
-            this.showToast('日期已记录！我们会提醒你的 ❤️');
-            this.renderPeriod(); // 立即更新显示
-        },
-
-        renderPeriod() {
-            const display = document.getElementById('period-display');
-            if (!this.data.periodDate) {
-                // 如果没有数据，且在渲染设置页时回显空
-                // document.getElementById('period-date-input').value = ''; 
-                return;
-            }
-
-            // 回显设置页输入框
-            const input = document.getElementById('period-date-input');
-            if(input && !input.value) input.value = this.data.periodDate;
-
-            // 计算逻辑
-            const lastDate = new Date(this.data.periodDate);
-            const today = new Date();
-            // 假设周期 28 天
-            const cycle = 28;
-            
-            // 计算时间差
-            const diffTime = Math.abs(today - lastDate);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-            
-            // 简单推算：如果还在周期内
-            // 比如 1号来的，今天 5号，diff 4天。 下次是 1+28 = 29号。 还有 29-5 = 24天。
-            // 逻辑：下次日期 = 上次日期 + 28天
-            const nextDate = new Date(lastDate);
-            nextDate.setDate(lastDate.getDate() + cycle);
-            
-            const daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
-            
-            let msg = '';
-            let color = '';
-
-            if (daysUntil > 0) {
-                msg = `距离下次还剩 <span class="period-days">${daysUntil}</span> 天`;
-                color = '#fff';
-            } else if (daysUntil === 0) {
-                msg = `就是今天！<br>记得多喝热水，注意保暖哦 ❤️`;
-                color = '#ffcccb';
-            } else {
-                msg = `已经推迟 <span class="period-days">${Math.abs(daysUntil)}</span> 天了<br>或者是忘记记录啦？🤔`;
-                color = '#ffd1dc';
-            }
-
-            if(display) {
-                display.innerHTML = `
-                    <div class="period-info">上次记录：${this.data.periodDate}</div>
-                    <div style="margin-top:5px; color:${color}">${msg}</div>
-                `;
-            }
+            return;
         }
-    };
 
-    // 动态生成桌面图标
-    (function generateIcon() {
-        const canvas = document.createElement('canvas');
-        canvas.width = 180;
-        canvas.height = 180;
-        const ctx = canvas.getContext('2d');
-
-        // 背景
-        const gradient = ctx.createLinearGradient(0, 0, 180, 180);
-        gradient.addColorStop(0, '#ff9a9e');
-        gradient.addColorStop(1, '#fecfef');
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.roundRect(0, 0, 180, 180, 40);
-        ctx.fill();
-
-        // 爱心
-        ctx.fillStyle = 'white';
-        ctx.font = '90px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('❤️', 90, 95);
-
-        // 创建 Link 标签 (iOS/Safari)
-        const link = document.createElement('link');
-        link.rel = 'apple-touch-icon';
-        link.href = canvas.toDataURL('image/png');
-        document.head.appendChild(link);
-
-        // 创建 Manifest (Edge/Chrome/Android PWA支持)
-        const manifest = {
-            name: "周金霞男友",
-            short_name: "周金霞男友",
-            start_url: ".",
-            display: "standalone",
-            background_color: "#fff0f3",
-            theme_color: "#ff8fa3",
-            icons: [{
-                src: canvas.toDataURL('image/png'),
-                sizes: "180x180",
-                type: "image/png"
-            }]
-        };
-        const manifestLink = document.createElement('link');
-        manifestLink.rel = 'manifest';
-        manifestLink.href = 'data:application/manifest+json;charset=utf-8,' + encodeURIComponent(JSON.stringify(manifest));
-        document.head.appendChild(manifestLink);
-    })();
-
-    // 检测 iOS 并提示添加主屏幕
-    function checkIOSInstall() {
-        // 判断是否是 iOS Safari
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        // 判断是否已经在全屏模式 (PWA模式)
-        const isStandalone = window.navigator.standalone === true;
-
-        if (isIOS && !isStandalone) {
-            // 延迟一点显示，避免打扰
-            setTimeout(() => {
-                document.getElementById('ios-install-guide').style.display = 'block';
-            }, 2000);
+        let diffDays = 0;
+        if (this.data.lastSignInDate) {
+            const last = new Date(this.data.lastSignInDate);
+            const utc1 = Date.UTC(last.getFullYear(), last.getMonth(), last.getDate());
+            const utc2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+            diffDays = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
         }
-    }
-    checkIOSInstall();
 
-    // 独立定义樱花特效函数，供内部循环调用
-    function createPetal() {
-        const petal = document.createElement('div');
-        petal.className = 'petal';
-        const size = Math.random() * 10 + 5;
-        petal.style.width = `${size}px`;
-        petal.style.height = `${size}px`;
-        petal.style.left = `${Math.random() * 100}vw`;
-        petal.style.animationDuration = `${Math.random() * 3 + 2}s`;
-        petal.style.opacity = Math.random();
-        document.getElementById('sakura-container').appendChild(petal);
+        if (diffDays === 1) {
+            this.data.signInStreak++;
+        } else if (diffDays > 1 || !this.data.lastSignInDate) {
+            this.data.signInStreak = 1;
+        }
+
+        let reward = 1;
+        let title = this.getTimeGreeting();
+        let subText = "每日签到奖励";
+        let icon = this.getTimeIcon();
+        let extraReward = false;
+
+        if (this.data.signInStreak % 7 === 0) {
+            reward = 20;
+            title = "🎉 连击大礼包！";
+            subText = `太棒了！已连续打卡 ${this.data.signInStreak} 天！`;
+            icon = "🎁";
+            extraReward = true;
+        }
+
+        this.data.lastSignInDate = todayStr;
+        this.executeChange(reward, `每日签到 (连击 ${this.data.signInStreak} 天)`);
+
+        this.showSignInModal(false, title, subText, icon, reward, extraReward);
+    },
+
+    showSignInModal(isViewOnly = false, title, subText, icon, reward, isBigReward) {
+        const modal = document.getElementById('signin-modal');
+        const streak = this.data.signInStreak;
         
-        setTimeout(() => petal.remove(), 5000);
-    }
+        if (isViewOnly) {
+            document.getElementById('signin-title').innerText = `已连续打卡 ${streak} 天`;
+            document.getElementById('signin-text').innerText = "坚持就是胜利，加油！💪";
+            document.getElementById('signin-icon').innerText = "🔥";
+            document.getElementById('signin-reward-text').style.display = 'none';
+        } else {
+            document.getElementById('signin-title').innerText = title;
+            document.getElementById('signin-text').innerText = subText;
+            document.getElementById('signin-icon').innerText = icon;
+            const rewardEl = document.getElementById('signin-reward-text');
+            rewardEl.style.display = 'flex';
+            rewardEl.innerHTML = isBigReward 
+                ? `<span>🎁</span> 连击奖励 +${reward} 分` 
+                : `<span>💎</span> 积分 +${reward}`;
+        }
 
-    app.init();
+        const dotsContainer = document.getElementById('streak-dots');
+        let dotsHtml = '';
+        let currentCycle = streak % 7; 
+        if (currentCycle === 0 && streak > 0) currentCycle = 7;
+        
+        for (let i = 1; i <= 7; i++) {
+            const isActive = i <= currentCycle;
+            dotsHtml += `<div class="streak-dot ${isActive ? 'active' : ''}"></div>`;
+        }
+        dotsContainer.innerHTML = dotsHtml;
+        document.getElementById('signin-streak').innerText = streak;
+
+        modal.style.display = 'flex';
+        this.updateStreakUI();
+    },
+
+    closeSignIn() {
+        document.getElementById('signin-modal').style.display = 'none';
+        createPetal(); createPetal(); createPetal();
+    },
+
+    updateStreakUI() {
+        const el = document.getElementById('home-streak');
+        if(el) {
+            const numEl = document.getElementById('streak-num');
+            if (numEl) numEl.innerText = this.data.signInStreak;
+        }
+    },
+
+    getTimeGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 6) return "凌晨好！🌙";
+        if (hour < 9) return "早安！☀️";
+        if (hour < 12) return "上午好！☕";
+        if (hour < 14) return "午安！🍱";
+        if (hour < 18) return "下午好！🍵";
+        if (hour < 22) return "晚上好！✨";
+        return "晚安！💤";
+    },
+
+    getTimeIcon() {
+        const hour = new Date().getHours();
+        if (hour < 6) return "🌌";
+        if (hour < 18) return "☀️";
+        return "🌙";
+    },
+
+    renderPeriod() {
+        const display = document.getElementById('period-display');
+        if (!display) return;
+        
+        if (!this.data.periodDate) {
+            return;
+        }
+
+        const lastDate = new Date(this.data.periodDate);
+        const today = new Date();
+        const cycle = 28;
+        
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(lastDate.getDate() + cycle);
+        
+        const daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+        
+        let msg = '';
+        let color = '';
+
+        if (daysUntil > 0) {
+            msg = `距离下次还剩 <span class="period-days">${daysUntil}</span> 天`;
+            color = '#fff';
+        } else if (daysUntil === 0) {
+            msg = `就是今天！<br>记得多喝热水，注意保暖哦 ❤️`;
+            color = '#ffcccb';
+        } else {
+            msg = `已经推迟 <span class="period-days">${Math.abs(daysUntil)}</span> 天了<br>或者是忘记记录啦？🤔`;
+            color = '#ffd1dc';
+        }
+
+        display.innerHTML = `
+            <div class="period-info">上次记录：${this.data.periodDate}</div>
+            <div style="margin-top:5px; color:${color}">${msg}</div>
+        `;
+    }
+});
+
+app.init();
 </script>
 </body>
 </html>

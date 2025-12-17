@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>恋爱商店 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>🎁 恋爱商店 <span class="version-tag">V3.1</span></h1>
+        <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="album.html" class="nav-btn">🖼️ 相册</a>
+        <a href="shop.html" class="nav-btn active">🎁 商店</a>
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
+    </div>
+
+    <div class="shop-tabs">
+        <button class="shop-tab-btn active" onclick="app.switchShopTab('mall')" id="tab-mall">🎁 兑换中心</button>
+        <button class="shop-tab-btn" onclick="app.switchShopTab('inventory')" id="tab-inventory">🎒 我的背包</button>
+    </div>
+
+    <div id="view-mall">
+        <div class="shop-grid" id="shop-list"></div>
+    </div>
+
+    <div id="view-inventory" style="display: none;">
+        <div class="inventory-list" id="inventory-list"></div>
+    </div>
+</div>
+
+<!-- 使用物品弹窗 -->
+<div class="modal-overlay" id="use-modal" style="display:none;">
+    <div class="modal">
+        <span id="use-icon" style="font-size:3rem; display:block; margin-bottom:15px;">🎫</span>
+        <h3 style="margin:0 0 10px 0;">使用物品</h3>
+        <p style="color:#666; margin-bottom:20px; line-height:1.5;">确定要使用 <span id="use-name" style="font-weight:bold; color:var(--accent-pink);"></span> 吗？<br><span style="font-size:0.8rem;">(使用后将变为已核销状态)</span></p>
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('use-modal').style.display='none'" style="flex:1; background:#f0f0f0; border:none; padding:12px; border-radius:12px;">取消</button>
+            <button onclick="app.confirmUse()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold;">确认使用</button>
+        </div>
+    </div>
+</div>
+
+<script src="common.js"></script>
+<script>
+Object.assign(app, {
+    init() {
+        this.initCommon();
+        this.render();
+    },
+
+    render() {
+        // 渲染商店
+        const shopList = document.getElementById('shop-list');
+        if (shopList) {
+            shopList.innerHTML = this.products.map(p => `
+                <div class="shop-item">
+                    <div class="shop-icon">${p.icon}</div>
+                    <div style="font-weight:bold; margin-bottom:5px;">${p.name}</div>
+                    <div class="shop-price">${p.price} 分</div>
+                    <button class="btn-buy" ${this.data.score >= p.price ? '' : 'disabled'} onclick="app.buyProduct(${p.id})">
+                        ${this.data.score >= p.price ? '兑换' : '积分不足'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // 渲染背包
+        const invList = document.getElementById('inventory-list');
+        if (!invList) return;
+        
+        if (!this.data.inventory || this.data.inventory.length === 0) {
+            invList.innerHTML = '<div class="empty-hint">背包空空如也<br>快去商店兑换奖励吧！🎁</div>';
+        } else {
+            invList.innerHTML = this.data.inventory.map(item => {
+                const isUsed = item.status === 'used';
+                return `
+                    <div class="inventory-item ${isUsed ? 'used' : 'unused'}" onclick="${isUsed ? '' : `app.askUseItem(${item.id})`}">
+                        <div class="inv-icon">${item.icon}</div>
+                        <div class="inv-info">
+                            <div class="inv-name">${item.name}</div>
+                            <div class="inv-date">${isUsed ? '使用于: ' + item.useTime : '购买于: ' + item.buyTime}</div>
+                        </div>
+                        ${isUsed ? '<div class="stamp-used"></div>' : '<button class="btn-use">使用</button>'}
+                    </div>
+                `;
+            }).join('');
+        }
+    },
+
+    switchShopTab(tab) {
+        document.querySelectorAll('.shop-tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        
+        document.getElementById('view-mall').style.display = tab === 'mall' ? 'block' : 'none';
+        document.getElementById('view-inventory').style.display = tab === 'inventory' ? 'block' : 'none';
+    },
+
+    buyProduct(id) {
+        const p = this.products.find(x => x.id === id);
+        if (!p) return;
+        
+        if (this.data.score < p.price) {
+            return this.showToast('积分不足哦，快去赚积分吧！🥺');
+        }
+
+        if (confirm(`确认兑换 ${p.name} 吗？\n(消耗 ${p.price} 积分，物品将放入背包)`)) {
+            this.executeChange(-p.price, `购买商品：${p.name}`);
+            
+            this.data.inventory.unshift({
+                id: Date.now(),
+                productId: p.id,
+                name: p.name,
+                icon: p.icon,
+                price: p.price,
+                buyTime: new Date().toLocaleString(),
+                status: 'unused'
+            });
+            
+            this.saveData();
+            this.showToast('兑换成功！已放入背包 🎒');
+        }
+    },
+
+    askUseItem(itemId) {
+        const item = this.data.inventory.find(i => i.id === itemId);
+        if (!item || item.status === 'used') return;
+        
+        this.pendingUseItem = itemId;
+        document.getElementById('use-icon').innerText = item.icon;
+        document.getElementById('use-name').innerText = item.name;
+        document.getElementById('use-modal').style.display = 'flex';
+    },
+
+    confirmUse() {
+        if (!this.pendingUseItem) return;
+        
+        const item = this.data.inventory.find(i => i.id === this.pendingUseItem);
+        if (item) {
+            item.status = 'used';
+            item.useTime = new Date().toLocaleString();
+            this.saveData();
+            this.showToast('使用成功！要开心哦 ❤️');
+        }
+        
+        document.getElementById('use-modal').style.display = 'none';
+        this.pendingUseItem = null;
+    }
+});
+
+app.init();
+</script>
+</body>
+</html>
+
