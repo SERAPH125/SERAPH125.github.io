@@ -1051,12 +1051,21 @@ input[type="text"]:focus, input[type="date"]:focus {
     .score-card, .sweetness-card {
         flex: 1 1 100%;
         min-width: 100%;
+        /* 修复移动端居中问题 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
     }
     .score-value {
         font-size: 3.5rem;
     }
     .sweetness-display {
         font-size: 2.2rem;
+    }
+    /* 调整移动端进度条宽度 */
+    .sweetness-progress-bg {
+        width: 90%;
     }
 }
 
@@ -1567,5 +1576,41 @@ input[type="text"]:focus, input[type="date"]:focus {
     .pet-actions {
         grid-template-columns: 1fr;
     }
+}
+
+/* 宫崎骏风格 - 龙猫样式 */
+.pet-container {
+    background: none !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* SVG 容器 */
+.ghibli-pet {
+    width: 200px; /* 龙猫体型较大，稍微调大一点 */
+    height: 200px;
+    filter: drop-shadow(0 5px 8px rgba(0,0,0,0.15));
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 悬停互动：龙猫会好奇地变大一点 */
+.pet-container:hover .ghibli-pet {
+    transform: scale(1.1) translateY(-5px);
+}
+
+/* 点击反馈：Q弹的收缩效果 */
+.pet-container:active .ghibli-pet {
+    transform: scale(0.95) translateY(2px);
+}
+
+.pet-heart {
+    transform-box: fill-box;
+    transform-origin: center;
+    filter: drop-shadow(0 2px 4px rgba(255,100,100,0.3));
 }
 

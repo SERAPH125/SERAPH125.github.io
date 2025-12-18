@@ -104,9 +104,6 @@
         <div class="sweetness-card">
             <h3>🍬 小周的甜度存钱罐</h3>
             <div class="sweetness-display"><span id="sweetness-val">0</span> 🍬</div>
-            <div class="sweetness-progress-bg">
-                <div class="sweetness-progress-fill" id="sweetness-bar" style="width: 0%"></div>
-            </div>
             <button class="btn-record-sweet" onclick="app.showSweetModal()">💖 记录心动瞬间</button>
         </div>
     </div>
@@ -122,37 +119,95 @@
         <div class="pet-display-area" id="pet-display-area">
             <!-- 宠物主体容器 -->
             <div class="pet-container" id="pet-container" onclick="app.petInteraction()">
-                <!-- 宠物身体 -->
-                <div class="pet-body" id="pet-body">
-                    <div class="pet-face" id="pet-face">
-                        <!-- 眼睛 -->
-                        <div class="pet-eye left-eye" id="pet-eye-left">
-                            <div class="eye-pupil"></div>
-                        </div>
-                        <div class="pet-eye right-eye" id="pet-eye-right">
-                            <div class="eye-pupil"></div>
-                        </div>
-                        <!-- 嘴巴 -->
-                        <div class="pet-mouth" id="pet-mouth"></div>
-                        <!-- 脸颊红晕 -->
-                        <div class="pet-cheek left-cheek"></div>
-                        <div class="pet-cheek right-cheek"></div>
-                    </div>
-                    <!-- 宠物身体装饰 -->
-                    <div class="pet-decoration"></div>
-                </div>
-                
-                <!-- 尾巴 -->
-                <div class="pet-tail" id="pet-tail">
-                    <div class="tail-tip"></div>
-                </div>
-                
-                <!-- 耳朵 -->
-                <div class="pet-ear left-ear" id="pet-ear-left"></div>
-                <div class="pet-ear right-ear" id="pet-ear-right"></div>
-                
-                <!-- 爱心特效 -->
-                <div class="pet-heart" id="pet-heart">💕</div>
+                <!-- 宫崎骏风格：龙猫 (Totoro) -->
+                <svg viewBox="0 0 200 200" class="ghibli-pet">
+                    <!-- 身体阴影 -->
+                    <ellipse cx="100" cy="180" rx="60" ry="10" fill="#000" opacity="0.2" />
+                    
+                    <!-- 龙猫主体组 (用于呼吸动画) -->
+                    <g class="pet-body-group">
+                        <!-- 呼吸动画：整体缓慢缩放 -->
+                        <animateTransform attributeName="transform" type="scale" values="1 1; 1.02 0.99; 1 1" dur="4s" repeatCount="indefinite" origin="100 180" />
+                        
+                        <!-- 耳朵 (尖尖的灰色耳朵) -->
+                        <path d="M70,50 Q65,10 85,30 L90,60 Z" fill="#7D858F" stroke="#5A6169" stroke-width="1"/>
+                        <path d="M130,50 Q135,10 115,30 L110,60 Z" fill="#7D858F" stroke="#5A6169" stroke-width="1"/>
+                        
+                        <!-- 身体 (灰色大椭圆) -->
+                        <path d="M50,170 C20,170 25,80 55,60 C75,30 125,30 145,60 C175,80 180,170 150,170 Z" fill="#7D858F" stroke="#5A6169" stroke-width="2"/>
+                        
+                        <!-- 肚子 (米白色圆形区域) -->
+                        <path d="M60,170 C55,170 50,90 70,75 C85,60 115,60 130,75 C150,90 145,170 140,170 Z" fill="#F7F3E8" />
+                        
+                        <!-- 肚子上的花纹 (经典的灰色飞镖纹) -->
+                        <g fill="none" stroke="#7D858F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- 上排 -->
+                            <path d="M85,85 L90,80 L95,85" />
+                            <path d="M105,85 L110,80 L115,85" />
+                            <!-- 下排 -->
+                            <path d="M75,100 L80,95 L85,100" />
+                            <path d="M95,100 L100,95 L105,100" />
+                            <path d="M115,100 L120,95 L125,100" />
+                        </g>
+                        
+                        <!-- 手臂 (放在身体两侧) -->
+                        <ellipse cx="45" cy="110" rx="10" ry="25" fill="#7D858F" transform="rotate(10 45 110)" />
+                        <ellipse cx="155" cy="110" rx="10" ry="25" fill="#7D858F" transform="rotate(-10 155 110)" />
+
+                        <!-- 脸部 -->
+                        <g transform="translate(0, 10)">
+                            <!-- 眼睛 (眼距较宽，呆萌感) -->
+                            <g fill="#FFFFFF" stroke="#5A6169" stroke-width="1">
+                                <circle cx="80" cy="50" r="7" />
+                                <circle cx="120" cy="50" r="7" />
+                            </g>
+                            <g fill="#000000">
+                                <!-- 眼珠 (偶尔转动) -->
+                                <circle cx="80" cy="50" r="2.5">
+                                    <animate attributeName="cx" values="80;78;82;80" dur="5s" repeatCount="indefinite" />
+                                </circle>
+                                <circle cx="120" cy="50" r="2.5">
+                                    <animate attributeName="cx" values="120;118;122;120" dur="5s" repeatCount="indefinite" />
+                                </circle>
+                            </g>
+                            
+                            <!-- 鼻子 (倒三角形) -->
+                            <path d="M96,55 L104,55 L100,60 Z" fill="#333" />
+                            
+                            <!-- 胡须 (长长的黑线) -->
+                            <g stroke="#333" stroke-width="1.5" stroke-linecap="round">
+                                <path d="M60,55 L30,50" />
+                                <path d="M60,60 L30,60" />
+                                <path d="M60,65 L30,70" />
+                                
+                                <path d="M140,55 L170,50" />
+                                <path d="M140,60 L170,60" />
+                                <path d="M140,65 L170,70" />
+                            </g>
+                            
+                            <!-- 嘴巴 (极小的微笑) -->
+                            <path d="M97,65 Q100,67 103,65" fill="none" stroke="#333" stroke-width="1.5" opacity="0.6" />
+                        </g>
+                        
+                        <!-- 头顶的小叶子 (点睛之笔) -->
+                        <path d="M100,30 Q100,10 90,15 Q100,10 110,15 Q100,10 100,30" fill="#88C057" stroke="#6A9A40" stroke-width="1"/>
+                        <path d="M100,30 L100,25" stroke="#6A9A40" stroke-width="1"/>
+                    </g>
+
+                    <!-- 小煤球 (Soot Sprite) - 保留这个可爱的彩蛋 -->
+                    <g transform="translate(165, 160)">
+                        <circle r="8" fill="#222" />
+                        <circle cx="-3" cy="-2" r="2" fill="white" />
+                        <circle cx="3" cy="-2" r="2" fill="white" />
+                        <circle cx="-3" cy="-2" r="0.8" fill="black" />
+                        <circle cx="3" cy="-2" r="0.8" fill="black" />
+                        <!-- 弹跳动画 -->
+                        <animateTransform attributeName="transform" type="translate" values="165,160; 165,150; 165,160" dur="0.8s" repeatCount="indefinite" begin="0.5s" />
+                    </g>
+                    
+                    <!-- 爱心特效 -->
+                    <text x="100" y="30" class="pet-heart" id="pet-heart" font-size="24" text-anchor="middle" style="opacity:0">💕</text>
+                </svg>
             </div>
             
             <!-- 宠物状态文字 -->
@@ -321,13 +376,7 @@ Object.assign(app, {
         // 渲染甜度
         const sweetVal = this.data.girlSweetness || 0;
         const sweetEl = document.getElementById('sweetness-val');
-        const sweetBar = document.getElementById('sweetness-bar');
         if(sweetEl) sweetEl.innerText = sweetVal;
-        if(sweetBar) {
-            // 视觉上限调整为1000，方便查看大额目标的进度
-            let pct = Math.min(100, (sweetVal / 1000) * 100);
-            sweetBar.style.width = `${pct}%`;
-        }
 
         const body = document.body;
         const scoreCard = document.querySelector('.score-card');
