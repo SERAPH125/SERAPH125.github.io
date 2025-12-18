@@ -123,33 +123,78 @@ Object.assign(app, {
             document.getElementById('role-girl').classList.add('active');
         }
 
-        // 渲染历史记录
+        // 渲染历史记录（合并积分历史和甜度历史）
         const logList = document.getElementById('log-list');
         if (logList) {
-            logList.innerHTML = this.data.history.map(item => `
-                <div class="log-item">
-                    <div style="flex:1;">
-                        <div style="font-weight:500; color:var(--text-main)">${item.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
-                        <div style="font-size:0.8rem; color:var(--text-light)">${item.time}</div>
-                    </div>
-                    <div style="display:flex; align-items:center;">
-                        <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" class="${item.amount > 0 ? 'plus' : 'minus'}">
-                            ${item.amount > 0 ? '+' : ''}${item.amount}
+            // 合并两种历史记录
+            const allHistory = [];
+            
+            // 添加积分历史记录
+            if (this.data.history && this.data.history.length > 0) {
+                this.data.history.forEach(item => {
+                    allHistory.push({
+                        ...item,
+                        type: 'score', // 标记为积分记录
+                        displayAmount: item.amount > 0 ? `+${item.amount}` : `${item.amount}`,
+                        icon: item.amount > 0 ? '💖' : '💔'
+                    });
+                });
+            }
+            
+            // 添加甜度历史记录
+            if (this.data.girlHistory && this.data.girlHistory.length > 0) {
+                this.data.girlHistory.forEach(item => {
+                    allHistory.push({
+                        ...item,
+                        type: 'sweetness', // 标记为甜度记录
+                        displayAmount: `+${item.amount} 🍬`,
+                        icon: '🍬'
+                    });
+                });
+            }
+            
+            // 按时间倒序排序
+            allHistory.sort((a, b) => b.id - a.id);
+            
+            // 渲染合并后的历史记录
+            if (allHistory.length === 0) {
+                logList.innerHTML = '<div style="text-align:center; color:var(--text-light); padding:20px;">暂无历史记录</div>';
+            } else {
+                logList.innerHTML = allHistory.map(item => `
+                    <div class="log-item">
+                        <div style="flex:1;">
+                            <div style="font-weight:500; color:var(--text-main)">
+                                ${item.icon} ${item.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
+                            </div>
+                            <div style="font-size:0.8rem; color:var(--text-light)">${item.time}</div>
                         </div>
-                        <button class="btn-del-log" onclick="app.deleteLog(${item.id})">🗑️</button>
+                        <div style="display:flex; align-items:center;">
+                            <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" 
+                                 class="${item.type === 'sweetness' ? 'sweetness' : (item.amount > 0 ? 'plus' : 'minus')}">
+                                ${item.displayAmount}
+                            </div>
+                            <button class="btn-del-log" onclick="app.deleteLog(${item.id}, '${item.type}')">🗑️</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            }
         }
 
         // 渲染生理期
         this.renderPeriod();
     },
 
-    deleteLog(id) {
+    deleteLog(id, type = 'score') {
         if(confirm('确定要删除这条记录吗？(分数不会回滚哦)')) {
-            this.data.history = this.data.history.filter(item => item.id !== id);
+            if (type === 'sweetness') {
+                // 删除甜度记录
+                this.data.girlHistory = this.data.girlHistory.filter(item => item.id !== id);
+            } else {
+                // 删除积分记录
+                this.data.history = this.data.history.filter(item => item.id !== id);
+            }
             this.saveData();
+            this.render(); // 重新渲染
             this.showToast('记录已删除 🗑️');
         }
     },

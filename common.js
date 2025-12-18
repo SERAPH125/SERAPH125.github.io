@@ -17,7 +17,9 @@ const app = {
         signInLog: [], // { date: '2023-10-01', user: 'boy' }
         // 甜度系统
         girlSweetness: 0,
-        girlHistory: []
+        girlHistory: [],
+        // 宠物系统
+        pet: null // 将在 initPet 中初始化
     },
     currentUser: 'boy', // 默认 'boy', 可切换为 'girl'
     deductStep: 0,
@@ -240,6 +242,10 @@ const app = {
                 // 甜度系统兼容
                 if (this.data.girlSweetness === undefined) this.data.girlSweetness = 0;
                 if (this.data.girlHistory === undefined) this.data.girlHistory = [];
+                // 宠物系统兼容
+                if (this.data.pet === undefined || this.data.pet === null) {
+                    this.data.pet = null; // 将在 initPet 中初始化
+                }
 
                 this.fixHistoryIds();
                 this.saveToLocal();
@@ -299,6 +305,9 @@ const app = {
         this.loadLocalData();
         this.fixHistoryIds();
         this.updateDays();
+        
+        // 初始化宠物系统
+        this.initPet();
         
         // 再尝试连接云端同步
         this.initLeanCloud(presetAppId, presetAppKey, presetServerURL);
@@ -363,6 +372,10 @@ const app = {
                 // 甜度系统兼容
                 if (this.data.girlSweetness === undefined) this.data.girlSweetness = 0;
                 if (this.data.girlHistory === undefined) this.data.girlHistory = [];
+                // 宠物系统兼容
+                if (this.data.pet === undefined || this.data.pet === null) {
+                    this.data.pet = null; // 将在 initPet 中初始化
+                }
             } catch(e) {
                 console.error("Local data parse error", e);
             }
@@ -503,6 +516,417 @@ const app = {
         // 自动兑换检查已移除，支持无限积累
         this.showToast(`记录成功！甜度 +${amount} 💕`);
         this.saveData();
+    },
+
+    // ========== 宠物系统 ==========
+    
+    // 初始化宠物数据
+    initPet() {
+        if (!this.data.pet) {
+            this.data.pet = {
+                name: '小怪',
+                health: 80,
+                mood: 75,
+                growth: 0,
+                intimacy: 0,
+                stage: 'egg',
+                lastFeedTime: null,
+                feedCountToday: 0,
+                lastFeedUser: null,
+                consecutiveDays: 0,
+                lastInteractionTime: null, // 上次互动时间
+                interactionCount: 0 // 连续互动次数（30秒内）
+            };
+        }
+        
+        // 数据兼容性处理：确保新字段存在
+        if (this.data.pet.lastInteractionTime === undefined) {
+            this.data.pet.lastInteractionTime = null;
+        }
+        if (this.data.pet.interactionCount === undefined) {
+            this.data.pet.interactionCount = 0;
+        }
+        
+        // 每天重置喂养次数
+        const today = new Date().toISOString().split('T')[0];
+        const lastFeedDate = this.data.pet.lastFeedTime 
+            ? new Date(this.data.pet.lastFeedTime).toISOString().split('T')[0]
+            : null;
+        
+        if (lastFeedDate !== today) {
+            this.data.pet.feedCountToday = 0;
+        }
+        
+        // 自动衰减
+        this.updatePetDecay();
+    },
+
+    // 更新宠物衰减
+    updatePetDecay() {
+        const pet = this.data.pet;
+        if (!pet || !pet.lastFeedTime) return;
+        
+        const now = new Date();
+        const lastFeed = new Date(pet.lastFeedTime);
+        const hoursSinceFeed = (now - lastFeed) / (1000 * 60 * 60);
+        
+        // 每24小时健康-2，心情-1
+        const daysPassed = Math.floor(hoursSinceFeed / 24);
+        if (daysPassed > 0) {
+            pet.health = Math.max(0, pet.health - (daysPassed * 2));
+            pet.mood = Math.max(0, pet.mood - daysPassed);
+            this.saveData();
+        }
+    },
+
+    // 宠物交互（点击时的动画）
+    petInteraction() {
+        const container = document.getElementById('pet-container');
+        if (!container) return;
+        
+        const pet = this.data.pet;
+        if (!pet) {
+            this.initPet();
+            return this.petInteraction(); // 递归调用一次
+        }
+        
+        // 随机选择互动动作
+        const actions = ['shake-head', 'shake-tail', 'jump'];
+        const randomAction = actions[Math.floor(Math.random() * actions.length)];
+        
+        // 移除之前的动画类
+        container.classList.remove('shake-head', 'shake-tail', 'jump');
+        
+        // 添加新动画
+        setTimeout(() => {
+            container.classList.add(randomAction);
+            
+            // 显示爱心特效
+            this.showPetHeart();
+            
+            // 移除动画类
+            setTimeout(() => {
+                container.classList.remove(randomAction);
+            }, 600);
+        }, 10);
+        
+        // 心情提升逻辑
+        const now = new Date();
+        const lastInteraction = pet.lastInteractionTime ? new Date(pet.lastInteractionTime) : null;
+        const secondsSinceLastInteraction = lastInteraction 
+            ? (now - lastInteraction) / 1000 
+            : Infinity;
+        
+        // 如果30秒内有互动，算连续互动
+        if (secondsSinceLastInteraction < 30) {
+            pet.interactionCount++;
+        } else {
+            pet.interactionCount = 1; // 重新开始计数
+        }
+        
+        // 计算心情增加值
+        let moodIncrease = 1; // 基础增加1点
+        if (pet.interactionCount >= 5) {
+            moodIncrease = 5; // 连续5次以上，每次+5
+        } else if (pet.interactionCount >= 3) {
+            moodIncrease = 3; // 连续3次以上，每次+3
+        } else if (pet.interactionCount >= 2) {
+            moodIncrease = 2; // 连续2次，每次+2
+        }
+        
+        // 提升心情（不超过100）
+        pet.mood = Math.min(100, (pet.mood || 0) + moodIncrease);
+        pet.lastInteractionTime = now.toISOString();
+        
+        // 保存数据并更新显示
+        this.saveData();
+        this.renderPet();
+    },
+
+    // 显示爱心特效
+    showPetHeart() {
+        const heart = document.getElementById('pet-heart');
+        if (!heart) return;
+        
+        heart.classList.remove('show');
+        setTimeout(() => {
+            heart.classList.add('show');
+        }, 10);
+        
+        // 移除类以便下次使用
+        setTimeout(() => {
+            heart.classList.remove('show');
+        }, 1500);
+    },
+
+    // 获取互动文字
+    getPetInteractionText() {
+        const pet = this.data.pet || {};
+        const texts = [
+            '💕 宠物好开心！',
+            '😊 宠物在对你笑呢~',
+            '✨ 宠物感受到了你的爱意！',
+            '💖 宠物想和你玩~',
+            '🥰 宠物好喜欢你！'
+        ];
+        
+        if (pet.mood > 80) {
+            return texts[Math.floor(Math.random() * texts.length)];
+        } else if (pet.mood < 30) {
+            return '😢 宠物心情不太好，需要你的关心...';
+        } else {
+            return '😌 宠物感受到了你的关注~';
+        }
+    },
+
+    // 喂养宠物
+    feedPet(type) {
+        const pet = this.data.pet;
+        if (!pet) {
+            this.initPet();
+            return this.feedPet(type); // 递归调用一次
+        }
+        
+        const today = new Date().toISOString().split('T')[0];
+        const lastFeedDate = pet.lastFeedTime 
+            ? new Date(pet.lastFeedTime).toISOString().split('T')[0]
+            : null;
+        
+        // 检查今日喂养次数
+        if (pet.feedCountToday >= 3) {
+            return this.showToast('今天已经喂养3次了，明天再来吧！💕');
+        }
+        
+        // 检查喂养间隔（至少2小时）
+        if (pet.lastFeedTime) {
+            const lastFeed = new Date(pet.lastFeedTime);
+            const now = new Date();
+            const hoursSinceFeed = (now - lastFeed) / (1000 * 60 * 60);
+            if (hoursSinceFeed < 2) {
+                const minutesLeft = Math.ceil((2 - hoursSinceFeed) * 60);
+                return this.showToast(`还需要等待 ${minutesLeft} 分钟才能再次喂养哦~`);
+            }
+        }
+        
+        // 检查资源并喂养
+        if (type === 'score') {
+            if (this.data.score < 10) {
+                return this.showToast('积分不足哦，快去赚积分吧！💪');
+            }
+            this.executeChange(-10, '喂养宠物');
+            pet.health = Math.min(100, pet.health + 5);
+            pet.mood = Math.min(100, pet.mood + 3);
+        } else if (type === 'sweetness') {
+            if ((this.data.girlSweetness || 0) < 5) {
+                return this.showToast('甜度不足哦，快去让他夸夸你！🍬');
+            }
+            this.data.girlSweetness = (this.data.girlSweetness || 0) - 5;
+            pet.health = Math.min(100, pet.health + 3);
+            pet.mood = Math.min(100, pet.mood + 5);
+        }
+        
+        // 更新喂养记录
+        pet.growth++;
+        pet.feedCountToday++;
+        pet.lastFeedTime = new Date().toISOString();
+        pet.lastFeedUser = this.currentUser;
+        
+        // 检查双人喂养奖励
+        if (lastFeedDate === today && pet.lastFeedUser !== this.currentUser) {
+            pet.intimacy += 10;
+            this.showToast('❤️ 双人喂养！亲密度+10！');
+        } else {
+            pet.intimacy += 5;
+        }
+        
+        // 连续喂养奖励
+        if (lastFeedDate !== today) {
+            if (lastFeedDate && this.isConsecutiveDay(lastFeedDate, today)) {
+                pet.consecutiveDays++;
+            } else {
+                pet.consecutiveDays = 1;
+            }
+            // 首次喂养奖励
+            this.executeChange(2, '每日首次喂养奖励');
+        }
+        
+        // 检查成长奖励
+        const oldStage = pet.stage;
+        this.updatePetStage();
+        if (pet.stage !== oldStage) {
+            this.executeChange(20, `宠物成长到${this.getStageName(pet.stage)}阶段！`);
+            this.showToast(`🎉 恭喜！${this.getStageName(pet.stage)}！`);
+        }
+        
+        // 亲密度奖励（每100点）
+        if (pet.intimacy > 0 && pet.intimacy % 100 === 0) {
+            this.executeChange(50, '亲密度达到新里程碑！');
+            this.showToast('💕 亲密度奖励！+50积分！');
+        }
+        
+        // 连续7天奖励
+        if (pet.consecutiveDays > 0 && pet.consecutiveDays % 7 === 0) {
+            this.executeChange(30, '连续喂养7天奖励！');
+            this.showToast('🔥 连续喂养7天！+30积分！');
+        }
+        
+        this.saveData();
+        this.renderPet();
+        
+        // 喂养时的特殊动画
+        this.playFeedAnimation();
+        createPetal(); createPetal(); createPetal();
+    },
+
+    // 喂养动画
+    playFeedAnimation() {
+        const container = document.getElementById('pet-container');
+        if (!container) return;
+        
+        // 跳跃动画
+        container.classList.add('jump');
+        
+        // 显示多个爱心
+        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                this.showPetHeart();
+            }, i * 200);
+        }
+        
+        setTimeout(() => {
+            container.classList.remove('jump');
+        }, 600);
+    },
+
+    // 更新宠物阶段
+    updatePetStage() {
+        const pet = this.data.pet;
+        if (!pet) return;
+        
+        if (pet.growth <= 10) {
+            pet.stage = 'egg';
+        } else if (pet.growth <= 30) {
+            pet.stage = 'baby';
+        } else if (pet.growth <= 60) {
+            pet.stage = 'growing';
+        } else if (pet.growth <= 100) {
+            pet.stage = 'mature';
+        } else {
+            pet.stage = 'perfect';
+        }
+    },
+
+    // 获取阶段名称
+    getStageName(stage) {
+        const names = {
+            'egg': '蛋阶段',
+            'baby': '幼崽期',
+            'growing': '成长期',
+            'mature': '成熟期',
+            'perfect': '完美期'
+        };
+        return names[stage] || stage;
+    },
+
+    // 获取阶段图标
+    getStageIcon(stage) {
+        const icons = {
+            'egg': '🥚',
+            'baby': '🐣',
+            'growing': '🐱',
+            'mature': '✨',
+            'perfect': '👑'
+        };
+        return icons[stage] || '🥚';
+    },
+
+    // 检查是否连续
+    isConsecutiveDay(date1, date2) {
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        const diff = (d2 - d1) / (1000 * 60 * 60 * 24);
+        return diff === 1;
+    },
+
+    // 渲染宠物
+    renderPet() {
+        const pet = this.data.pet;
+        if (!pet) return;
+        
+        const container = document.getElementById('pet-container');
+        if (!container) return;
+        
+        // 更新名字
+        const nameEl = document.getElementById('pet-name');
+        if (nameEl) nameEl.innerText = pet.name ;
+        
+        // 更新阶段徽章
+        const stageEl = document.getElementById('pet-stage-badge');
+        if (stageEl) stageEl.innerText = this.getStageIcon(pet.stage || 'egg');
+        
+        // 根据心情和健康状态更新动画类
+        container.classList.remove('mood-happy', 'mood-sad', 'health-low');
+        
+        if (pet.health < 30) {
+            container.classList.add('health-low');
+        }
+        
+        if (pet.mood > 70) {
+            container.classList.add('mood-happy');
+        } else if (pet.mood < 30) {
+            container.classList.add('mood-sad');
+        }
+        
+        // 更新状态文字
+        const statusEl = document.getElementById('pet-status');
+        if (statusEl) {
+            let statusText = '';
+            if (pet.health < 30) {
+                statusText = '😰 宠物好像不太舒服...';
+            } else if (pet.mood < 30) {
+                statusText = '😢 宠物心情不好...';
+            } else if (pet.health > 80 && pet.mood > 80) {
+                statusText = '😊 宠物非常健康快乐！';
+            } else {
+                statusText = '😌 宠物状态良好~';
+            }
+            statusEl.innerText = statusText;
+        }
+        
+        // 更新属性条
+        const healthBar = document.getElementById('pet-health-bar');
+        const moodBar = document.getElementById('pet-mood-bar');
+        const intimacyBar = document.getElementById('pet-intimacy-bar');
+        const healthVal = document.getElementById('pet-health-val');
+        const moodVal = document.getElementById('pet-mood-val');
+        const intimacyVal = document.getElementById('pet-intimacy-val');
+        
+        if (healthBar) healthBar.style.width = `${pet.health || 0}%`;
+        if (moodBar) moodBar.style.width = `${pet.mood || 0}%`;
+        if (intimacyBar) intimacyBar.style.width = `${Math.min(100, (pet.intimacy || 0) % 100)}%`;
+        
+        if (healthVal) healthVal.innerText = pet.health || 0;
+        if (moodVal) moodVal.innerText = pet.mood || 0;
+        if (intimacyVal) intimacyVal.innerText = pet.intimacy || 0;
+    },
+
+    // 修改宠物名字
+    editPetName() {
+        const pet = this.data.pet;
+        if (!pet) {
+            this.initPet();
+            pet = this.data.pet;
+        }
+        
+        const currentName = pet.name || '小怪';
+        const newName = prompt('请输入宠物的新名字：', currentName);
+        
+        if (newName && newName.trim() && newName.trim() !== currentName) {
+            pet.name = newName.trim();
+            this.saveData();
+            this.renderPet();
+            this.showToast(`宠物名字已改为：${pet.name} 💕`);
+        }
     }
 };
 

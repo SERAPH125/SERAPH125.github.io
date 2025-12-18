@@ -86,15 +86,115 @@
         <a href="settings.html" class="nav-btn">⚙️ 设置</a>
     </div>
 
-    <!-- 主页内容 -->
-    <div class="score-card">
-        <div class="home-streak-badge" id="home-streak" onclick="app.showSignInModal(true)">
-            <span>🔥</span> <span id="streak-num">0</span> 天
+    <!-- 积分和甜度并列布局 -->
+    <div class="score-sweetness-container">
+        <!-- 积分卡片 -->
+        <div class="score-card">
+            <div class="home-streak-badge" id="home-streak" onclick="app.showSignInModal(true)">
+                <span>🔥</span> <span id="streak-num">0</span> 天
+            </div>
+            <div class="score-content">
+                <div class="score-title">Current Score</div>
+                <div class="score-value" id="score-display">0</div>
+                <div class="rank-badge" id="rank-display">加载中...</div>
+            </div>
         </div>
-        <div class="score-content">
-            <div class="score-title">Current Score</div>
-            <div class="score-value" id="score-display">0</div>
-            <div class="rank-badge" id="rank-display">加载中...</div>
+
+        <!-- 甜度存钱罐 -->
+        <div class="sweetness-card">
+            <h3>🍬 小周的甜度存钱罐</h3>
+            <div class="sweetness-display"><span id="sweetness-val">0</span> 🍬</div>
+            <div class="sweetness-progress-bg">
+                <div class="sweetness-progress-fill" id="sweetness-bar" style="width: 0%"></div>
+            </div>
+            <button class="btn-record-sweet" onclick="app.showSweetModal()">💖 记录心动瞬间</button>
+        </div>
+    </div>
+
+    <!-- 宠物卡片 -->
+    <div class="pet-card" id="pet-card">
+        <div class="pet-header">
+            <h3>🐾 我们的<span id="pet-name" onclick="app.editPetName()">小怪</span></h3>
+            <div class="pet-stage-badge" id="pet-stage-badge">🥚</div>
+        </div>
+        
+        <!-- 宠物显示区域 -->
+        <div class="pet-display-area" id="pet-display-area">
+            <!-- 宠物主体容器 -->
+            <div class="pet-container" id="pet-container" onclick="app.petInteraction()">
+                <!-- 宠物身体 -->
+                <div class="pet-body" id="pet-body">
+                    <div class="pet-face" id="pet-face">
+                        <!-- 眼睛 -->
+                        <div class="pet-eye left-eye" id="pet-eye-left">
+                            <div class="eye-pupil"></div>
+                        </div>
+                        <div class="pet-eye right-eye" id="pet-eye-right">
+                            <div class="eye-pupil"></div>
+                        </div>
+                        <!-- 嘴巴 -->
+                        <div class="pet-mouth" id="pet-mouth"></div>
+                        <!-- 脸颊红晕 -->
+                        <div class="pet-cheek left-cheek"></div>
+                        <div class="pet-cheek right-cheek"></div>
+                    </div>
+                    <!-- 宠物身体装饰 -->
+                    <div class="pet-decoration"></div>
+                </div>
+                
+                <!-- 尾巴 -->
+                <div class="pet-tail" id="pet-tail">
+                    <div class="tail-tip"></div>
+                </div>
+                
+                <!-- 耳朵 -->
+                <div class="pet-ear left-ear" id="pet-ear-left"></div>
+                <div class="pet-ear right-ear" id="pet-ear-right"></div>
+                
+                <!-- 爱心特效 -->
+                <div class="pet-heart" id="pet-heart">💕</div>
+            </div>
+            
+            <!-- 宠物状态文字 -->
+            <div class="pet-status" id="pet-status">😊 宠物非常健康快乐！</div>
+            
+            <!-- 点击提示 -->
+            <div class="pet-hint">💡 点击宠物互动</div>
+        </div>
+        
+        <!-- 属性条 -->
+        <div class="pet-stats">
+            <div class="stat-item">
+                <span>❤️ 健康</span>
+                <div class="stat-bar">
+                    <div class="stat-fill health" id="pet-health-bar" style="width: 80%"></div>
+                </div>
+                <span id="pet-health-val">80</span>
+            </div>
+            <div class="stat-item">
+                <span>😊 心情</span>
+                <div class="stat-bar">
+                    <div class="stat-fill mood" id="pet-mood-bar" style="width: 75%"></div>
+                </div>
+                <span id="pet-mood-val">75</span>
+            </div>
+            <div class="stat-item">
+                <span>💕 亲密度</span>
+                <div class="stat-bar">
+                    <div class="stat-fill intimacy" id="pet-intimacy-bar" style="width: 0%"></div>
+                </div>
+                <span id="pet-intimacy-val">0</span>
+            </div>
+        </div>
+        
+        <!-- 喂养按钮 -->
+        <div class="pet-actions">
+            <button class="btn-feed-score" onclick="app.feedPet('score')">
+                💖 用积分喂养 (消耗10分)
+            </button>
+            <button class="btn-feed-sweet" onclick="app.feedPet('sweetness')">
+                🍬 用甜度喂养 (消耗5甜度)
+            </button>
         </div>
     </div>
 
@@ -105,16 +205,6 @@
             <div class="signin-avatar" id="avatar-girl">👧</div>
         </div>
         <div id="signin-text-status">等待签到...</div>
-    </div>
-
-    <!-- 甜度存钱罐 -->
-    <div class="sweetness-card">
-        <h3>🍬 小周的甜度存钱罐</h3>
-        <div class="sweetness-display"><span id="sweetness-val">0</span> 🍬</div>
-        <div class="sweetness-progress-bg">
-            <div class="sweetness-progress-fill" id="sweetness-bar" style="width: 0%"></div>
-        </div>
-        <button class="btn-record-sweet" onclick="app.showSweetModal()">💖 记录心动瞬间</button>
     </div>
 
     <!-- 生理期卡片 -->
@@ -217,6 +307,7 @@ Object.assign(app, {
         // 延迟渲染，确保数据已加载
         setTimeout(() => {
             this.render();
+            this.renderPet(); // 渲染宠物
             this.checkDailySignIn();
         }, 100);
     },
@@ -259,6 +350,7 @@ Object.assign(app, {
         this.renderPeriod();
         this.updateStreakUI();
         this.renderSignInStatus();
+        this.renderPet(); // 渲染宠物
     },
 
     // 渲染双人签到状态
