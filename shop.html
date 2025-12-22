@@ -165,9 +165,10 @@ Object.assign(app, {
                 return this.showToast('甜度不足哦，快去让他夸夸你！💕');
             }
             if (confirm(`确认兑换【${p.name}】吗？\n(消耗 ${p.price} 甜度)`)) {
-                this.data.girlSweetness -= p.price;
-                this.addInventoryItem(p, 'used'); // 权益类商品直接核销或放入背包？建议放入背包
-                this.saveData();
+                // 使用 addGirlSweetness 记录负数，自动计入历史
+                app.addGirlSweetness(-p.price, `兑换权益：${p.name}`);
+                this.addInventoryItem(p, 'used'); 
+                // this.saveData(); // addGirlSweetness 已经包含了 saveData
                 this.showToast('兑换成功！快去找他兑现吧！👑');
             }
         } else {
@@ -178,7 +179,7 @@ Object.assign(app, {
             if (confirm(`确认兑换 ${p.name} 吗？\n(消耗 ${p.price} 积分，物品将放入背包)`)) {
                 this.executeChange(-p.price, `购买商品：${p.name}`);
                 this.addInventoryItem(p);
-                this.saveData();
+                // this.saveData(); // executeChange 已经包含了 saveData
                 this.showToast('兑换成功！已放入背包 🎒');
             }
         }

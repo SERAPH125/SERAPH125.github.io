@@ -17,7 +17,9 @@ const app = {
         signInLog: [], // { date: '2023-10-01', user: 'boy' }
         // 甜度系统
         girlSweetness: 0,
-        girlHistory: []
+        girlHistory: [],
+        // 纪念日 (V3.4)
+        nextAnniversary: null // { name: '生日', date: '2023-12-25' }
     },
     currentUser: 'boy', // 默认 'boy', 可切换为 'girl'
     deductStep: 0,
@@ -25,6 +27,7 @@ const app = {
     cloudObj: null,
     tempPhotoData: null,
     pendingUseItem: null,
+    sizeWarningShown: false, // 防止重复弹窗
 
     ranks: [
         { limit: 0, title: "周金霞的新手男友" },
@@ -164,6 +167,8 @@ const app = {
             newData.save().then((obj) => {
                 this.cloudObj = obj;
                 this.updateSyncStatus(true);
+                // 新增：初始化相册
+                this.syncAlbum();
             }).catch(err => {
                 console.error('Initial save failed', err);
                 this.updateSyncStatus(false);
@@ -199,19 +204,28 @@ const app = {
                         useLocalForAuth = true;
                     }
 
-                    // 合并历史记录 (以 ID 为准去重)
-                    const localHistoryIds = new Set(this.data.history.map(h => h.id));
-                    const mergedHistory = [...this.data.history];
-                    if (remoteData.history) {
-                        remoteData.history.forEach(h => {
-                            if (!localHistoryIds.has(h.id)) {
-                                mergedHistory.push(h);
+                    // 通用数组合并函数 (基于ID去重)
+                    const mergeArray = (localArr, remoteArr) => {
+                        if (!localArr) return remoteArr || [];
+                        if (!remoteArr) return localArr || [];
+                        const localMap = new Map(localArr.map(item => [item.id, item]));
+                        const merged = [...localArr];
+                        remoteArr.forEach(remoteItem => {
+                            if (!localMap.has(remoteItem.id)) {
+                                merged.push(remoteItem);
                             }
                         });
-                    }
-                    // 按时间倒序
-                    mergedHistory.sort((a, b) => b.id - a.id);
-                    remoteData.history = mergedHistory;
+                        // 按ID倒序排列 (通常ID是时间戳)
+                        return merged.sort((a, b) => b.id - a.id);
+                    };
+
+                    // 合并各个核心数据列表
+                    remoteData.history = mergeArray(this.data.history, remoteData.history);
+                    remoteData.girlHistory = mergeArray(this.data.girlHistory, remoteData.girlHistory); // 甜度记录
+                    remoteData.wishes = mergeArray(this.data.wishes, remoteData.wishes);
+                    // 相册不再合并，而是独立同步
+                    // remoteData.album = mergeArray(this.data.album, remoteData.album);
+                    remoteData.inventory = mergeArray(this.data.inventory, remoteData.inventory);
 
                     // 如果本地有新签到，优先使用本地分数（因为它包含了签到奖励）
                     if (useLocalForAuth) {
@@ -228,7 +242,6 @@ const app = {
                     // --- Merge Logic End ---
                     
                     // 数据兼容性处理
-                    if (!this.data.album) this.data.album = [];
                     if (!this.data.wishes) this.data.wishes = [];
                     if (!this.data.periodDate) this.data.periodDate = null;
                     if (!this.data.inventory) this.data.inventory = [];
@@ -248,6 +261,9 @@ const app = {
                     if (typeof this.render === 'function') this.render();
                     
                     this.updateSyncStatus(true);
+                    
+                    // 启动相册同步
+                    this.syncAlbum();
                 } else {
                     this.createInitialData(LoveData);
                 }
@@ -386,14 +402,107 @@ const app = {
         if (typeof this.render === 'function') this.render();
 
         if (this.cloudObj) {
-            this.cloudObj.set('content', this.data);
+            // 复制一份数据，排除 album
+            const dataToSync = JSON.parse(JSON.stringify(this.data));
+            delete dataToSync.album; // 相册走独立表，不存这里
+
+            this.cloudObj.set('content', dataToSync);
             this.cloudObj.save().then(() => {
-                console.log('云端同步成功');
+                console.log('云端同步成功 (主数据)');
             }).catch(err => {
                 console.error('云端同步失败', err);
             });
         }
     },
+
+    // --- 相册独立存储逻辑 (V3.4 方案三) ---
+    
+    // 同步相册（拉取）
+    syncAlbum() {
+        if (!window.AV) return;
+        const query = new AV.Query('LoveAlbum');
+        query.descending('createdAt');
+        query.limit(100); // 限制每次加载 100 张
+        query.find().then((photos) => {
+            const cloudAlbum = photos.map(p => {
+                const attr = p.attributes;
+                return {
+                    id: p.id, // 使用 LeanCloud 的 ObjectId
+                    url: attr.url,
+                    caption: attr.caption,
+                    location: attr.location,
+                    date: attr.date,
+                    timestamp: p.createdAt.getTime()
+                };
+            });
+
+            // 迁移逻辑：如果本地有数据但云端为空（或少于本地），且未迁移过
+            if ((!this.data.album || this.data.album.length > 0) && cloudAlbum.length === 0 && !this.data.albumMigrated) {
+                console.log('检测到旧版相册数据，开始迁移...');
+                this.migrateAlbum();
+            } else {
+                this.data.album = cloudAlbum;
+                this.saveToLocal();
+                if (typeof this.render === 'function') this.render();
+                console.log('相册同步完成，共加载', cloudAlbum.length, '张');
+            }
+        }).catch(err => {
+            console.error('相册同步失败', err);
+        });
+    },
+
+    // 迁移旧照片
+    migrateAlbum() {
+        if (!this.data.album || this.data.album.length === 0) return;
+        
+        const tasks = this.data.album.map(photo => {
+            return this.uploadPhoto({
+                url: photo.url,
+                caption: photo.caption,
+                location: photo.location,
+                date: photo.date
+            }, true); // true 表示是迁移，不重复刷新
+        });
+
+        Promise.all(tasks).then(() => {
+            this.data.albumMigrated = true;
+            this.saveData(); // 保存迁移标记
+            this.syncAlbum(); // 重新拉取
+            alert('旧版相册已成功升级为“无限容量”相册！🎉');
+        });
+    },
+
+    // 上传照片
+    uploadPhoto(photoData, isMigration = false) {
+        if (!window.AV) return Promise.reject('Cloud not ready');
+        
+        const LoveAlbum = AV.Object.extend('LoveAlbum');
+        const photo = new LoveAlbum();
+        
+        photo.set('url', photoData.url);
+        photo.set('caption', photoData.caption);
+        photo.set('location', photoData.location);
+        photo.set('date', photoData.date || new Date().toLocaleDateString());
+        
+        return photo.save().then((saved) => {
+            if (!isMigration) {
+                this.syncAlbum(); // 刷新显示
+            }
+            return saved;
+        });
+    },
+
+    // 删除照片
+    removePhoto(id) {
+        if (!window.AV) return Promise.reject('Cloud not ready');
+        // id 是 LeanCloud 的 objectId
+        const photo = AV.Object.createWithoutData('LoveAlbum', id);
+        return photo.destroy().then(() => {
+            this.syncAlbum(); // 刷新
+        });
+    },
+
+    // --- End 相册逻辑 ---
 
     // 获取等级
     getRank() {
@@ -501,7 +610,7 @@ const app = {
         if(this.data.girlHistory.length > 50) this.data.girlHistory.pop();
         
         // 自动兑换检查已移除，支持无限积累
-        this.showToast(`记录成功！甜度 +${amount} 💕`);
+        this.showToast(`记录成功！甜度 ${amount >= 0 ? '+' : ''}${amount} 💕`);
         this.saveData();
     }
 };

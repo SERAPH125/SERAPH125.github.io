@@ -94,7 +94,12 @@
     </div>
 
     <h3>📜 历史记录</h3>
-    <div id="log-list"></div>
+    <div class="history-switches" style="display:flex; gap:10px; margin-bottom:15px;">
+        <button id="tab-sweet" class="btn" style="flex:1; background:var(--accent-pink); color:white;" onclick="app.switchHistoryTab('sweet')">甜蜜瞬间</button>
+        <button id="tab-daily" class="btn" style="flex:1; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink);" onclick="app.switchHistoryTab('daily')">日常与消费</button>
+    </div>
+    <div id="sweet-log-list"></div>
+    <div id="daily-log-list" style="display:none;"></div>
 </div>
 
 <script src="common.js"></script>
@@ -124,9 +129,93 @@ Object.assign(app, {
         }
 
         // 渲染历史记录
-        const logList = document.getElementById('log-list');
-        if (logList) {
-            logList.innerHTML = this.data.history.map(item => `
+        this.renderHistory();
+
+        // 渲染生理期
+        this.renderPeriod();
+    },
+
+    currentHistoryTab: 'sweet', // default to sweet as it's more positive
+
+    switchHistoryTab(tab) {
+        this.currentHistoryTab = tab;
+        const btnSweet = document.getElementById('tab-sweet');
+        const btnDaily = document.getElementById('tab-daily');
+        const listSweet = document.getElementById('sweet-log-list');
+        const listDaily = document.getElementById('daily-log-list');
+
+        if(tab === 'sweet') {
+            btnSweet.style.background = 'var(--accent-pink)';
+            btnSweet.style.color = 'white';
+            btnDaily.style.background = 'transparent';
+            btnDaily.style.color = 'var(--accent-pink)';
+            listSweet.style.display = 'block';
+            listDaily.style.display = 'none';
+        } else {
+            btnDaily.style.background = 'var(--accent-pink)';
+            btnDaily.style.color = 'white';
+            btnSweet.style.background = 'transparent';
+            btnSweet.style.color = 'var(--accent-pink)';
+            listDaily.style.display = 'block';
+            listSweet.style.display = 'none';
+        }
+    },
+
+    renderHistory() {
+        const sweetList = document.getElementById('sweet-log-list');
+        const dailyList = document.getElementById('daily-log-list');
+        if (!sweetList || !dailyList) return;
+
+        // --- 准备数据 ---
+        // 1. 甜蜜瞬间：甜度记录(girlHistory) + 手动加分/非签到正分(history > 0 & !签到)
+        const sweetItems = (this.data.girlHistory || []).map(item => ({...item, _type: 'sugar'}));
+        const scoreLoveItems = (this.data.history || []).filter(item => 
+            item.amount > 0 && !item.reason.includes('签到')
+        ).map(item => ({...item, _type: 'score'}));
+
+        const mergedSweet = [...sweetItems, ...scoreLoveItems].sort((a, b) => b.id - a.id);
+
+        // 2. 日常流水：签到(history includes 签到) + 消费/惩罚(history <= 0)
+        // 注意：history 中包含所有积分记录，需要排除掉上面已经归为“甜蜜瞬间”的
+        const dailyItems = (this.data.history || []).filter(item => 
+            item.amount <= 0 || item.reason.includes('签到')
+        ).sort((a, b) => b.id - a.id);
+
+        // --- 渲染甜蜜瞬间 ---
+        if (mergedSweet.length === 0) {
+            sweetList.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">暂无甜蜜记录，快去创造回忆吧！💕</div>';
+        } else {
+            sweetList.innerHTML = mergedSweet.map(item => {
+                const isSugar = item._type === 'sugar';
+                // 修复负数显示问题
+                const isPositive = item.amount > 0;
+                const sign = isPositive ? '+' : '';
+                const displayColor = isPositive ? (isSugar ? 'var(--accent-pink)' : '#ff6b6b') : 'var(--text-light)';
+                
+                const amountDisplay = isSugar ? `${sign}${item.amount} 🍬` : `${sign}${item.amount}`;
+                const bgStyle = isSugar ? 'background:rgba(255,192,203,0.1);' : '';
+                
+                return `
+                <div class="log-item" style="${bgStyle}">
+                    <div style="flex:1;">
+                        <div style="font-weight:500; color:var(--text-main)">${item.reason ? item.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;') : '心动瞬间'}</div>
+                        <div style="font-size:0.8rem; color:var(--text-light)">${item.time} ${isSugar ? ' <span style="font-size:0.7rem; border:1px solid pink; border-radius:4px; padding:0 2px; color:pink;">甜度</span>' : ''}</div>
+                    </div>
+                    <div style="display:flex; align-items:center;">
+                        <div style="font-weight:bold; font-size:1.1rem; margin-right:10px; color:${displayColor};">
+                            ${amountDisplay}
+                        </div>
+                        <button class="btn-del-log" onclick="app.deleteLog(${item.id}, '${item._type}')">🗑️</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // --- 渲染日常流水 ---
+        if (dailyItems.length === 0) {
+            dailyList.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">暂无日常记录 🍃</div>';
+        } else {
+            dailyList.innerHTML = dailyItems.map(item => `
                 <div class="log-item">
                     <div style="flex:1;">
                         <div style="font-weight:500; color:var(--text-main)">${item.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
@@ -136,22 +225,33 @@ Object.assign(app, {
                         <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" class="${item.amount > 0 ? 'plus' : 'minus'}">
                             ${item.amount > 0 ? '+' : ''}${item.amount}
                         </div>
-                        <button class="btn-del-log" onclick="app.deleteLog(${item.id})">🗑️</button>
+                        <button class="btn-del-log" onclick="app.deleteLog(${item.id}, 'score')">🗑️</button>
                     </div>
                 </div>
             `).join('');
         }
-
-        // 渲染生理期
-        this.renderPeriod();
     },
 
-    deleteLog(id) {
-        if(confirm('确定要删除这条记录吗？(分数不会回滚哦)')) {
-            this.data.history = this.data.history.filter(item => item.id !== id);
-            this.saveData();
-            this.showToast('记录已删除 🗑️');
+    deleteLog(id, type) {
+        if (type === 'sugar') {
+            if(confirm('确定要删除这条甜度记录吗？(数值不会回滚)')) {
+                this.data.girlHistory = (this.data.girlHistory || []).filter(item => item.id !== id);
+                this.saveData();
+                this.showToast('记录已删除 🗑️');
+            }
+        } else {
+            // type === 'score'
+            if(confirm('确定要删除这条积分记录吗？(分数不会回滚)')) {
+                this.data.history = this.data.history.filter(item => item.id !== id);
+                this.saveData();
+                this.showToast('记录已删除 🗑️');
+            }
         }
+    },
+
+    deleteSweetLog(id) {
+        // Deprecated, merged into deleteLog
+        this.deleteLog(id, 'sugar');
     },
 
     savePeriod() {

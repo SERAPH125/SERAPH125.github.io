@@ -85,7 +85,7 @@ Object.assign(app, {
         if (this.data.album && this.data.album.length > 0) {
             albumHtml += this.data.album.map(photo => `
                 <div class="polaroid" onclick="app.showLightbox('${photo.url.replace(/'/g, "\\'")}')">
-                    <div class="btn-del-photo" onclick="event.stopPropagation(); app.deletePhoto(${photo.id})">×</div>
+                    <div class="btn-del-photo" onclick="event.stopPropagation(); app.deletePhoto('${photo.id}')">×</div>
                     <div class="photo-frame">
                         <img src="${photo.url.replace(/"/g, '&quot;')}" class="photo-img" loading="lazy">
                     </div>
@@ -170,30 +170,21 @@ Object.assign(app, {
             const caption = document.getElementById('photo-caption').value.trim();
             const location = document.getElementById('photo-location').value.trim();
             
-            if (this.tempPhotoData.length > 500000) {
-                if(!confirm('这张图片可能有点大，会影响同步速度，确定要添加吗？')) return;
-            }
-
-            if (!this.data.album || !Array.isArray(this.data.album)) {
-                this.data.album = [];
-            }
-
-            this.data.album.unshift({
-                id: Date.now(),
+            // V3.4 方案三：上传到独立表
+            this.showToast('正在上传照片，请稍候... ☁️');
+            
+            app.uploadPhoto({
                 url: this.tempPhotoData,
                 caption: caption,
-                location: location,
-                date: new Date().toLocaleDateString()
+                location: location
+            }).then(() => {
+                document.getElementById('add-photo-modal').style.display = 'none';
+                this.showToast('照片上传成功！美好+1 ❤️');
+            }).catch(err => {
+                console.error(err);
+                alert('上传失败，请检查网络或重试。');
             });
 
-            if (this.data.album.length > 40) {
-                this.showToast('相册好像满了 (40张)，旧照片被挤掉了... 😢');
-                this.data.album.pop();
-            }
-
-            this.saveData();
-            document.getElementById('add-photo-modal').style.display = 'none';
-            this.showToast('照片添加成功！美好+1 ❤️');
         } catch (e) {
             console.error(e);
             alert('出错了：' + e.message);
@@ -202,9 +193,11 @@ Object.assign(app, {
 
     deletePhoto(id) {
         if (confirm('确定要删除这张美好回忆吗？🥺')) {
-            this.data.album = this.data.album.filter(p => p.id !== id);
-            this.saveData();
-            this.showToast('照片已删除');
+            app.removePhoto(id).then(() => {
+                this.showToast('照片已删除 🗑️');
+            }).catch(err => {
+                alert('删除失败，可能网络开小差了。');
+            });
         }
     },
 
@@ -220,4 +213,3 @@ app.init();
 </script>
 </body>
 </html>
-

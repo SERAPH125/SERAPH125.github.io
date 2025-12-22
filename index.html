@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="周金霞男友">
-    <title>小周的男友养成计划 V3.3 云同步版 ❤️</title>
+    <title>小周的男友养成计划 V3.4 云同步版 ❤️</title>
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="common.css">
     <style>
@@ -71,11 +71,19 @@
 
 <div class="container">
     <header>
-        <h1>小周的男友养成计划 <span class="version-tag">V3.3</span></h1>
+        <h1>小周的男友养成计划 <span class="version-tag">V3.4</span></h1>
         <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
     </header>
     
     <div id="daily-quote" class="daily-quote">加载中...</div>
+
+    <!-- 纪念日卡片 (V3.4) -->
+    <div class="anniversary-card" onclick="app.editAnniversary()" style="background:rgba(255,255,255,0.6); padding:15px; border-radius:15px; margin-bottom:20px; text-align:center; border:1px solid rgba(255,255,255,0.5); cursor:pointer;">
+        <div style="font-size:0.9rem; color:var(--text-light); margin-bottom:5px;">📅 下一个重要日子</div>
+        <div id="anniversary-content">
+            <span style="color:var(--text-light); font-size:0.9rem;">(点击设置纪念日)</span>
+        </div>
+    </div>
 
     <!-- 导航栏 -->
     <div class="nav-tabs">
@@ -173,20 +181,37 @@
     </div>
 </div>
 
-<!-- 随机任务弹窗 -->
-<div class="modal-overlay" id="task-modal" style="display:none;">
-    <div class="modal">
-        <span style="font-size:3rem; display:block; margin-bottom:15px;">🎁</span>
-        <h3 style="margin:0 0 10px 0;">随机甜蜜任务</h3>
-        <p id="task-text" style="color:#666; margin-bottom:20px;">任务加载中...</p>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-            <button onclick="app.acceptTask()" style="background:var(--accent-blue); color:white; border:none; padding:12px; border-radius:12px;">💪 接下任务 (+50分)</button>
-            <button onclick="app.closeTask()" style="background:transparent; color:#999; border:none; padding:10px;">下次一定</button>
+    <!-- 随机任务弹窗 -->
+    <div class="modal-overlay" id="task-modal" style="display:none;">
+        <div class="modal">
+            <span style="font-size:3rem; display:block; margin-bottom:15px;">🎁</span>
+            <h3 style="margin:0 0 10px 0;">随机甜蜜任务</h3>
+            <p id="task-text" style="color:#666; margin-bottom:20px;">任务加载中...</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="app.acceptTask()" style="background:var(--accent-blue); color:white; border:none; padding:12px; border-radius:12px;">💪 接下任务 (+50分)</button>
+                <button onclick="app.closeTask()" style="background:transparent; color:#999; border:none; padding:10px;">下次一定</button>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- 甜度记录弹窗 -->
+    <!-- 纪念日设置弹窗 (V3.4) -->
+    <div class="modal-overlay" id="anniversary-modal" style="display:none;">
+        <div class="modal">
+            <span style="font-size:3rem; display:block; margin-bottom:15px;">📅</span>
+            <h3 style="margin:0 0 10px 0;">设置下一个纪念日</h3>
+            <p style="color:#666; font-size:0.9rem; margin-bottom:15px;">例如：她的生日、恋爱一周年等</p>
+            
+            <input type="text" id="anni-name" placeholder="日子名称 (如: 宝宝生日)" style="margin-bottom:10px;">
+            <input type="date" id="anni-date" style="margin-bottom:15px;">
+            
+            <div style="display:flex; gap:10px;">
+                <button onclick="document.getElementById('anniversary-modal').style.display='none'" style="flex:1; background:#f0f0f0; border:none; padding:10px; border-radius:12px;">取消</button>
+                <button onclick="app.saveAnniversary()" style="flex:1; background:var(--accent-pink); color:white; border:none; padding:10px; border-radius:12px;">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 甜度记录弹窗 -->
 <div class="modal-overlay" id="sweet-modal" style="display:none;">
     <div class="modal">
         <span style="font-size:3rem; display:block; margin-bottom:15px;">🥰</span>
@@ -257,8 +282,58 @@ Object.assign(app, {
         }
 
         this.renderPeriod();
+        this.renderAnniversary();
         this.updateStreakUI();
         this.renderSignInStatus();
+    },
+
+    editAnniversary() {
+        document.getElementById('anniversary-modal').style.display = 'flex';
+        if(this.data.nextAnniversary) {
+            document.getElementById('anni-name').value = this.data.nextAnniversary.name || '';
+            document.getElementById('anni-date').value = this.data.nextAnniversary.date || '';
+        }
+    },
+
+    saveAnniversary() {
+        const name = document.getElementById('anni-name').value.trim();
+        const date = document.getElementById('anni-date').value;
+        if(!name || !date) return alert('请填写完整哦！');
+        
+        this.data.nextAnniversary = { name, date };
+        this.saveData();
+        document.getElementById('anniversary-modal').style.display = 'none';
+        this.renderAnniversary();
+        this.showToast('纪念日已设置！期待那一天的到来！🎉');
+    },
+
+    renderAnniversary() {
+        const el = document.getElementById('anniversary-content');
+        if(!el) return;
+        
+        if(!this.data.nextAnniversary || !this.data.nextAnniversary.date) {
+            el.innerHTML = '<span style="color:var(--text-light); font-size:0.9rem;">(点击设置下一个重要日子)</span>';
+            return;
+        }
+
+        const target = new Date(this.data.nextAnniversary.date);
+        const today = new Date();
+        // 清除时分秒影响
+        target.setHours(0,0,0,0);
+        today.setHours(0,0,0,0);
+        
+        const diff = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+        const name = this.data.nextAnniversary.name;
+
+        let html = '';
+        if (diff > 0) {
+            html = `距离 <span style="font-weight:bold; color:var(--accent-pink);">${name}</span> 还有 <span style="font-size:1.5rem; font-weight:bold; color:var(--accent-blue);">${diff}</span> 天`;
+        } else if (diff === 0) {
+            html = `🎉 今天是 <span style="font-weight:bold; color:var(--accent-pink);">${name}</span> ！<br>快去庆祝吧！`;
+        } else {
+             html = `<span style="font-weight:bold; color:var(--text-main);">${name}</span> 已经过去 ${Math.abs(diff)} 天啦<br><span style="font-size:0.8rem; color:#999;">(点击更新下一个日子)</span>`;
+        }
+        el.innerHTML = html;
     },
 
     // 渲染双人签到状态
