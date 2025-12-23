@@ -104,6 +104,71 @@
             font-size: 1.2rem;
             cursor: pointer;
         }
+
+        /* 2048游戏样式 */
+        #game2048-board {
+            width: 90%;
+            max-width: 350px;
+            margin: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game2048-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            width: 100%;
+            aspect-ratio: 1/1;
+            background: rgba(187, 173, 160, 0.5);
+            padding: 8px;
+            border-radius: 10px;
+        }
+        
+        .game2048-cell {
+            background: rgba(238, 228, 218, 0.35);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            user-select: none;
+            transition: all 0.15s ease;
+        }
+        
+        .game2048-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .game2048-btn {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .game2048-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .game2048-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .game2048-hint {
+            color: white;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -130,10 +195,10 @@
             <div class="game-title">甜蜜消消乐</div>
             <div class="game-desc">消除糖果赚积分<br>目标：1000分</div>
         </div>
-        <div class="game-card" style="opacity:0.6; cursor:not-allowed;">
+        <div class="game-card" onclick="startGame('2048')">
             <span class="game-icon">🧩</span>
-            <div class="game-title">2048 (开发中)</div>
-            <div class="game-desc">合成大爱心</div>
+            <div class="game-title">合成大爱心</div>
+            <div class="game-desc">滑动合成数字<br>目标：2048分</div>
         </div>
     </div>
 </div>
@@ -141,18 +206,40 @@
 <!-- 游戏运行容器 -->
 <div id="game-container">
     <button class="btn-close-game" onclick="closeGame()">×</button>
-    <div class="game-header">
-        <div>得分: <span id="game-score">0</span></div>
-        <div>步数: <span id="game-moves">20</span></div>
+    
+    <!-- 消消乐游戏界面 -->
+    <div id="match3-ui" style="display:none;">
+        <div class="game-header">
+            <div>得分: <span id="game-score">0</span></div>
+            <div>步数: <span id="game-moves">20</span></div>
+        </div>
+        <div id="match3-board"></div>
+        <div style="color:white; font-size:0.9rem; text-align:center; margin-top:10px;">
+            交换相邻糖果，凑成3个消除 🍬
+        </div>
     </div>
-    <div id="match3-board"></div>
-    <div style="color:white; font-size:0.9rem; text-align:center; margin-top:10px;">
-        交换相邻糖果，凑成3个消除 🍬
+    
+    <!-- 2048游戏界面 -->
+    <div id="game2048-ui" style="display:none;">
+        <div class="game-header">
+            <div>得分: <span id="game2048-score">0</span></div>
+            <div>最高: <span id="game2048-best">0</span></div>
+        </div>
+        <div id="game2048-board"></div>
+        <div class="game2048-controls">
+            <button class="game2048-btn" onclick="if(game2048Instance && game2048Instance.restoreState()) { game2048Instance.render(); }">↶ 撤销</button>
+            <button class="game2048-btn" onclick="game2048Instance && game2048Instance.start() && game2048Instance.render()">🔄 重玩</button>
+        </div>
+        <div class="game2048-hint">
+            使用方向键或滑动屏幕移动 🎮<br>
+            合成相同数字，目标是2048！❤️
+        </div>
     </div>
 </div>
 
 <script src="common.js"></script>
-<script src="js/match3.js"></script> 
+<script src="js/match3.js"></script>
+<script src="js/game2048.js"></script>
 <script>
     // 页面逻辑
     Object.assign(app, {
@@ -174,11 +261,25 @@
     
     app.init();
 
+    // 游戏实例管理
     let currentGame = null;
+    let currentGameType = null;
+    let game2048Instance = null;
+    let game2048Controller = null;
 
     function startGame(type) {
+        const container = document.getElementById('game-container');
+        const match3UI = document.getElementById('match3-ui');
+        const game2048UI = document.getElementById('game2048-ui');
+        
+        container.style.display = 'flex';
+        currentGameType = type;
+        
         if(type === 'match3') {
-            document.getElementById('game-container').style.display = 'flex';
+            // 显示消消乐界面
+            match3UI.style.display = 'block';
+            game2048UI.style.display = 'none';
+            
             if(!currentGame) {
                 currentGame = new Match3Game('match3-board', {
                     onScoreChange: (s) => document.getElementById('game-score').innerText = s,
@@ -186,7 +287,6 @@
                     onGameOver: (score) => {
                         alert(`游戏结束！最终得分：${score}`);
                         if(score >= 1000) {
-                            // 调用 common.js 新增的接口
                             const success = app.submitGameScore('match3', score);
                             if (success) {
                                 const unit = app.currentUser === 'girl' ? '甜度' : '积分';
@@ -202,15 +302,69 @@
                 });
             }
             currentGame.start();
+            
+        } else if(type === '2048') {
+            // 显示2048界面
+            match3UI.style.display = 'none';
+            game2048UI.style.display = 'block';
+            
+            if(!game2048Instance) {
+                game2048Instance = new Game2048('game2048-board', {
+                    onScoreChange: (score) => {
+                        document.getElementById('game2048-score').innerText = score;
+                    },
+                    onGameOver: (score) => {
+                        const bestScore = game2048Instance.getBestScore();
+                        alert(`游戏结束！\n最终得分：${score}\n最高分：${bestScore}`);
+                        
+                        // 2048游戏奖励：达到2048分可获得奖励
+                        if(score >= 2048) {
+                            const success = app.submitGameScore('2048', score);
+                            if (success) {
+                                const unit = app.currentUser === 'girl' ? '甜度' : '积分';
+                                alert(`恭喜！合成2048成功！获得 30 ${unit}奖励！🎉`);
+                            } else {
+                                alert('挑战成功！但今天的奖励已经领过啦，明天再来吧！❤️');
+                            }
+                        } else if(score >= 1024) {
+                            alert('很棒！继续努力，达到2048分有奖励哦！💪');
+                        }
+                    },
+                    onGameWin: (score) => {
+                        // 达到2048时的特殊提示
+                        const success = app.submitGameScore('2048', score);
+                        if (success) {
+                            const unit = app.currentUser === 'girl' ? '甜度' : '积分';
+                            alert(`🎉🎉🎉 恭喜！合成2048成功！获得 30 ${unit}奖励！🎉🎉🎉`);
+                        } else {
+                            alert('🎉 恭喜合成2048！但今天的奖励已经领过啦，明天再来吧！❤️');
+                        }
+                    }
+                });
+                
+                // 初始化控制器
+                game2048Controller = new Game2048Controller(game2048Instance, container);
+                
+                // 更新最高分显示
+                document.getElementById('game2048-best').innerText = game2048Instance.getBestScore();
+            }
+            
+            game2048Instance.start();
+            game2048Instance.render();
         }
     }
 
     function closeGame() {
         document.getElementById('game-container').style.display = 'none';
-        if(currentGame) {
-            // currentGame.destroy(); // 如果有清理逻辑
-            currentGame = null;
+        
+        // 清理游戏实例（保留状态以便下次继续）
+        if(currentGameType === 'match3' && currentGame) {
+            // match3游戏可以保留实例
+        } else if(currentGameType === '2048' && game2048Instance) {
+            // 2048游戏保留实例，但可以重置
         }
+        
+        currentGameType = null;
     }
 </script>
 </body>

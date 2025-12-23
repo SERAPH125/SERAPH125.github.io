@@ -569,23 +569,37 @@ const app = {
     // 游戏积分结算接口 (Game Integration)
     // 供 games.html 调用，具有防刷机制（简单版）
     submitGameScore(gameName, score) {
-        // 简单校验：比如消消乐至少 1000 分才给奖励
-        if (gameName === 'match3' && score >= 1000) {
+        let minScore = 0;
+        let reward = 0;
+        
+        // 不同游戏的奖励规则
+        if (gameName === 'match3') {
+            minScore = 1000;
+            reward = 20;
+        } else if (gameName === '2048') {
+            minScore = 2048; // 需要达到2048分
+            reward = 30; // 奖励更多
+        } else {
+            return false; // 未知游戏
+        }
+        
+        // 检查分数是否达标
+        if (score >= minScore) {
             // 检查今天是否已经领取过游戏奖励
             const todayStr = this.getTodayStr();
             const lastGameReward = localStorage.getItem(`game_reward_${gameName}_${todayStr}`);
             
             if (lastGameReward) {
-                return false; 
+                return false; // 今天已经领过奖励
             } else {
                 // 首次达标，发放奖励
                 const reason = `游戏挑战成功：${gameName} (${score}分)`;
                 
                 // 根据身份区分奖励类型
                 if (this.currentUser === 'girl') {
-                    this.addGirlSweetness(20, reason); // 女生加甜度
+                    this.addGirlSweetness(reward, reason); // 女生加甜度
                 } else {
-                    this.executeChange(20, reason); // 男生加积分
+                    this.executeChange(reward, reason); // 男生加积分
                 }
                 
                 localStorage.setItem(`game_reward_${gameName}_${todayStr}`, 'true');
