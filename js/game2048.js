@@ -59,9 +59,22 @@ class SoundManager {
         
         // 如果音频上下文被暂停（浏览器策略），尝试恢复
         if (this.audioContext.state === 'suspended') {
-            this.audioContext.resume().catch(() => {});
-            return; // 本次不播放，等待下次
+            this.audioContext.resume().then(() => {
+                // 恢复后立即播放（异步）
+                this.playInternal(type, value);
+            }).catch(() => {});
+            return; // 本次不播放，等待恢复后播放
         }
+        
+        this.playInternal(type, value);
+    }
+
+    /**
+     * 内部播放方法
+     * @private
+     */
+    playInternal(type, value = 0) {
+        if (!this.enabled || !this.audioContext || this.audioContext.state === 'closed') return;
 
         try {
             const oscillator = this.audioContext.createOscillator();

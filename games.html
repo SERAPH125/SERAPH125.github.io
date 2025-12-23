@@ -474,6 +474,7 @@
             <button class="game-btn" onclick="if(game2048Instance) game2048Instance.restoreState()">↶ 撤销</button>
             <button class="game-btn" onclick="game2048Instance && game2048Instance.start()">🔄 重玩</button>
             <button class="game-btn" id="sound-toggle-btn" onclick="toggle2048Sound()">🔊 音效</button>
+            <button class="game-btn" onclick="test2048Sound()" title="点击测试音效">🔊 测试</button>
             <button class="game-btn" onclick="showLeaderboard('2048')">🏆 排行</button>
         </div>
         
@@ -786,6 +787,29 @@
                 btn.innerHTML = '🔇 静音';
                 btn.style.opacity = '0.6';
             }
+        }
+    }
+
+    // 测试音效功能
+    function test2048Sound() {
+        if (game2048Instance && game2048Instance.sound) {
+            // 确保音效已初始化
+            game2048Instance.sound.init();
+            
+            // 播放测试音效序列
+            game2048Instance.sound.play('move');
+            setTimeout(() => game2048Instance.sound.play('merge', 256), 200);
+            setTimeout(() => game2048Instance.sound.play('merge', 1024), 400);
+            
+            // 显示提示
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '✓ 已测试';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1000);
+        } else {
+            alert('音效系统未初始化，请先移动一次方块！');
         }
     }
 
