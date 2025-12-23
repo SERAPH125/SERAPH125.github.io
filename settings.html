@@ -107,13 +107,14 @@
 Object.assign(app, {
     init() {
         this.initCommon();
-        const presetAppId = "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
-        const presetAppKey = "4gtuHZVj2S6XlF79Av5l7WKz";
+        // 优先读取本地存储的配置，如果没有则使用默认值
+        const savedAppId = localStorage.getItem('lean_app_id') || "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
+        const savedAppKey = localStorage.getItem('lean_app_key') || "4gtuHZVj2S6XlF79Av5l7WKz";
         
         const appIdEl = document.getElementById('lean-app-id');
         const appKeyEl = document.getElementById('lean-app-key');
-        if (appIdEl) appIdEl.value = presetAppId;
-        if (appKeyEl) appKeyEl.value = presetAppKey;
+        if (appIdEl) appIdEl.value = savedAppId;
+        if (appKeyEl) appKeyEl.value = savedAppKey;
         
         this.render();
     },

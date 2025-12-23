@@ -159,6 +159,15 @@ const app = {
         "你是我的未完待续，也是我的现在进行时。"
     ],
 
+    // 获取本地时间字符串 (YYYY-MM-DD)
+    getTodayStr() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    },
+
     // 初始化LeanCloud
     initLeanCloud(appId, appKey, serverURL) {
         this.createInitialData = (LoveData) => {
@@ -191,7 +200,7 @@ const app = {
                     
                     // --- Merge Logic Start ---
                     // 防止云端旧数据覆盖本地刚刚发生的签到行为
-                    const todayStr = new Date().toISOString().split('T')[0];
+                    const todayStr = this.getTodayStr();
                     let useLocalForAuth = false;
 
                     // 检查本地是否有新的签到
@@ -295,9 +304,16 @@ const app = {
         const presetAppKey = "4gtuHZVj2S6XlF79Av5l7WKz";
         const presetServerURL = "https://mekxcarj.lc-cn-n1-shared.com";
         
-        localStorage.setItem('lean_app_id', presetAppId);
-        localStorage.setItem('lean_app_key', presetAppKey);
-        localStorage.setItem('lean_server_url', presetServerURL);
+        // 修复：仅当本地没有配置时才写入默认值，避免覆盖用户设置
+        if (!localStorage.getItem('lean_app_id')) {
+            localStorage.setItem('lean_app_id', presetAppId);
+        }
+        if (!localStorage.getItem('lean_app_key')) {
+            localStorage.setItem('lean_app_key', presetAppKey);
+        }
+        if (!localStorage.getItem('lean_server_url')) {
+            localStorage.setItem('lean_server_url', presetServerURL);
+        }
 
         // 核心修复：强制优先读取本地身份设置，不受云端影响
         const savedRole = localStorage.getItem('user_role');

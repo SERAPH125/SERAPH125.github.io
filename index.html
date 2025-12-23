@@ -338,7 +338,7 @@ Object.assign(app, {
 
     // 渲染双人签到状态
     renderSignInStatus() {
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = app.getTodayStr();
         const boyDone = this.data.lastSignInDate_Boy === todayStr;
         const girlDone = this.data.lastSignInDate_Girl === todayStr;
         
@@ -450,81 +450,66 @@ Object.assign(app, {
     },
 
     checkDailySignIn() {
-        // common.js 已实现签到核心逻辑，这里主要是触发并处理UI更新
-        // 但 common.js 的 checkDailySignIn 是通过 this 调用，这里需要确保覆盖或者使用 common.js 的
-        // 实际上，common.js 已经定义了 checkDailySignIn。
-        // 但由于我们在 index.html 的 script 中使用了 Object.assign 覆盖 app，
-        // 如果这里没有 checkDailySignIn，就会使用 common.js 的（如果 common.js 是先定义的 app，然后 index.html 这里扩展）
-        // 这里的 Object.assign 是扩展 app 对象。
-        // 如果 common.js 中的 app 对象已经有了 checkDailySignIn，这里不需要重写，除非需要特殊的主页 UI 逻辑。
-        
-        // 我们可以直接调用 common.js 中的逻辑，并添加 render 更新
-        const superCheck = app.__proto__?.checkDailySignIn || app.checkDailySignIn; // 获取 common.js 的实现比较麻烦，因为是直接对象
-        
-        // 实际上，common.js 里的 app 对象会被这里的 Object.assign 扩展。
-        // 所以我们不需要在这里重写 checkDailySignIn，除非我们要修改它的行为。
-        // 我们在 common.js 里已经重写了 checkDailySignIn 以支持双人。
-        // 这里只需要保留 showSignInModal 即可（因为它涉及 DOM 操作，且 DOM 在 index.html 中）。
-        
-        // 调用 common.js 中定义的 checkDailySignIn (如果它已经在 app 对象上)
-        // 注意：Object.assign 会合并属性。我们在 common.js 定义了 app，这里又定义了一堆方法合并进去。
-        // 所以这里**不需要**再定义 checkDailySignIn，直接让它执行 common.js 的即可。
-        // 唯一的问题是 showSignInModal 需要操作 index.html 特有的 DOM。
-        // 所以我们在 common.js 留了 showSignInModal 的空实现或者基础实现？
-        // common.js 里没有 showSignInModal 的具体实现（因为涉及弹窗 DOM）。
-        // 所以我们需要在这里实现 showSignInModal。
-        
-        // 触发签到检查 (由 common.js 的 initCommon 调用，或者这里手动调用)
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        
+        // 核心签到逻辑修正版
+        const todayStr = app.getTodayStr(); // 获取本地日期 YYYY-MM-DD
         const lastSignInField = this.currentUser === 'boy' ? 'lastSignInDate_Boy' : 'lastSignInDate_Girl';
-        
-        // 只有当今天没签到时才执行核心逻辑
+        const partnerField = this.currentUser === 'boy' ? 'lastSignInDate_Girl' : 'lastSignInDate_Boy';
+
+        // 检查今天是否已经签到过
         if (this.data[lastSignInField] !== todayStr) {
-             // 这里的逻辑稍微有点绕，为了简单，我直接在这里重写 checkDailySignIn 以确保逻辑正确
-             // 并且调用 common.js 的 executeChange
-             
-            let diffDays = 0;
-            if (this.data.lastSignInDate) {
-                const last = new Date(this.data.lastSignInDate);
-                const utc1 = Date.UTC(last.getFullYear(), last.getMonth(), last.getDate());
-                const utc2 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-                diffDays = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
-            }
-
-            if (diffDays > 1 || !this.data.lastSignInDate) {
-                this.data.signInStreak = 1;
-            } else if (diffDays === 1) {
-                if (this.data.lastSignInDate !== todayStr) {
-                    this.data.signInStreak++;
+            
+            // 1. 计算连续签到天数
+            let streak = this.data.signInStreak || 0;
+            const lastDateStr = this.data.lastSignInDate; // 这里记录的是任意一方上次签到的日期
+            
+            if (!lastDateStr) {
+                streak = 1; // 第一次签到
+            } else {
+                // 计算日期差 (天数)
+                const d1 = new Date(lastDateStr);
+                const d2 = new Date(todayStr);
+                const diffTime = Math.abs(d2 - d1);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                if (diffDays === 1) {
+                    streak++; // 连续签到
+                } else if (diffDays > 1) {
+                    streak = 1; // 断签重置
                 }
+                // 如果 diffDays === 0，说明今天已经签过（理论上会被外层 if 拦截，但为了保险）
             }
+            
+            // 更新连续签到天数
+            this.data.signInStreak = streak;
 
+            // 2. 计算奖励
             let reward = 1;
             let title = this.getTimeGreeting();
             let subText = "每日签到奖励";
             let icon = this.getTimeIcon();
             let extraReward = false;
 
-            const partnerField = this.currentUser === 'boy' ? 'lastSignInDate_Girl' : 'lastSignInDate_Boy';
-            const partnerSignIn = this.data[partnerField] === todayStr;
+            // 3. 检查双人签到 (读取对方的签到日期)
+            // 注意：对方的签到日期也必须是 todayStr 才能算双人签到
+            const partnerLastDate = this.data[partnerField];
+            const partnerSignIn = partnerLastDate === todayStr;
 
             if (partnerSignIn) {
                 reward = 5;
                 title = "❤️ 心有灵犀！";
                 subText = "另一半也签到了！触发双倍甜蜜暴击！";
                 icon = "👩‍❤️‍👨";
-            } else if (this.data.signInStreak % 7 === 0 && this.data.lastSignInDate !== todayStr) {
+            } else if (streak % 7 === 0) {
                 reward = 20; 
                 title = "🎉 连击大礼包！";
-                subText = `太棒了！已连续打卡 ${this.data.signInStreak} 天！`;
+                subText = `太棒了！已连续打卡 ${streak} 天！`;
                 icon = "🎁";
                 extraReward = true;
             }
 
+            // 4. 更新数据
             this.data[lastSignInField] = todayStr;
-            this.data.lastSignInDate = todayStr;
+            this.data.lastSignInDate = todayStr; // 更新总的最后签到时间
             
             this.data.signInLog.unshift({
                 date: todayStr,
@@ -532,10 +517,14 @@ Object.assign(app, {
                 time: new Date().toLocaleTimeString()
             });
             
+            // 执行加分 (包含保存数据)
             this.executeChange(reward, `每日签到 (${this.currentUser === 'boy' ? '男朋友' : '周金霞'}) ${partnerSignIn ? '+ 双人加成' : ''}`);
+            
+            // 显示弹窗
             this.showSignInModal(false, title, subText, icon, reward, extraReward);
+            
         } else {
-            // 已签到，只更新UI
+            // 今天已签到，仅更新 UI
             this.updateStreakUI();
             this.renderSignInStatus();
         }
