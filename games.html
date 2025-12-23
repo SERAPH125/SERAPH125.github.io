@@ -473,7 +473,8 @@
         <div class="game-controls-bar">
             <button class="game-btn" onclick="if(game2048Instance) game2048Instance.restoreState()">↶ 撤销</button>
             <button class="game-btn" onclick="game2048Instance && game2048Instance.start()">🔄 重玩</button>
-            <button class="game-btn" onclick="showLeaderboard('2048')">🏆 排行榜</button>
+            <button class="game-btn" id="sound-toggle-btn" onclick="toggle2048Sound()">🔊 音效</button>
+            <button class="game-btn" onclick="showLeaderboard('2048')">🏆 排行</button>
         </div>
         
         <div class="game2048-hint">
@@ -653,6 +654,10 @@
             
             // 更新最高分显示
             document.getElementById('game2048-best').innerText = game2048Instance.getBestScore();
+            
+            // 更新音效按钮状态
+            updateSoundButton();
+            
             game2048Instance.start();
             
         } else if(type === 'sudoku') {
@@ -759,6 +764,29 @@
 
     function closeLeaderboard() {
         document.getElementById('rank-modal').style.display = 'none';
+    }
+
+    // 音效开关函数
+    function toggle2048Sound() {
+        if (game2048Instance && game2048Instance.sound) {
+            const newState = !game2048Instance.sound.enabled;
+            game2048Instance.sound.setEnabled(newState);
+            updateSoundButton();
+        }
+    }
+
+    // 更新音效按钮显示
+    function updateSoundButton() {
+        const btn = document.getElementById('sound-toggle-btn');
+        if (btn && game2048Instance && game2048Instance.sound) {
+            if (game2048Instance.sound.enabled) {
+                btn.innerHTML = '🔊 音效';
+                btn.style.opacity = '1';
+            } else {
+                btn.innerHTML = '🔇 静音';
+                btn.style.opacity = '0.6';
+            }
+        }
     }
 
 </script>

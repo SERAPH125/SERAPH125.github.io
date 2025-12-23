@@ -1,7 +1,118 @@
 /**
- * 2048 游戏核心逻辑 (V3.7 动画增强版)
+ * 2048 游戏核心逻辑 (V4.2 音效增强版)
  * 采用模块化设计，分离游戏逻辑、渲染和交互
  */
+
+/**
+ * 音效管理器
+ * 使用 Web Audio API 生成音效，无需外部音频文件
+ */
+class SoundManager {
+    constructor() {
+        this.audioContext = null;
+        this.enabled = localStorage.getItem('game2048_sound') !== 'false'; // 默认开启
+        this.lastPlayTime = {}; // 防抖：记录上次播放时间
+        this.minInterval = 50; // 最小播放间隔（毫秒）
+    }
+
+    /**
+     * 初始化音频上下文（延迟初始化，等待用户交互）
+     */
+    init() {
+        if (this.audioContext) return;
+        
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        } catch(e) {
+            console.warn('Web Audio API not supported', e);
+        }
+    }
+
+    /**
+     * 启用/禁用音效
+     */
+    setEnabled(enabled) {
+        this.enabled = enabled;
+        localStorage.setItem('game2048_sound', enabled);
+    }
+
+    /**
+     * 播放音效
+     * @param {string} type - 音效类型：'move', 'merge', 'spawn'
+     * @param {number} value - 可选：合并时的数字值（用于调整音调）
+     */
+    play(type, value = 0) {
+        if (!this.enabled) return;
+        
+        // 延迟初始化（首次用户交互时）
+        if (!this.audioContext) {
+            this.init();
+            if (!this.audioContext) return;
+        }
+        
+        // 防抖：避免音效过于频繁
+        const now = Date.now();
+        if (this.lastPlayTime[type] && (now - this.lastPlayTime[type]) < this.minInterval) {
+            return;
+        }
+        this.lastPlayTime[type] = now;
+        
+        // 如果音频上下文被暂停（浏览器策略），尝试恢复
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume().catch(() => {});
+            return; // 本次不播放，等待下次
+        }
+
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+
+            const currentTime = this.audioContext.currentTime;
+
+            // 根据类型设置不同的音效
+            switch(type) {
+                case 'move':
+                    // 滑动音效：短促的低音
+                    oscillator.type = 'sine';
+                    oscillator.frequency.value = 150;
+                    gainNode.gain.setValueAtTime(0.1, currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.1);
+                    oscillator.start(currentTime);
+                    oscillator.stop(currentTime + 0.1);
+                    break;
+                    
+                case 'merge':
+                    // 合并音效：根据数字值调整音调，数字越大音调越高
+                    oscillator.type = 'sine';
+                    const baseFreq = 200;
+                    const freqMultiplier = Math.min(1 + (value / 2048) * 2, 3); // 最高3倍频率
+                    oscillator.frequency.value = baseFreq * freqMultiplier;
+                    gainNode.gain.setValueAtTime(0.15, currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.15);
+                    oscillator.start(currentTime);
+                    oscillator.stop(currentTime + 0.15);
+                    break;
+                    
+                case 'spawn':
+                    // 生成音效：轻快的上升音调
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(100, currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(200, currentTime + 0.1);
+                    gainNode.gain.setValueAtTime(0.08, currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, currentTime + 0.1);
+                    oscillator.start(currentTime);
+                    oscillator.stop(currentTime + 0.1);
+                    break;
+            }
+        } catch(e) {
+            // 静默处理错误，避免影响游戏体验
+            console.warn('Sound playback error', e);
+        }
+    }
+}
 
 // 辅助类：网格管理
 class Grid {
@@ -154,6 +265,9 @@ class Game2048 {
         
         // 撤销支持
         this.history = [];
+
+        // 音效系统
+        this.sound = new SoundManager();
 
         this.setup();
     }
@@ -376,6 +490,9 @@ class Game2048 {
                            this.saveBestScore();
                         }
 
+                        // 播放合并音效
+                        this.sound.play('merge', merged.value);
+
                         if (merged.value === 2048) this.won = true;
                     } else {
                         this.moveTile(tile, positions.farthest);
@@ -389,7 +506,13 @@ class Game2048 {
         });
 
         if (moved) {
+            // 播放移动音效
+            this.sound.play('move');
+            
             this.addRandomTile();
+            // 生成音效只在特定情况下播放（避免过于频繁）
+            // 这里暂时不播放，因为每次移动都会生成，音效会太频繁
+            
             if (!this.movesAvailable()) {
                 this.over = true;
             }
@@ -535,6 +658,8 @@ class Game2048Controller {
             const direction = map[e.which];
             if (direction) {
         e.preventDefault();
+                // 首次交互时初始化音效
+                if (this.game.sound) this.game.sound.init();
                 this.game.move(direction);
             }
         });
@@ -565,6 +690,9 @@ class Game2048Controller {
         const absDy = Math.abs(dy);
 
         if (Math.max(absDx, absDy) > 30) {
+            // 首次交互时初始化音效
+            if (this.game.sound) this.game.sound.init();
+            
             if (absDx > absDy) {
                 this.game.move(dx > 0 ? 'right' : 'left');
         } else {
