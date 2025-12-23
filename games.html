@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>游戏中心 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        /* 游戏大厅样式 */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .game-card {
+            background: rgba(255,255,255,0.6);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+        .game-card:active { transform: scale(0.95); }
+        .game-card:hover { background: white; border-color: var(--accent-pink); }
+        .game-icon { font-size: 3rem; margin-bottom: 10px; display: block; }
+        .game-title { font-weight: bold; color: var(--text-main); }
+        .game-desc { font-size: 0.8rem; color: var(--text-light); margin-top: 5px; }
+
+        /* 游戏容器 (覆盖全屏) */
+        #game-container {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: var(--bg-gradient);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* 消消乐棋盘 */
+        #match3-board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+            background: rgba(255,255,255,0.3);
+            padding: 10px;
+            border-radius: 15px;
+            margin: 20px;
+            width: 90%;
+            max-width: 350px;
+            aspect-ratio: 1/1;
+        }
+        .cell {
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .cell.selected {
+            background: var(--accent-pink);
+            transform: scale(1.1);
+            box-shadow: 0 0 10px var(--accent-pink);
+        }
+        .cell.matched {
+            animation: pop 0.3s forwards;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            width: 90%;
+            max-width: 350px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .btn-close-game {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: rgba(0,0,0,0.3);
+            color: white;
+            border: none;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+
+<div class="container">
+    <header>
+        <h1>🎮 游戏中心 <span class="version-tag">Beta</span></h1>
+        <div class="love-days" id="game-subtitle">玩游戏赚奖励 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+        <a href="#" class="nav-btn active">🎮 游戏</a>
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
+    </div>
+
+    <div class="game-grid">
+        <div class="game-card" onclick="startGame('match3')">
+            <span class="game-icon">🍬</span>
+            <div class="game-title">甜蜜消消乐</div>
+            <div class="game-desc">消除糖果赚积分<br>目标：1000分</div>
+        </div>
+        <div class="game-card" style="opacity:0.6; cursor:not-allowed;">
+            <span class="game-icon">🧩</span>
+            <div class="game-title">2048 (开发中)</div>
+            <div class="game-desc">合成大爱心</div>
+        </div>
+    </div>
+</div>
+
+<!-- 游戏运行容器 -->
+<div id="game-container">
+    <button class="btn-close-game" onclick="closeGame()">×</button>
+    <div class="game-header">
+        <div>得分: <span id="game-score">0</span></div>
+        <div>步数: <span id="game-moves">20</span></div>
+    </div>
+    <div id="match3-board"></div>
+    <div style="color:white; font-size:0.9rem; text-align:center; margin-top:10px;">
+        交换相邻糖果，凑成3个消除 🍬
+    </div>
+</div>
+
+<script src="common.js"></script>
+<script src="js/match3.js"></script> 
+<script>
+    // 页面逻辑
+    Object.assign(app, {
+        init() {
+            this.initCommon();
+            // 初始化主题
+            const savedTheme = localStorage.getItem('app_theme') || 'pink';
+            document.body.className = `theme-${savedTheme}`;
+            
+            // 动态显示奖励类型
+            const subtitle = document.getElementById('game-subtitle');
+            if (this.currentUser === 'girl') {
+                subtitle.innerText = "玩游戏赚甜度 🍬";
+            } else {
+                subtitle.innerText = "玩游戏赚积分 💎";
+            }
+        }
+    });
+    
+    app.init();
+
+    let currentGame = null;
+
+    function startGame(type) {
+        if(type === 'match3') {
+            document.getElementById('game-container').style.display = 'flex';
+            if(!currentGame) {
+                currentGame = new Match3Game('match3-board', {
+                    onScoreChange: (s) => document.getElementById('game-score').innerText = s,
+                    onMovesChange: (m) => document.getElementById('game-moves').innerText = m,
+                    onGameOver: (score) => {
+                        alert(`游戏结束！最终得分：${score}`);
+                        if(score >= 1000) {
+                            // 调用 common.js 新增的接口
+                            const success = app.submitGameScore('match3', score);
+                            if (success) {
+                                const unit = app.currentUser === 'girl' ? '甜度' : '积分';
+                                alert(`恭喜！挑战成功！获得 20 ${unit}奖励！🎉`);
+                            } else {
+                                alert('挑战成功！但今天的奖励已经领过啦，明天再来吧！❤️');
+                            }
+                        } else {
+                            alert('差一点点！满 1000 分才有奖励哦，再接再厉！💪');
+                        }
+                        closeGame();
+                    }
+                });
+            }
+            currentGame.start();
+        }
+    }
+
+    function closeGame() {
+        document.getElementById('game-container').style.display = 'none';
+        if(currentGame) {
+            // currentGame.destroy(); // 如果有清理逻辑
+            currentGame = null;
+        }
+    }
+</script>
+</body>
+</html>
