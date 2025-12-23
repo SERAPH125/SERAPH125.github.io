@@ -42,7 +42,7 @@ body.theme-blue {
     --shape-2-bg: #00f2fe;
 }
 
-/* 清新绿 (Fresh / Green) */
+/* 清新绿 (Fresh / Green)
 body.theme-green {
     --primary-gradient: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%);
     --bg-gradient: linear-gradient(-45deg, #84fab0, #8fd3f4, #84fab0, #a8edea);
@@ -50,14 +50,31 @@ body.theme-green {
     --glass-border: rgba(255, 255, 255, 0.6);
     --text-main: #2d3436;
     --text-light: #636e72;
-    --accent-pink: #00b894; /* 绿色替代粉色 */
+    --accent-pink: #00b894;
     --accent-blue: #55efc4;
     --success: #27ae60;
     --danger: #fab1a0;
     --shadow: 0 8px 32px 0 rgba(31, 135, 100, 0.15);
 
-    /* 形状颜色 */
+    //形状颜色 
     --shape-1-bg: #55efc4;
     --shape-2-bg: #00b894;
-}
+} */
+/* 更深更柔和的清新绿主题变量 */
+body.theme-green {
+    --primary-gradient: linear-gradient(120deg, #7ab893 0%, #5a9e7b 100%);
+    --bg-gradient: linear-gradient(-45deg, #6b9b7a, #8ab39b, #7ba88c, #9bb8a8);
+    --glass-bg: rgba(255, 255, 255, 0.6);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --text-main: #2d3436;
+    --text-light: #636e72;
+    --accent-pink: #4a8b6f; /* 深绿色替代粉色 */
+    --accent-blue: #6da088;
+    --success: #1d6d42;
+    --danger: #c8957a;
+    --shadow: 0 8px 32px 0 rgba(31, 80, 60, 0.15);
 
+    /* 形状颜色 */
+    --shape-1-bg: #6da088;
+    --shape-2-bg: #4a8b6f;
+}
