@@ -18,6 +18,22 @@ class Match3Game {
         this.isProcessing = false;
         this.uniqueIdCounter = 0;
         
+        // 音效系统（复用2048的SoundManager）
+        if (typeof SoundManager !== 'undefined') {
+            this.sound = new SoundManager();
+            // 消消乐使用独立的音效设置
+            this.sound.enabled = localStorage.getItem('match3_sound') !== 'false';
+            // 重写setEnabled方法，使用独立的localStorage键
+            const originalSetEnabled = this.sound.setEnabled.bind(this.sound);
+            this.sound.setEnabled = (enabled) => {
+                this.sound.enabled = enabled;
+                localStorage.setItem('match3_sound', enabled);
+            };
+        } else {
+            this.sound = null;
+            console.warn('SoundManager not available');
+        }
+        
         this.updateBoardMetrics();
         window.addEventListener('resize', () => this.updateBoardMetrics());
     }
@@ -126,6 +142,16 @@ class Match3Game {
             this.selected = null;
             item.el.classList.remove('selected');
             
+            // 播放触发音效
+            if (this.sound) {
+                this.sound.init();
+                if (item.special === 'rainbow') {
+                    this.sound.play('merge', 2048);
+                } else if (item.special === 'bomb') {
+                    this.sound.play('merge', 512);
+                }
+            }
+            
             // 直接触发爆炸
             this.moves--;
             this.callbacks.onMovesChange(this.moves);
@@ -175,6 +201,12 @@ class Match3Game {
         // 交换
         this.grid[p1.r][p1.c] = item2;
         this.grid[p2.r][p2.c] = item1;
+        
+        // 播放交换音效
+        if (this.sound) {
+            this.sound.init();
+            this.sound.play('move');
+        }
         
         this.render();
         await this.wait(300);
@@ -300,6 +332,40 @@ class Match3Game {
         // 4. 爆炸逻辑 (递归扩展 removeList)
         removeList = this.expandExplosions(removeList);
 
+        // 4.5 播放消除音效（在动画前）
+        if (this.sound && removeList.length > 0) {
+            this.sound.init();
+            
+            // 检查是否有特殊道具
+            let hasBomb = false;
+            let hasRainbow = false;
+            let normalCount = 0;
+            
+            for (let p of removeList) {
+                const item = this.grid[p.r]?.[p.c];
+                if (item) {
+                    if (item.special === 'rainbow') {
+                        hasRainbow = true;
+                    } else if (item.special === 'bomb') {
+                        hasBomb = true;
+                    } else {
+                        normalCount++;
+                    }
+                }
+            }
+            
+            // 根据消除类型播放不同音效
+            if (hasRainbow) {
+                this.sound.play('merge', 2048); // 彩虹用高音调
+            } else if (hasBomb) {
+                this.sound.play('merge', 512); // 炸弹用中音调
+            } else {
+                // 普通消除：根据消除数量调整音调
+                const matchValue = Math.min(normalCount * 50, 1000);
+                this.sound.play('merge', matchValue);
+            }
+        }
+
         // 5. 执行消除动画
         for (let p of removeList) {
             const item = this.grid[p.r][p.c];
@@ -329,6 +395,11 @@ class Match3Game {
             const type = newItem.special === 'bomb' ? '💣' : '🌈';
             this.grid[newItem.r][newItem.c] = this.createItem(newItem.r, newItem.c, type, newItem.special);
             this.grid[newItem.r][newItem.c].el.classList.add('new-item');
+            
+            // 播放生成道具音效
+            if (this.sound) {
+                this.sound.play('spawn');
+            }
         }
 
         // 8. 下落

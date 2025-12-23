@@ -454,6 +454,8 @@
         <div id="match3-board"></div>
         <div class="game-controls-bar">
             <button class="game-btn" onclick="showLeaderboard('match3')">🏆 排行榜</button>
+            <button class="game-btn" id="match3-sound-toggle-btn" onclick="toggleMatch3Sound()">🔊 音效</button>
+            <button class="game-btn" id="match3-sound-style-btn" onclick="switchMatch3SoundStyle()" title="点击切换音效风格">🎵 <span id="match3-sound-style-text">清脆</span></button>
             <button class="game-btn" onclick="if(confirm('确定要重新开始吗？')) currentGame.start()">🔄 重玩</button>
         </div>
         <div style="color:white; font-size:0.9rem; text-align:center; margin-top:15px;">
@@ -474,7 +476,7 @@
             <button class="game-btn" onclick="if(game2048Instance) game2048Instance.restoreState()">↶ 撤销</button>
             <button class="game-btn" onclick="game2048Instance && game2048Instance.start()">🔄 重玩</button>
             <button class="game-btn" id="sound-toggle-btn" onclick="toggle2048Sound()">🔊 音效</button>
-            <button class="game-btn" onclick="test2048Sound()" title="点击测试音效">🔊 测试</button>
+            <button class="game-btn" id="sound-style-btn" onclick="switch2048SoundStyle()" title="点击切换音效风格">🎵 <span id="sound-style-text">清脆</span></button>
             <button class="game-btn" onclick="showLeaderboard('2048')">🏆 排行</button>
         </div>
         
@@ -506,10 +508,9 @@
         </div>
         
         <div class="game-controls-bar">
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('easy')">🔄 简单</button>
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('medium')">🔄 中等</button>
             <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">🔄 困难</button>
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('expert')" style="background: rgba(255,0,0,0.3); border-color: rgba(255,0,0,0.5);">🔥 超级难</button>
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hell')" style="background: rgba(255,0,0,0.3); border-color: rgba(255,0,0,0.5);">🔥 地狱级</button>
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('extreme')" style="background: rgba(128,0,128,0.4); border-color: rgba(128,0,128,0.6); color: #fff; font-weight: bold;">💀 数据极限</button>
         </div>
         
         <div style="color:white; font-size:0.9rem; text-align:center; margin-top:15px;">
@@ -534,8 +535,8 @@
 </div>
 
 <script src="common.js"></script>
-<script src="js/match3.js"></script>
 <script src="js/game2048.js"></script>
+<script src="js/match3.js"></script>
 <script src="js/sudoku.js"></script>
 <script>
     // 页面逻辑
@@ -612,6 +613,11 @@
             }
             // 每次打开都重新开始？或者保留状态
             // 最好询问是否继续，这里简化直接重新开始
+            
+            // 更新音效按钮状态
+            updateMatch3SoundButton();
+            updateMatch3SoundStyleButton();
+            
             currentGame.start();
             
         } else if(type === '2048') {
@@ -658,6 +664,7 @@
             
             // 更新音效按钮状态
             updateSoundButton();
+            updateSoundStyleButton();
             
             game2048Instance.start();
             
@@ -698,8 +705,8 @@
                 });
             }
             
-            // 启动游戏（默认简单难度）
-            sudokuGameInstance.start('easy');
+            // 启动游戏（默认困难难度）
+            sudokuGameInstance.start('hard');
             
             // 启动计时器
             if(sudokuTimer) clearInterval(sudokuTimer);
@@ -790,24 +797,106 @@
         }
     }
 
-    // 测试音效功能
-    function test2048Sound() {
+    // 更新音效风格按钮显示
+    function updateSoundStyleButton() {
+        const styleText = document.getElementById('sound-style-text');
+        if (styleText && game2048Instance && game2048Instance.sound) {
+            styleText.innerText = game2048Instance.sound.getCurrentStyleName();
+        }
+    }
+
+    // 消消乐音效开关函数
+    function toggleMatch3Sound() {
+        if (currentGame && currentGame.sound) {
+            const newState = !currentGame.sound.enabled;
+            currentGame.sound.setEnabled(newState);
+            // 使用独立的localStorage键
+            localStorage.setItem('match3_sound', newState);
+            updateMatch3SoundButton();
+        }
+    }
+
+    // 更新消消乐音效按钮显示
+    function updateMatch3SoundButton() {
+        const btn = document.getElementById('match3-sound-toggle-btn');
+        if (btn && currentGame && currentGame.sound) {
+            if (currentGame.sound.enabled) {
+                btn.innerHTML = '🔊 音效';
+                btn.style.opacity = '1';
+            } else {
+                btn.innerHTML = '🔇 静音';
+                btn.style.opacity = '0.6';
+            }
+        }
+    }
+
+    // 消消乐音效风格切换函数
+    function switchMatch3SoundStyle() {
+        if (currentGame && currentGame.sound) {
+            // 确保音效已初始化
+            currentGame.sound.init();
+            
+            // 切换到下一个风格
+            const newStyleName = currentGame.sound.nextStyle();
+            
+            // 更新按钮显示
+            const styleText = document.getElementById('match3-sound-style-text');
+            if (styleText) {
+                styleText.innerText = newStyleName;
+            }
+            
+            // 播放测试音效序列，展示新风格
+            currentGame.sound.play('move');
+            setTimeout(() => currentGame.sound.play('merge', 256), 200);
+            setTimeout(() => currentGame.sound.play('merge', 1024), 400);
+            
+            // 显示提示
+            const btn = event.target;
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✓ ' + newStyleName;
+            setTimeout(() => {
+                btn.innerHTML = originalHTML;
+            }, 800);
+        } else {
+            alert('音效系统未初始化，请先点击一次糖果！');
+        }
+    }
+
+    // 更新消消乐音效风格按钮显示
+    function updateMatch3SoundStyleButton() {
+        const styleText = document.getElementById('match3-sound-style-text');
+        if (styleText && currentGame && currentGame.sound) {
+            styleText.innerText = currentGame.sound.getCurrentStyleName();
+        }
+    }
+
+    // 切换音效风格（通过测试按钮）
+    function switch2048SoundStyle() {
         if (game2048Instance && game2048Instance.sound) {
             // 确保音效已初始化
             game2048Instance.sound.init();
             
-            // 播放测试音效序列
+            // 切换到下一个风格
+            const newStyleName = game2048Instance.sound.nextStyle();
+            
+            // 更新按钮显示
+            const styleText = document.getElementById('sound-style-text');
+            if (styleText) {
+                styleText.innerText = newStyleName;
+            }
+            
+            // 播放测试音效序列，展示新风格
             game2048Instance.sound.play('move');
             setTimeout(() => game2048Instance.sound.play('merge', 256), 200);
             setTimeout(() => game2048Instance.sound.play('merge', 1024), 400);
             
             // 显示提示
             const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '✓ 已测试';
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '✓ ' + newStyleName;
             setTimeout(() => {
-                btn.innerHTML = originalText;
-            }, 1000);
+                btn.innerHTML = originalHTML;
+            }, 800);
         } else {
             alert('音效系统未初始化，请先移动一次方块！');
         }

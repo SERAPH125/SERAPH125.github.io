@@ -5,8 +5,8 @@
  * 架构设计：
  * - 采用类封装，与 Match3Game、Game2048 保持一致
  * - 通过回调函数与页面交互，解耦游戏逻辑和UI
- * - 支持难度选择（简单/中等/困难/超级难）
- * - 错误检测机制：简单/中等/困难允许3次错误，超级难只允许2次错误
+ * - 支持难度选择（困难/地狱级/数据极限）
+ * - 错误检测机制：困难允许3次错误，地狱级允许2次错误，数据极限只允许1次错误
  */
 class SudokuGame {
     /**
@@ -20,7 +20,7 @@ class SudokuGame {
         this.boardEl = document.getElementById(boardId);
         this.callbacks = callbacks;
         this.selectedCell = null; // {r, c}
-        this.difficulty = 'easy'; // easy, medium, hard, expert
+        this.difficulty = 'hard'; // hard, hell, extreme
         this.initialBoard = []; // 初始题目（不可变）
         this.currentBoard = []; // 当前状态
         this.solution = []; // 答案
@@ -33,9 +33,9 @@ class SudokuGame {
 
     /**
      * 开始新游戏
-     * @param {string} difficulty - 难度：'easy', 'medium', 'hard', 'expert'
+     * @param {string} difficulty - 难度：'hard', 'hell', 'extreme'
      */
-    start(difficulty = 'easy') {
+    start(difficulty = 'hard') {
         this.difficulty = difficulty;
         this.mistakes = 0;
         this.isGameOver = false;
@@ -43,11 +43,13 @@ class SudokuGame {
         this.startTime = Date.now();
         this.elapsedTime = 0;
         
-        // 超级难模式：只允许2次错误
-        if (difficulty === 'expert') {
-            this.maxMistakes = 2;
+        // 根据难度设置错误次数限制
+        if (difficulty === 'extreme') {
+            this.maxMistakes = 1; // 数据极限：只允许1次错误
+        } else if (difficulty === 'hell') {
+            this.maxMistakes = 2; // 地狱级：允许2次错误
         } else {
-            this.maxMistakes = 3;
+            this.maxMistakes = 3; // 困难：允许3次错误
         }
         
         // 生成题目
@@ -67,10 +69,12 @@ class SudokuGame {
         this.solution = this.generateSolution();
         
         // 2. 根据难度挖空
-        let holes = 30; // easy
-        if (this.difficulty === 'medium') holes = 40;
-        if (this.difficulty === 'hard') holes = 50;
-        if (this.difficulty === 'expert') holes = 62; // 超级难：挖掉62个，只留19个提示
+        let holes = 50; // 困难：挖掉50个，留31个提示
+        if (this.difficulty === 'hell') {
+            holes = 62; // 地狱级：挖掉62个，只留19个提示
+        } else if (this.difficulty === 'extreme') {
+            holes = 70; // 数据极限：挖掉70个，只留11个提示（接近理论极限）
+        }
         
         // 深拷贝
         this.initialBoard = this.solution.map(row => [...row]);
