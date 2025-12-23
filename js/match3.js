@@ -1,203 +1,99 @@
-/**
- * 甜蜜消消乐核心逻辑
- * Match-3 Game Logic
- */
-class Match3Game {
-    constructor(boardId, callbacks) {
-        this.boardEl = document.getElementById(boardId);
-        this.callbacks = callbacks;
-        this.width = 7;
-        this.height = 7;
-        this.items = ['❤️', '🍬', '🍪', '🎁', '🧸', '🌹'];
-        this.grid = [];
-        this.score = 0;
-        this.moves = 20;
-        this.selected = null; // {r, c}
-        this.isProcessing = false;
-    }
+    // V4.1: 增加 manualTriggers 参数，用于处理主动触发的特殊道具
+    async processMatches(matchGroups, manualTriggers = []) {
+        let pointsToRemove = new Set();
+        let itemsToCreate = []; // {r, c, special}
 
-    start() {
-        this.score = 0;
-        this.moves = 20;
-        this.callbacks.onScoreChange(this.score);
-        this.callbacks.onMovesChange(this.moves);
-        this.initGrid();
-        this.render();
-    }
-
-    initGrid() {
-        this.grid = [];
-        for (let r = 0; r < this.height; r++) {
-            let row = [];
-            for (let c = 0; c < this.width; c++) {
-                row.push(this.randomItem());
-            }
-            this.grid.push(row);
-        }
-        // 初始消除检查，避免开局就有消除
-        // 简化版：暂不处理开局消除，让用户自己消
-    }
-
-    randomItem() {
-        return this.items[Math.floor(Math.random() * this.items.length)];
-    }
-
-    render() {
-        this.boardEl.innerHTML = '';
-        for (let r = 0; r < this.height; r++) {
-            for (let c = 0; c < this.width; c++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                cell.innerText = this.grid[r][c];
-                cell.dataset.r = r;
-                cell.dataset.c = c;
-                if (this.selected && this.selected.r === r && this.selected.c === c) {
-                    cell.classList.add('selected');
-                }
-                cell.onclick = () => this.handleClick(r, c);
-                this.boardEl.appendChild(cell);
+        // 1. 处理自然匹配
+        for (let group of matchGroups) {
+            group.forEach(p => pointsToRemove.add(`${p.r},${p.c}`));
+            
+            if (group.length === 4) {
+                let target = this.findTargetForSpecial(group);
+                // 确保新生成的道具位置不被标记为移除（虽然逻辑上是要移除旧的生成新的，
+                // 但为了避免 expandExplosions 误伤未来生成的位置，或者逻辑冲突）
+                // 实际上我们是先移除旧DOM，再在同位置createItem。
+                // 关键点：如果是4/5连，生成新道具是替代原来的消除，
+                // 所以这个位置虽然在pointsToRemove里，但稍后我们会覆盖它。
+                itemsToCreate.push({r: target.r, c: target.c, special: 'bomb'});
+            } else if (group.length >= 5) {
+                let target = this.findTargetForSpecial(group);
+                itemsToCreate.push({r: target.r, c: target.c, special: 'rainbow'});
             }
         }
-    }
 
-    handleClick(r, c) {
-        if (this.isProcessing) return;
-
-        if (!this.selected) {
-            this.selected = { r, c };
-            this.render();
-        } else {
-            const dist = Math.abs(this.selected.r - r) + Math.abs(this.selected.c - c);
-            if (dist === 1) {
-                this.swap(this.selected, { r, c });
-                this.selected = null;
-            } else {
-                this.selected = { r, c }; // 重新选择
-                this.render();
-            }
-        }
-    }
-
-    async swap(p1, p2) {
-        this.isProcessing = true;
-        
-        // 交换数据
-        let temp = this.grid[p1.r][p1.c];
-        this.grid[p1.r][p1.c] = this.grid[p2.r][p2.c];
-        this.grid[p2.r][p2.c] = temp;
-        
-        this.render();
-        await this.wait(200);
-
-        // 检查消除
-        const matches = this.findMatches();
-        if (matches.length > 0) {
-            this.moves--;
-            this.callbacks.onMovesChange(this.moves);
-            await this.processMatches(matches);
-        } else {
-            // 无效交换，还原
-            temp = this.grid[p1.r][p1.c];
-            this.grid[p1.r][p1.c] = this.grid[p2.r][p2.c];
-            this.grid[p2.r][p2.c] = temp;
-            this.render();
+        // 2. 将 manualTriggers 加入待移除列表，以便触发 expandExplosions
+        for (let p of manualTriggers) {
+            pointsToRemove.add(`${p.r},${p.c}`);
         }
 
-        this.isProcessing = false;
-        
-        if (this.moves <= 0) {
-            setTimeout(() => this.callbacks.onGameOver(this.score), 500);
-        }
-    }
-
-    findMatches() {
-        let matchedSet = new Set();
-        
-        // 横向
-        for (let r = 0; r < this.height; r++) {
-            for (let c = 0; c < this.width - 2; c++) {
-                let item = this.grid[r][c];
-                if (item && item === this.grid[r][c+1] && item === this.grid[r][c+2]) {
-                    matchedSet.add(`${r},${c}`);
-                    matchedSet.add(`${r},${c+1}`);
-                    matchedSet.add(`${r},${c+2}`);
-                }
-            }
-        }
-        
-        // 纵向
-        for (let r = 0; r < this.height - 2; r++) {
-            for (let c = 0; c < this.width; c++) {
-                let item = this.grid[r][c];
-                if (item && item === this.grid[r+1][c] && item === this.grid[r+2][c]) {
-                    matchedSet.add(`${r},${c}`);
-                    matchedSet.add(`${r+1},${c}`);
-                    matchedSet.add(`${r+2},${c}`);
-                }
-            }
-        }
-        
-        return Array.from(matchedSet).map(s => {
+        // 3. 转换 Set 为 Array
+        let removeList = Array.from(pointsToRemove).map(s => {
             const [r, c] = s.split(',').map(Number);
-            return { r, c };
+            return {r, c};
         });
-    }
 
-    async processMatches(matches) {
-        // 1. 消除动画
-        matches.forEach(p => {
-            this.grid[p.r][p.c] = null; // 标记为空
-        });
-        
-        // 增加分数 (每个消除 10 分)
-        this.score += matches.length * 10;
-        this.callbacks.onScoreChange(this.score);
-        
-        this.render();
+        // 4. 爆炸逻辑 (递归扩展 removeList)
+        removeList = this.expandExplosions(removeList);
+
+        // 5. 执行消除动画
+        for (let p of removeList) {
+            const item = this.grid[p.r][p.c];
+            if (item) {
+                item.el.classList.add('matched');
+                if (item.special) item.el.classList.add('exploding');
+            }
+        }
         await this.wait(300);
 
-        // 2. 下落填充
+        // 6. 移除 DOM 和 Data
+        // 注意：这里需要先移除，但要保留 itemsToCreate 中预定的位置
+        for (let p of removeList) {
+            const item = this.grid[p.r][p.c];
+            if (item) {
+                item.el.remove();
+                this.grid[p.r][p.c] = null;
+                this.score += item.special ? 50 : 10;
+            }
+        }
+        this.callbacks.onScoreChange(this.score);
+
+        // 7. 生成新道具 (炸弹/彩虹)
+        // 关键逻辑：这一步是在“消除”之后，“下落”之前执行的。
+        // 所以新生成的道具会占据原本的位置，不会掉下去，也不会消失。
+        // 它们会参与后续的逻辑（作为障碍物阻挡下落，或者自己下落）
+        for (let newItem of itemsToCreate) {
+            // 如果位置上有残留（异常情况），先移除
+            if (this.grid[newItem.r][newItem.c]) {
+                this.grid[newItem.r][newItem.c].el.remove();
+            }
+            const type = newItem.special === 'bomb' ? '💣' : '🌈';
+            this.grid[newItem.r][newItem.c] = this.createItem(newItem.r, newItem.c, type, newItem.special);
+            this.grid[newItem.r][newItem.c].el.classList.add('new-item');
+        }
+
+        // 8. 下落
         this.applyGravity();
         this.render();
         await this.wait(300);
 
-        // 3. 填充新块
+        // 9. 填充
         this.fillNewItems();
-        this.render();
         await this.wait(300);
 
-        // 4. 连击检查
-        const newMatches = this.findMatches();
-        if (newMatches.length > 0) {
-            await this.processMatches(newMatches);
-        }
-    }
-
-    applyGravity() {
-        for (let c = 0; c < this.width; c++) {
-            let emptySlots = 0;
-            for (let r = this.height - 1; r >= 0; r--) {
-                if (this.grid[r][c] === null) {
-                    emptySlots++;
-                } else if (emptySlots > 0) {
-                    this.grid[r + emptySlots][c] = this.grid[r][c];
-                    this.grid[r][c] = null;
-                }
+        // 10. 连击 (Chain Reaction)
+        // 这里的关键：所有东西（包括刚才生成的炸弹/彩虹）都已经就位。
+        // findMatches 会扫描整个棋盘。
+        // 如果刚才生成的炸弹（比如）恰好落下来凑成了 4 个炸弹连在一起（极低概率，因为炸弹不参与普通匹配），
+        // 或者炸弹落下后，周围的普通糖果凑成了新的 4/5 连。
+        // 那么是的！新的 4/5 连会再次触发 processMatches，再次生成新的炸弹/彩虹！
+        // 这就是“无限连击”的快乐！
+        const newGroups = this.findMatches();
+        if (newGroups.length > 0) {
+            await this.processMatches(newGroups);
+        } else {
+            // 检查死局
+             if (!this.hasPossibleMoves()) {
+                await this.shuffleBoard();
             }
         }
     }
-
-    fillNewItems() {
-        for (let r = 0; r < this.height; r++) {
-            for (let c = 0; c < this.width; c++) {
-                if (this.grid[r][c] === null) {
-                    this.grid[r][c] = this.randomItem();
-                }
-            }
-        }
-    }
-
-    wait(ms) {
-        return new Promise(resolve => setTimeout(resolve, ms));
-    }
-}

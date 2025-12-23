@@ -538,6 +538,80 @@ const app = {
 
     // --- End 相册逻辑 ---
 
+    // --- 排行榜系统 (V3.8) ---
+    
+    // 获取排行榜数据
+    fetchLeaderboard(gameType) {
+        if (!window.AV) return Promise.resolve([]);
+        
+        const query = new AV.Query('GameLeaderboard');
+        query.equalTo('gameType', gameType);
+        query.descending('score');
+        query.limit(20); // 取前20名
+        
+        return query.find().then(results => {
+            return results.map(r => ({
+                username: r.get('username'),
+                userRole: r.get('userRole'), // 'boy' or 'girl'
+                score: r.get('score'),
+                date: r.createdAt.toLocaleDateString()
+            }));
+        }).catch(err => {
+            console.error('获取排行榜失败', err);
+            return [];
+        });
+    },
+
+    // 上传游戏分数 (自动更新最高分)
+    uploadGameScore(gameType, score) {
+        if (!window.AV) return Promise.resolve(false);
+        
+        const userRole = this.currentUser;
+        const username = userRole === 'boy' ? '男朋友' : '周金霞';
+        
+        // 1. 查询该用户在该游戏的历史最高分
+        const query = new AV.Query('GameLeaderboard');
+        query.equalTo('gameType', gameType);
+        query.equalTo('userRole', userRole);
+        
+        return query.first().then(record => {
+            if (record) {
+                // 如果有记录，检查是否破纪录
+                const oldScore = record.get('score');
+                if (score > oldScore) {
+                    record.set('score', score);
+                    record.set('username', username); // 更新可能的名字变化
+                    return record.save().then(() => 'update');
+                }
+                return 'no_change';
+            } else {
+                // 如果没记录，创建新记录
+                const GameLeaderboard = AV.Object.extend('GameLeaderboard');
+                const newRecord = new GameLeaderboard();
+                newRecord.set('gameType', gameType);
+                newRecord.set('userRole', userRole);
+                newRecord.set('username', username);
+                newRecord.set('score', score);
+                return newRecord.save().then(() => 'create');
+            }
+        }).catch(err => {
+            console.error('上传分数失败', err);
+            // 第一次使用可能没有 Class，需要允许自动创建
+            if (err.code === 101) {
+                 // Class 不存在，直接创建
+                const GameLeaderboard = AV.Object.extend('GameLeaderboard');
+                const newRecord = new GameLeaderboard();
+                newRecord.set('gameType', gameType);
+                newRecord.set('userRole', userRole);
+                newRecord.set('username', username);
+                newRecord.set('score', score);
+                return newRecord.save().then(() => 'create');
+            }
+        });
+    },
+
+    // --- End 排行榜系统 ---
+
     // 获取等级
     getRank() {
         if (this.data.score < 0) {
@@ -569,6 +643,9 @@ const app = {
     // 游戏积分结算接口 (Game Integration)
     // 供 games.html 调用，具有防刷机制（简单版）
     submitGameScore(gameName, score) {
+        // 先尝试上传到排行榜 (后台静默进行)
+        this.uploadGameScore(gameName, score);
+        
         let minScore = 0;
         let reward = 0;
         

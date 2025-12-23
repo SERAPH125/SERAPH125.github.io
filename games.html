@@ -45,52 +45,17 @@
             justify-content: center;
         }
         
-        /* 消消乐棋盘 */
-        #match3-board {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 4px;
-            background: rgba(255,255,255,0.3);
-            padding: 10px;
-            border-radius: 15px;
-            margin: 20px;
-            width: 90%;
-            max-width: 350px;
-            aspect-ratio: 1/1;
-        }
-        .cell {
-            background: rgba(255,255,255,0.8);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            cursor: pointer;
-            user-select: none;
-            transition: transform 0.2s, background 0.2s;
-        }
-        .cell.selected {
-            background: var(--accent-pink);
-            transform: scale(1.1);
-            box-shadow: 0 0 10px var(--accent-pink);
-        }
-        .cell.matched {
-            animation: pop 0.3s forwards;
-        }
-        @keyframes pop {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(0); opacity: 0; }
-        }
-
+        /* 通用游戏头部 */
         .game-header {
             display: flex;
             justify-content: space-between;
-            width: 90%;
-            max-width: 350px;
+            width: 96%; /* 加宽 */
+            max-width: 450px; /* 加宽 */
             color: white;
             font-weight: bold;
             margin-bottom: 10px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            font-size: 1.1rem;
         }
         
         .btn-close-game {
@@ -99,76 +64,270 @@
             background: rgba(0,0,0,0.3);
             color: white;
             border: none;
-            width: 36px; height: 36px;
+            width: 40px; height: 40px;
             border-radius: 50%;
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             cursor: pointer;
+            z-index: 1001;
         }
 
-        /* 2048游戏样式 */
+        /* -----------------------
+           Match3 样式优化 (更宽大)
+           ----------------------- */
+        #match3-board {
+            position: relative;
+            width: 96%; /* 几乎占满屏幕宽度 */
+            max-width: 450px; /* 平板上也能更大 */
+            aspect-ratio: 1/1;
+            background: rgba(255,255,255,0.3);
+            padding: 5px; /* 减小padding以留给格子更多空间 */
+            border-radius: 15px;
+            margin: 10px 0; /* 减少margin */
+            box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .cell {
+            position: absolute;
+            width: calc(100% / 7 - 4px); /* 计算宽度，减去间隙 */
+            height: calc(100% / 7 - 4px);
+            background: rgba(255,255,255,0.85);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem; /* 更大的Emoji */
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        /* 小屏幕适配 */
+        @media (max-width: 360px) {
+            .cell { font-size: 1.4rem; }
+        }
+
+        .cell.selected {
+            background: var(--accent-pink);
+            transform: scale(1.15);
+            box-shadow: 0 0 15px var(--accent-pink);
+            z-index: 10;
+        }
+        .cell.matched {
+            animation: pop 0.3s forwards;
+        }
+        /* 特殊道具样式 */
+        .item-bomb {
+            background: radial-gradient(circle, #ff4444, #cc0000);
+            border: 2px solid white;
+            animation: pulse 1s infinite;
+            z-index: 5;
+        }
+        .item-rainbow {
+            background: linear-gradient(135deg, #ff99cc, #99ccff, #ffff99);
+            border: 2px solid white;
+            animation: spin 3s linear infinite;
+            z-index: 5;
+        }
+        .cell.exploding {
+            animation: explode 0.4s forwards !important;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px red; }
+            50% { transform: scale(1.1); box-shadow: 0 0 15px red; }
+            100% { transform: scale(1); box-shadow: 0 0 5px red; }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.5); opacity: 0.8; filter: brightness(2); }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        .cell.new-item {
+            animation: dropIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes pop {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes dropIn {
+            0% { transform: scale(0) translateY(-50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* -----------------------
+           2048 样式优化 (更宽大)
+           ----------------------- */
         #game2048-board {
-            width: 90%;
-            max-width: 350px;
-            margin: 20px;
+            position: relative;
+            width: 96%;
+            max-width: 450px;
+            margin: 10px 0;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
         
-        .game2048-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+        .game2048-grid-container {
+            position: relative;
             width: 100%;
             aspect-ratio: 1/1;
-            background: rgba(187, 173, 160, 0.5);
-            padding: 8px;
+            background: #bbada0;
+            padding: 8px; /* 减小padding */
             border-radius: 10px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .game2048-grid-bg {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 8px; /* 减小间隙 */
+            width: 100%;
+            height: 100%;
+        }
+
+        .game2048-cell-bg {
+            background: rgba(238, 228, 218, 0.35);
+            border-radius: 6px;
         }
         
-        .game2048-cell {
-            background: rgba(238, 228, 218, 0.35);
-            border-radius: 8px;
+        .tile-container {
+            position: absolute;
+            z-index: 2;
+            left: 0; top: 0; right: 0; bottom: 0;
+            margin: 8px; /* 对应padding */
+            pointer-events: none;
+        }
+
+        .tile {
+            position: absolute;
+            /* 动态计算位置 */
+            width: calc(25% - 8px); /* 对应 gap */
+            height: calc(25% - 8px);
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            user-select: none;
-            transition: all 0.15s ease;
+            font-size: 2.2rem; /* 更大字体 */
+            transition: transform 100ms ease-in-out;
+            z-index: 10;
         }
         
-        .game2048-controls {
+        /* 针对大数字调整字体 */
+        .tile-super { font-size: 1.5rem; }
+
+        .tile.tile-new { animation: appear 200ms ease 100ms backwards; }
+        .tile.tile-merged { animation: popTile 200ms ease 100ms; z-index: 20; }
+
+        @keyframes appear {
+            0% { opacity: 0; transform: scale(0); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes popTile {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* 控制按钮 */
+        .game-controls-bar {
             display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 15px;
+            margin-top: 20px;
         }
         
-        .game2048-btn {
-            background: rgba(255,255,255,0.3);
+        .game-btn {
+            background: rgba(255,255,255,0.25);
             color: white;
-            border: 2px solid rgba(255,255,255,0.5);
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
             cursor: pointer;
+            backdrop-filter: blur(5px);
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
         
-        .game2048-btn:hover {
-            background: rgba(255,255,255,0.5);
-        }
-        
-        .game2048-btn:active {
-            transform: scale(0.95);
-        }
-        
+        .game-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-2px); }
+        .game-btn:active { transform: scale(0.95); }
+
         .game2048-hint {
             color: white;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 15px;
             opacity: 0.9;
+            line-height: 1.5;
         }
+        
+        /* 排行榜模态框 */
+        .rank-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(3px);
+        }
+        .rank-card {
+            background: white;
+            width: 85%;
+            max-width: 350px;
+            border-radius: 20px;
+            padding: 20px;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            animation: slideUp 0.3s ease;
+        }
+        .rank-header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .rank-list {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .rank-item:last-child { border-bottom: none; }
+        .rank-user { display: flex; align-items: center; gap: 8px; }
+        .rank-avatar { 
+            width: 30px; height: 30px; 
+            background: #eee; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+        }
+        .rank-score { font-weight: bold; color: var(--accent-pink); font-size: 1.1rem; }
+        .rank-date { font-size: 0.7rem; color: #999; margin-left: 5px; }
+
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
     </style>
 </head>
 <body>
@@ -208,32 +367,54 @@
     <button class="btn-close-game" onclick="closeGame()">×</button>
     
     <!-- 消消乐游戏界面 -->
-    <div id="match3-ui" style="display:none;">
+    <div id="match3-ui" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
         <div class="game-header">
             <div>得分: <span id="game-score">0</span></div>
             <div>步数: <span id="game-moves">20</span></div>
         </div>
         <div id="match3-board"></div>
-        <div style="color:white; font-size:0.9rem; text-align:center; margin-top:10px;">
-            交换相邻糖果，凑成3个消除 🍬
+        <div class="game-controls-bar">
+            <button class="game-btn" onclick="showLeaderboard('match3')">🏆 排行榜</button>
+            <button class="game-btn" onclick="if(confirm('确定要重新开始吗？')) currentGame.start()">🔄 重玩</button>
+        </div>
+        <div style="color:white; font-size:0.9rem; text-align:center; margin-top:15px;">
+            交换相邻糖果，凑成3个消除 🍬<br>
+            4连得炸弹💣，5连得彩虹🌈
         </div>
     </div>
     
     <!-- 2048游戏界面 -->
-    <div id="game2048-ui" style="display:none;">
+    <div id="game2048-ui" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
         <div class="game-header">
             <div>得分: <span id="game2048-score">0</span></div>
             <div>最高: <span id="game2048-best">0</span></div>
         </div>
         <div id="game2048-board"></div>
-        <div class="game2048-controls">
-            <button class="game2048-btn" onclick="if(game2048Instance && game2048Instance.restoreState()) { game2048Instance.render(); }">↶ 撤销</button>
-            <button class="game2048-btn" onclick="game2048Instance && game2048Instance.start() && game2048Instance.render()">🔄 重玩</button>
+        
+        <div class="game-controls-bar">
+            <button class="game-btn" onclick="if(game2048Instance) game2048Instance.restoreState()">↶ 撤销</button>
+            <button class="game-btn" onclick="game2048Instance && game2048Instance.start()">🔄 重玩</button>
+            <button class="game-btn" onclick="showLeaderboard('2048')">🏆 排行榜</button>
         </div>
+        
         <div class="game2048-hint">
             使用方向键或滑动屏幕移动 🎮<br>
             合成相同数字，目标是2048！❤️
         </div>
+    </div>
+</div>
+
+<!-- 排行榜弹窗 -->
+<div id="rank-modal" class="rank-modal" onclick="if(event.target===this) closeLeaderboard()">
+    <div class="rank-card">
+        <div class="rank-header">
+            <h3>🏆 游戏排行榜</h3>
+            <div style="font-size:0.8rem; color:#999; margin-top:5px;">只展示历史最高分 TOP 20</div>
+        </div>
+        <div class="rank-list" id="rank-list">
+            <div style="text-align:center; padding:20px; color:#999;">正在加载...</div>
+        </div>
+        <button class="btn-primary" onclick="closeLeaderboard()" style="width:100%; margin-top:15px;">关闭</button>
     </div>
 </div>
 
@@ -277,7 +458,7 @@
         
         if(type === 'match3') {
             // 显示消消乐界面
-            match3UI.style.display = 'block';
+            match3UI.style.display = 'flex'; // Changed to flex to support column layout
             game2048UI.style.display = 'none';
             
             if(!currentGame) {
@@ -285,28 +466,35 @@
                     onScoreChange: (s) => document.getElementById('game-score').innerText = s,
                     onMovesChange: (m) => document.getElementById('game-moves').innerText = m,
                     onGameOver: (score) => {
-                        alert(`游戏结束！最终得分：${score}`);
-                        if(score >= 1000) {
-                            const success = app.submitGameScore('match3', score);
-                            if (success) {
-                                const unit = app.currentUser === 'girl' ? '甜度' : '积分';
-                                alert(`恭喜！挑战成功！获得 20 ${unit}奖励！🎉`);
+                        // 上传分数
+                        app.uploadGameScore('match3', score);
+                        
+                        // 延迟一点显示结果，等动画播完
+                        setTimeout(() => {
+                            if(score >= 1000) {
+                                const success = app.submitGameScore('match3', score);
+                                if (success) {
+                                    const unit = app.currentUser === 'girl' ? '甜度' : '积分';
+                                    alert(`恭喜！挑战成功！获得 5 ${unit}奖励！🎉\n最终得分：${score}`);
+                                } else {
+                                    alert(`挑战成功！得分：${score}\n今天的奖励已经领过啦，明天再来吧！❤️`);
+                                }
                             } else {
-                                alert('挑战成功！但今天的奖励已经领过啦，明天再来吧！❤️');
+                                alert(`游戏结束！最终得分：${score}\n差一点点！满 1000 分才有奖励哦！`);
                             }
-                        } else {
-                            alert('差一点点！满 1000 分才有奖励哦，再接再厉！💪');
-                        }
-                        closeGame();
+                            showLeaderboard('match3'); // 游戏结束自动显示排行榜
+                        }, 500);
                     }
                 });
             }
+            // 每次打开都重新开始？或者保留状态
+            // 最好询问是否继续，这里简化直接重新开始
             currentGame.start();
             
         } else if(type === '2048') {
             // 显示2048界面
             match3UI.style.display = 'none';
-            game2048UI.style.display = 'block';
+            game2048UI.style.display = 'flex'; // Changed to flex
             
             if(!game2048Instance) {
                 game2048Instance = new Game2048('game2048-board', {
@@ -314,28 +502,24 @@
                         document.getElementById('game2048-score').innerText = score;
                     },
                     onGameOver: (score) => {
+                        // 上传分数
+                        app.uploadGameScore('2048', score);
                         const bestScore = game2048Instance.getBestScore();
-                        alert(`游戏结束！\n最终得分：${score}\n最高分：${bestScore}`);
                         
-                        // 2048游戏奖励：达到2048分可获得奖励
-                        if(score >= 2048) {
-                            const success = app.submitGameScore('2048', score);
-                            if (success) {
-                                const unit = app.currentUser === 'girl' ? '甜度' : '积分';
-                                alert(`恭喜！合成2048成功！获得 30 ${unit}奖励！🎉`);
-                            } else {
-                                alert('挑战成功！但今天的奖励已经领过啦，明天再来吧！❤️');
-                            }
-                        } else if(score >= 1024) {
-                            alert('很棒！继续努力，达到2048分有奖励哦！💪');
-                        }
+                        setTimeout(() => {
+                            alert(`游戏结束！\n最终得分：${score}\n最高分：${bestScore}`);
+                            showLeaderboard('2048'); // 游戏结束自动显示排行榜
+                        }, 500);
                     },
                     onGameWin: (score) => {
+                        // 上传分数
+                        app.uploadGameScore('2048', score);
+                        
                         // 达到2048时的特殊提示
                         const success = app.submitGameScore('2048', score);
                         if (success) {
                             const unit = app.currentUser === 'girl' ? '甜度' : '积分';
-                            alert(`🎉🎉🎉 恭喜！合成2048成功！获得 30 ${unit}奖励！🎉🎉🎉`);
+                            alert(`🎉🎉🎉 恭喜！合成2048成功！获得 15 ${unit}奖励！🎉🎉🎉`);
                         } else {
                             alert('🎉 恭喜合成2048！但今天的奖励已经领过啦，明天再来吧！❤️');
                         }
@@ -344,28 +528,63 @@
                 
                 // 初始化控制器
                 game2048Controller = new Game2048Controller(game2048Instance, container);
-                
-                // 更新最高分显示
-                document.getElementById('game2048-best').innerText = game2048Instance.getBestScore();
             }
             
+            // 更新最高分显示
+            document.getElementById('game2048-best').innerText = game2048Instance.getBestScore();
             game2048Instance.start();
-            game2048Instance.render();
         }
     }
 
     function closeGame() {
-        document.getElementById('game-container').style.display = 'none';
-        
-        // 清理游戏实例（保留状态以便下次继续）
-        if(currentGameType === 'match3' && currentGame) {
-            // match3游戏可以保留实例
-        } else if(currentGameType === '2048' && game2048Instance) {
-            // 2048游戏保留实例，但可以重置
+        if(confirm('确定要退出游戏吗？')) {
+            document.getElementById('game-container').style.display = 'none';
+            currentGameType = null;
         }
-        
-        currentGameType = null;
     }
+
+    // --- 排行榜逻辑 ---
+    function showLeaderboard(gameType) {
+        const modal = document.getElementById('rank-modal');
+        const list = document.getElementById('rank-list');
+        modal.style.display = 'flex';
+        list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">正在加载排行榜...</div>';
+
+        app.fetchLeaderboard(gameType).then(ranks => {
+            if (ranks.length === 0) {
+                list.innerHTML = '<div style="text-align:center; padding:20px; color:#999;">暂无记录，快来抢占第一名！</div>';
+                return;
+            }
+
+            let html = '';
+            ranks.forEach((item, index) => {
+                const icon = item.userRole === 'girl' ? '👧' : '👦';
+                const medal = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : index + 1));
+                
+                html += `
+                    <div class="rank-item">
+                        <div class="rank-user">
+                            <span style="font-weight:bold; width:20px;">${medal}</span>
+                            <div class="rank-avatar">${icon}</div>
+                            <div>
+                                <div>${item.username || '匿名'}</div>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="rank-score">${item.score}</div>
+                            <div class="rank-date">${item.date}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        });
+    }
+
+    function closeLeaderboard() {
+        document.getElementById('rank-modal').style.display = 'none';
+    }
+
 </script>
 </body>
 </html>
