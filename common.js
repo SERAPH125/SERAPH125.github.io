@@ -327,6 +327,10 @@ const app = {
             localStorage.setItem('user_role', 'boy');
         }
 
+        // 初始化主题
+        const savedTheme = localStorage.getItem('app_theme') || 'pink';
+        this.applyTheme(savedTheme);
+
         // 先加载本地数据，保证界面快速响应
         this.loadLocalData();
         this.fixHistoryIds();
@@ -346,6 +350,20 @@ const app = {
         this.showToast(`身份已切换为：${role === 'boy' ? '男朋友' : '周金霞'}`);
         // 刷新页面以应用新身份
         setTimeout(() => location.reload(), 500);
+    },
+
+    // 切换主题
+    switchTheme(themeName) {
+        localStorage.setItem('app_theme', themeName);
+        this.applyTheme(themeName);
+        this.showToast('主题切换成功！🎨');
+        // 如果在设置页，重新渲染以更新选中状态
+        if (typeof this.render === 'function') this.render();
+    },
+
+    // 应用主题
+    applyTheme(themeName) {
+        document.body.className = `theme-${themeName}`;
     },
 
     // 更新恋爱天数

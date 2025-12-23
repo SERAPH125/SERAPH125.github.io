@@ -38,6 +38,34 @@
             display: block;
             margin-bottom: 5px;
         }
+        /* 主题选择器样式 */
+        .theme-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .theme-option {
+            background: rgba(255,255,255,0.5);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .theme-option.active {
+            border-color: var(--accent-pink);
+            background: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .theme-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -47,7 +75,7 @@
 
 <div class="container">
     <header>
-        <h1>⚙️ 设置 <span class="version-tag">V3.3</span></h1>
+        <h1>⚙️ 设置 <span class="version-tag">V3.5</span></h1>
         <div class="love-days">已经认识 <span id="days-count">0</span> 天啦 💕</div>
     </header>
 
@@ -68,6 +96,22 @@
         <div class="role-option" id="role-girl" onclick="app.switchUserRole('girl')">
             <span class="role-icon">👧</span>
             我是周金霞
+        </div>
+    </div>
+
+    <h3>🎨 主题风格</h3>
+    <div class="role-switch-container">
+        <div class="role-option" id="theme-pink" onclick="app.switchTheme('pink')">
+            <span class="role-icon">🌸</span>
+            恋爱粉
+        </div>
+        <div class="role-option" id="theme-blue" onclick="app.switchTheme('blue')">
+            <span class="role-icon">🌌</span>
+            星空蓝
+        </div>
+        <div class="role-option" id="theme-green" onclick="app.switchTheme('green')">
+            <span class="role-icon">🌿</span>
+            清新绿
         </div>
     </div>
 
@@ -128,6 +172,16 @@ Object.assign(app, {
         } else {
             document.getElementById('role-girl').classList.add('active');
         }
+
+        // 渲染主题状态
+        const currentTheme = localStorage.getItem('app_theme') || 'pink';
+        ['pink', 'blue', 'green'].forEach(t => {
+            const el = document.getElementById(`theme-${t}`);
+            if (el) {
+                if (t === currentTheme) el.classList.add('active');
+                else el.classList.remove('active');
+            }
+        });
 
         // 渲染历史记录
         this.renderHistory();
