@@ -94,7 +94,6 @@
         <a href="settings.html" class="nav-btn">⚙️ 设置</a>
     </div>
 
-    <!-- 主页内容 -->
     <div class="score-card">
         <div class="home-streak-badge" id="home-streak" onclick="app.showSignInModal(true)">
             <span>🔥</span> <span id="streak-num">0</span> 天
@@ -269,13 +268,15 @@ Object.assign(app, {
 
         if (scoreCard && scoreTitle) {
             if (this.data.score < 0) {
+                // 红色警报状态需要覆盖主题色
                 scoreCard.style.background = 'linear-gradient(135deg, #e63946, #000000)';
                 scoreTitle.innerText = "⚠️ 红色警报 ⚠️";
                 let grayLevel = Math.min(1, Math.abs(this.data.score) / 500); 
                 let brightnessLevel = Math.max(0.4, 1 - (Math.abs(this.data.score) / 800));
                 body.style.filter = `grayscale(${grayLevel}) brightness(${brightnessLevel})`;
             } else {
-                scoreCard.style.background = 'linear-gradient(135deg, rgba(255, 154, 158, 0.9), rgba(254, 207, 239, 0.9))';
+                // 正常状态，清除内联样式，回归 CSS 变量控制
+                scoreCard.style.background = ''; 
                 scoreTitle.innerText = "Current Score";
                 body.style.filter = 'none';
             }
