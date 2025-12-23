@@ -6,7 +6,7 @@
 /* 默认主题：恋爱粉 (Pink / Default) */
 :root,
 body.theme-pink {
-    --primary-gradient: linear-gradient(120deg, #a18cd1 0%, #fbc2eb 100%);
+    --primary-gradient: linear-gradient(120deg, #eea3c2 0%, #fbc2eb 100%);
     --bg-gradient: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1);
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(255, 255, 255, 0.5);
