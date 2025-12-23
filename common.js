@@ -567,7 +567,7 @@ const app = {
         if (!window.AV) return Promise.resolve(false);
         
         const userRole = this.currentUser;
-        const username = userRole === 'boy' ? '男朋友' : '周金霞';
+        const username = userRole === 'boy' ? '刘智勇' : '周金霞';
         
         // 1. 查询该用户在该游戏的历史最高分
         const query = new AV.Query('GameLeaderboard');
@@ -656,6 +656,10 @@ const app = {
         } else if (gameName === '2048') {
             minScore = 2048; // 需要达到2048分
             reward = 15; // 奖励更多
+        } else if (gameName === 'sudoku') {
+            // 数独：完成即可获得奖励（score 是转换后的分数，完成时 score > 0）
+            minScore = 1; // 只要完成就有奖励
+            reward = 10; // 完成数独奖励
         } else {
             return false; // 未知游戏
         }

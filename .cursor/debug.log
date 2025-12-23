@@ -1,0 +1,10 @@
+{"location":"games.html:576","message":"startGame match3 called","data":{"type":"match3"},"timestamp":1766498843566,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"games.html:582","message":"check boardEl","data":{"boardElExists":true,"boardElId":"match3-board"},"timestamp":1766498843569,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"games.html:585","message":"before Match3Game constructor","data":{"Match3GameExists":"function"},"timestamp":1766498843570,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"games.html:605","message":"after Match3Game constructor","data":{"currentGameExists":true,"hasStart":"function"},"timestamp":1766498843571,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"games.html:615","message":"before start() call","data":{"currentGameExists":true},"timestamp":1766498843572,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"games.html:617","message":"after start() call","data":{},"timestamp":1766498843576,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"games.html:576","message":"startGame match3 called","data":{"type":"match3"},"timestamp":1766499096133,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"games.html:617","message":"after start() call","data":{},"timestamp":1766499096139,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"games.html:615","message":"before start() call","data":{"currentGameExists":true},"timestamp":1766499096136,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
+{"location":"games.html:582","message":"check boardEl","data":{"boardElExists":true,"boardElId":"match3-board"},"timestamp":1766499096135,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}

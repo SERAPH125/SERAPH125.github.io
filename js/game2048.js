@@ -523,8 +523,8 @@ class Game2048Controller {
 
     init() {
         document.addEventListener('keydown', (e) => {
-            if (this.container.style.display === 'none') return;
-            
+        if (this.container.style.display === 'none') return;
+        
             const map = {
                 38: 'up', 87: 'up',
                 39: 'right', 68: 'right',
@@ -534,7 +534,7 @@ class Game2048Controller {
             
             const direction = map[e.which];
             if (direction) {
-                e.preventDefault();
+        e.preventDefault();
                 this.game.move(direction);
             }
         });
@@ -549,8 +549,8 @@ class Game2048Controller {
             if (e.changedTouches.length > 0) {
                 this.touchEndX = e.changedTouches[0].clientX;
                 this.touchEndY = e.changedTouches[0].clientY;
-                this.handleSwipe();
-            }
+        this.handleSwipe();
+    }
         }, { passive: true });
         
         this.container.addEventListener('touchmove', (e) => {
@@ -567,7 +567,7 @@ class Game2048Controller {
         if (Math.max(absDx, absDy) > 30) {
             if (absDx > absDy) {
                 this.game.move(dx > 0 ? 'right' : 'left');
-            } else {
+        } else {
                 this.game.move(dy > 0 ? 'down' : 'up');
             }
         }

@@ -225,23 +225,21 @@
         .tile-super { font-size: 1.5rem; }
 
         .tile.tile-new { animation: appear 200ms ease 100ms backwards; }
-        .tile.tile-merged { animation: popTile 200ms ease 100ms; z-index: 20; }
+        .tile.tile-merged { z-index: 20; } /* 取消 popTile 动画 */
 
         @keyframes appear {
             0% { opacity: 0; transform: scale(0); }
             100% { opacity: 1; transform: scale(1); }
         }
-        @keyframes popTile {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
+        /* @keyframes popTile { ... }  已移除 */
         
         /* 控制按钮 */
         .game-controls-bar {
             display: flex;
-            gap: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
             margin-top: 20px;
+            justify-content: center;
         }
         
         .game-btn {
@@ -249,14 +247,16 @@
             color: white;
             border: 1px solid rgba(255,255,255,0.4);
             border-radius: 20px;
-            padding: 10px 20px;
-            font-size: 1rem;
+            padding: 8px 16px;
+            font-size: 0.9rem;
             cursor: pointer;
             backdrop-filter: blur(5px);
             transition: all 0.2s;
             display: flex;
             align-items: center;
             gap: 5px;
+            flex: 0 1 auto;
+            min-width: 80px;
         }
         
         .game-btn:hover { background: rgba(255,255,255,0.4); transform: translateY(-2px); }
@@ -269,6 +269,80 @@
             margin-top: 15px;
             opacity: 0.9;
             line-height: 1.5;
+        }
+
+        /* -----------------------
+           数独游戏样式
+           ----------------------- */
+        #sudoku-board {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            width: 96%;
+            max-width: 450px;
+            aspect-ratio: 1/1;
+            background: white;
+            border: 2px solid #555;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .sudoku-cell {
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transition: background 0.2s;
+        }
+        .sudoku-cell.fixed { 
+            font-weight: bold; 
+            color: #333; 
+            background: #f0f0f0; 
+        }
+        .sudoku-cell.user-filled { 
+            color: #007bff; 
+            font-weight: 500;
+        }
+        .sudoku-cell.error { 
+            color: red; 
+            background: #ffcccc !important; 
+        }
+        .sudoku-cell.selected { 
+            background: #b3d9ff !important; 
+        }
+        .sudoku-cell.highlight-same { 
+            background: #e6f2ff; 
+        }
+        
+        /* 数独数字键盘 */
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            width: 96%;
+            max-width: 450px;
+            margin-top: 10px;
+        }
+        .num-btn {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 10px;
+            padding: 12px 0;
+            font-size: 1.3rem;
+            color: #007bff;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+        .num-btn:active { 
+            background: rgba(255,255,255,0.7); 
+            transform: scale(0.95);
+        }
+        .num-btn.erase {
+            color: #dc3545;
+            grid-column: span 2; /* 擦除按钮占两格 */
         }
         
         /* 排行榜模态框 */
@@ -359,6 +433,11 @@
             <div class="game-title">合成大爱心</div>
             <div class="game-desc">滑动合成数字<br>目标：2048分</div>
         </div>
+        <div class="game-card" onclick="startGame('sudoku')">
+            <span class="game-icon">🔢</span>
+            <div class="game-title">数独挑战</div>
+            <div class="game-desc">逻辑推理填数字<br>完成即可获奖</div>
+        </div>
     </div>
 </div>
 
@@ -402,6 +481,40 @@
             合成相同数字，目标是2048！❤️
         </div>
     </div>
+    
+    <!-- 数独游戏界面 -->
+    <div id="sudoku-ui" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
+        <div class="game-header">
+            <div>错误: <span id="sudoku-mistakes">0</span>/<span id="sudoku-max-mistakes">3</span></div>
+            <div>用时: <span id="sudoku-time">0</span>秒</div>
+        </div>
+        <div id="sudoku-board"></div>
+        
+        <div class="numpad">
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(1)">1</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(2)">2</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(3)">3</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(4)">4</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(5)">5</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(6)">6</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(7)">7</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(8)">8</button>
+            <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(9)">9</button>
+            <button class="num-btn erase" onclick="sudokuGameInstance && sudokuGameInstance.erase()">擦除</button>
+        </div>
+        
+        <div class="game-controls-bar">
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('easy')">🔄 简单</button>
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('medium')">🔄 中等</button>
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">🔄 困难</button>
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('expert')" style="background: rgba(255,0,0,0.3); border-color: rgba(255,0,0,0.5);">🔥 超级难</button>
+        </div>
+        
+        <div style="color:white; font-size:0.9rem; text-align:center; margin-top:15px;">
+            点击格子选择，然后输入数字 🔢<br>
+            每行、每列、每个3x3宫格不能重复
+        </div>
+    </div>
 </div>
 
 <!-- 排行榜弹窗 -->
@@ -421,6 +534,7 @@
 <script src="common.js"></script>
 <script src="js/match3.js"></script>
 <script src="js/game2048.js"></script>
+<script src="js/sudoku.js"></script>
 <script>
     // 页面逻辑
     Object.assign(app, {
@@ -447,19 +561,26 @@
     let currentGameType = null;
     let game2048Instance = null;
     let game2048Controller = null;
+    let sudokuGameInstance = null;
+    let sudokuTimer = null;
 
     function startGame(type) {
         const container = document.getElementById('game-container');
         const match3UI = document.getElementById('match3-ui');
         const game2048UI = document.getElementById('game2048-ui');
+        const sudokuUI = document.getElementById('sudoku-ui');
         
         container.style.display = 'flex';
         currentGameType = type;
         
+        // 隐藏所有游戏界面
+        match3UI.style.display = 'none';
+        game2048UI.style.display = 'none';
+        sudokuUI.style.display = 'none';
+        
         if(type === 'match3') {
             // 显示消消乐界面
-            match3UI.style.display = 'flex'; // Changed to flex to support column layout
-            game2048UI.style.display = 'none';
+            match3UI.style.display = 'flex';
             
             if(!currentGame) {
                 currentGame = new Match3Game('match3-board', {
@@ -533,6 +654,55 @@
             // 更新最高分显示
             document.getElementById('game2048-best').innerText = game2048Instance.getBestScore();
             game2048Instance.start();
+            
+        } else if(type === 'sudoku') {
+            // 显示数独界面
+            sudokuUI.style.display = 'flex';
+            
+            if(!sudokuGameInstance) {
+                sudokuGameInstance = new SudokuGame('sudoku-board', {
+                    onMistakesChange: (mistakes, maxMistakes) => {
+                        document.getElementById('sudoku-mistakes').innerText = mistakes;
+                        document.getElementById('sudoku-max-mistakes').innerText = maxMistakes;
+                    },
+                    onGameOver: (isWin, elapsedTime) => {
+                        // 停止计时器
+                        if(sudokuTimer) {
+                            clearInterval(sudokuTimer);
+                            sudokuTimer = null;
+                        }
+                        
+                        if(isWin) {
+                            // 上传分数（用时越短分数越高，转换为分数：3600秒 - 用时 = 分数）
+                            const score = Math.max(0, 3600 - elapsedTime);
+                            app.uploadGameScore('sudoku', score);
+                            
+                            // 发放奖励
+                            const success = app.submitGameScore('sudoku', score);
+                            if (success) {
+                                const unit = app.currentUser === 'girl' ? '甜度' : '积分';
+                                alert(`🎉🎉🎉 恭喜完成数独！用时 ${elapsedTime} 秒\n获得 10 ${unit}奖励！🎉🎉🎉`);
+                            } else {
+                                alert(`🎉 恭喜完成数独！用时 ${elapsedTime} 秒\n但今天的奖励已经领过啦，明天再来吧！❤️`);
+                            }
+                        } else {
+                            alert('游戏失败！错误次数超过限制，再接再厉！💪');
+                        }
+                    }
+                });
+            }
+            
+            // 启动游戏（默认简单难度）
+            sudokuGameInstance.start('easy');
+            
+            // 启动计时器
+            if(sudokuTimer) clearInterval(sudokuTimer);
+            sudokuTimer = setInterval(() => {
+                if(sudokuGameInstance && !sudokuGameInstance.isGameOver) {
+                    const time = sudokuGameInstance.getElapsedTime();
+                    document.getElementById('sudoku-time').innerText = time;
+                }
+            }, 1000);
         }
     }
 
@@ -540,6 +710,12 @@
         if(confirm('确定要退出游戏吗？')) {
             document.getElementById('game-container').style.display = 'none';
             currentGameType = null;
+            
+            // 停止数独计时器
+            if(sudokuTimer) {
+                clearInterval(sudokuTimer);
+                sudokuTimer = null;
+            }
         }
     }
 
