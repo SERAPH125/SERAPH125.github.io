@@ -575,10 +575,10 @@ const app = {
         // 不同游戏的奖励规则
         if (gameName === 'match3') {
             minScore = 1000;
-            reward = 20;
+            reward = 5;
         } else if (gameName === '2048') {
             minScore = 2048; // 需要达到2048分
-            reward = 30; // 奖励更多
+            reward = 15; // 奖励更多
         } else {
             return false; // 未知游戏
         }
