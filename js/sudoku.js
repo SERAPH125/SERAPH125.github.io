@@ -223,13 +223,17 @@ class SudokuGame {
         this.elapsedTime = 0;
         
         // 根据难度设置错误次数限制
-        if (difficulty === 'extreme') {
-            this.maxMistakes = 1; // 数据极限：只允许1次错误
-        } else if (difficulty === 'hell') {
-            this.maxMistakes = 2; // 地狱级：允许2次错误
-        } else {
-            this.maxMistakes = 3; // 困难：允许3次错误
-        }
+        // V4.7 Update: 统一所有难度允许3次错误，降低挫败感
+        this.maxMistakes = 3; 
+        
+        // 旧逻辑备注：
+        // if (difficulty === 'extreme') {
+        //     this.maxMistakes = 1; // 数据极限：只允许1次错误
+        // } else if (difficulty === 'hell') {
+        //     this.maxMistakes = 2; // 地狱级：允许2次错误
+        // } else {
+        //     this.maxMistakes = 3; // 困难：允许3次错误
+        // }
         
         // 生成题目
         try {
