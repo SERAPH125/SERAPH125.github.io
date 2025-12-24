@@ -69,3 +69,13 @@
 {"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766559062202,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
 {"location":"js/sudoku.js:generateBoard","message":"Extreme puzzle loaded from library","data":{"index":0},"timestamp":1766559062202,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
 {"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766559074701,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766564948911,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766564948912,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766564948912,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766564948911,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766564948925,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766564948925,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766564954144,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766564954145,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"Extreme puzzle loaded from library","data":{"index":0},"timestamp":1766564954145,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766564954146,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
