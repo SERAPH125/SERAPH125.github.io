@@ -1,10 +1,71 @@
-{"location":"games.html:576","message":"startGame match3 called","data":{"type":"match3"},"timestamp":1766498843566,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
-{"location":"games.html:582","message":"check boardEl","data":{"boardElExists":true,"boardElId":"match3-board"},"timestamp":1766498843569,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
-{"location":"games.html:585","message":"before Match3Game constructor","data":{"Match3GameExists":"function"},"timestamp":1766498843570,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
-{"location":"games.html:605","message":"after Match3Game constructor","data":{"currentGameExists":true,"hasStart":"function"},"timestamp":1766498843571,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
-{"location":"games.html:615","message":"before start() call","data":{"currentGameExists":true},"timestamp":1766498843572,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
-{"location":"games.html:617","message":"after start() call","data":{},"timestamp":1766498843576,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
-{"location":"games.html:576","message":"startGame match3 called","data":{"type":"match3"},"timestamp":1766499096133,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
-{"location":"games.html:617","message":"after start() call","data":{},"timestamp":1766499096139,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
-{"location":"games.html:615","message":"before start() call","data":{"currentGameExists":true},"timestamp":1766499096136,"sessionId":"debug-session","runId":"run1","hypothesisId":"C"}
-{"location":"games.html:582","message":"check boardEl","data":{"boardElExists":true,"boardElId":"match3-board"},"timestamp":1766499096135,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766557250535,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766557250536,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557250536,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766557250535,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:start","message":"Error in generateBoard","data":{"error":"this.generateSolution is not a function","stack":"TypeError: this.generateSolution is not a function\n    at SudokuGame.generateBoard (file:///H:/desktop/np/20251225/SERAPH125.github.io/js/sudoku.js:160:30)\n    at SudokuGame.start (file:///H:/desktop/np/20251225/SERAPH125.github.io/js/sudoku.js:76:18)\n    at startGame (file:///H:/desktop/np/20251225/SERAPH125.github.io/games.html:800:32)\n    at HTMLDivElement.onclick (file:///H:/desktop/np/20251225/SERAPH125.github.io/games.html:495:62)"},"timestamp":1766557250536,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557250537,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766557254681,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766557254680,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557254681,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:start","message":"Error in generateBoard","data":{"error":"this.generateSolution is not a function","stack":"TypeError: this.generateSolution is not a function\n    at SudokuGame.generateBoard (file:///H:/desktop/np/20251225/SERAPH125.github.io/js/sudoku.js:160:30)\n    at SudokuGame.start (file:///H:/desktop/np/20251225/SERAPH125.github.io/js/sudoku.js:76:18)\n    at startGame (file:///H:/desktop/np/20251225/SERAPH125.github.io/games.html:800:32)\n    at HTMLDivElement.onclick (file:///H:/desktop/np/20251225/SERAPH125.github.io/games.html:495:62)"},"timestamp":1766557254681,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766557254681,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557254681,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766557437509,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766557437509,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557437510,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766557437509,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766557437517,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557437517,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766557439821,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557439821,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766557439873,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557439873,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hell"},"timestamp":1766557442075,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557442075,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766557442121,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557442121,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766557447150,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557447151,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766557447684,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557447684,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766557457841,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766557457841,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766557457842,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766557457841,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766557457846,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766557457847,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766558040815,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766558040815,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766558040816,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766558040816,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766558040852,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766558040853,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766558042218,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766558042218,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766558043680,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766558043681,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766558043919,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766558043919,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766558044204,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766558044205,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766558144481,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766558144481,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766558144482,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766558144482,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766558144498,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766558144499,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766558145967,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766558145967,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766558146349,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766558146349,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"games.html:startGame","message":"startGame called","data":{"type":"sudoku"},"timestamp":1766559057713,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"hard"},"timestamp":1766559057713,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766559057714,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"games.html:startGame","message":"UI elements found","data":{"container":true,"match3UI":true,"game2048UI":true,"sudokuUI":true},"timestamp":1766559057713,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard end","data":{},"timestamp":1766559057718,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766559057719,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:start","message":"SudokuGame.start called","data":{"difficulty":"extreme"},"timestamp":1766559062201,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:generateBoard","message":"generateBoard start","data":{},"timestamp":1766559062202,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766559062202,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"js/sudoku.js:generateBoard","message":"Extreme puzzle loaded from library","data":{"index":0},"timestamp":1766559062202,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"js/sudoku.js:render","message":"render start","data":{},"timestamp":1766559074701,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
