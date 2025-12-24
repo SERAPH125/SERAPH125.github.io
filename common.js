@@ -770,6 +770,34 @@ const app = {
         // 自动兑换检查已移除，支持无限积累
         this.showToast(`记录成功！甜度 ${amount >= 0 ? '+' : ''}${amount} 💕`);
         this.saveData();
+    },
+
+    // 积分交易 (查看答案专用)
+    // fromUser: 'boy' or 'girl'
+    // amount: 交易数量
+    // reason: 原因
+    tradePoints(fromUser, amount, reason) {
+        if (amount <= 0) return false;
+
+        if (fromUser === 'girl') {
+            // 女生扣甜度，男生加积分
+            if ((this.data.girlSweetness || 0) < amount) {
+                alert('甜度不足，无法查看答案！快去哄哄男朋友赚甜度吧~ 💕');
+                return false;
+            }
+            this.addGirlSweetness(-amount, `[支出] ${reason}`);
+            this.executeChange(amount, `[收入] 女朋友${reason}`); // executeChange 默认给男生加分
+            return true;
+        } else {
+            // 男生扣积分，女生加甜度
+            if ((this.data.score || 0) < amount) {
+                alert('积分不足，无法查看答案！快去努力表现赚积分吧！💪');
+                return false;
+            }
+            this.executeChange(-amount, `[支出] ${reason}`);
+            this.addGirlSweetness(amount, `[收入] 男朋友${reason}`);
+            return true;
+        }
     }
 };
 

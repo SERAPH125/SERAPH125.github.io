@@ -458,6 +458,68 @@ class SudokuGame {
     }
 
     /**
+     * 检查某个格子是否已经正确
+     */
+    isCellCorrect(r, c) {
+        return this.currentBoard[r][c] === this.solution[r][c];
+    }
+
+    /**
+     * 填入正确答案 (作弊模式)
+     */
+    fillAnswer(r, c) {
+        if(this.isGameOver) return;
+        
+        const ans = this.solution[r][c];
+        
+        // 填入数字
+        this.currentBoard[r][c] = ans;
+        this.marks[r][c].clear(); // 清除笔记
+        this.autoClearMarks(r, c, ans); // 清除关联笔记
+        
+        // 播放特殊音效
+        if(this.sound) this.sound.play('merge', 2048); 
+        
+        this.render();
+        
+        // 检查是否获胜
+        if(this.checkWin()) {
+            this.isGameOver = true;
+            this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+            if(this.callbacks.onGameOver) {
+                this.callbacks.onGameOver(true, this.elapsedTime);
+            }
+        }
+    }
+
+    /**
+     * 填入所有正确答案 (直接通关)
+     */
+    fillAllAnswers() {
+        if(this.isGameOver) return;
+        
+        // 填满所有格子
+        for(let r=0; r<9; r++) {
+            for(let c=0; c<9; c++) {
+                this.currentBoard[r][c] = this.solution[r][c];
+                this.marks[r][c].clear();
+            }
+        }
+        
+        this.render();
+        
+        // 播放胜利音效
+        if(this.sound) this.sound.play('merge', 2048); 
+        
+        // 触发胜利
+        this.isGameOver = true;
+        this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+        if(this.callbacks.onGameOver) {
+            this.callbacks.onGameOver(true, this.elapsedTime);
+        }
+    }
+
+    /**
      * 获取当前用时（秒）
      * @returns {number} 用时
      */

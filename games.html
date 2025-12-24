@@ -333,7 +333,8 @@
             background: #b3d9ff !important; 
         }
         .sudoku-cell.highlight-same { 
-            background: #e6f2ff; 
+            background: #cce5ff !important; /* 加深高亮颜色，原 #e6f2ff */
+            font-weight: bold; /* 增加加粗效果更明显 */
         }
         
         /* 数独数字键盘 */
@@ -538,6 +539,19 @@
                 🗑️ 清空
             </button>
         </div>
+        
+        <!-- V4.4 查看答案区域 -->
+        <div class="game-controls-bar" style="margin-top:10px; display: flex; gap: 8px;">
+            <button class="game-btn" onclick="checkSudokuAnswer()" style="flex: 1; background: rgba(255, 193, 7, 0.2); border-color: rgba(255, 193, 7, 0.5); color: #ffeb3b; padding: 8px 4px; font-size: 0.8rem;">
+                💡 单格 (-1)
+            </button>
+            <button class="game-btn" onclick="checkSudokuAllAnswers()" style="flex: 1; background: rgba(255, 87, 34, 0.2); border-color: rgba(255, 87, 34, 0.5); color: #ff5722; padding: 8px 4px; font-size: 0.8rem;">
+                🚀 全解 (-10)
+            </button>
+        </div>
+        
+        <div class="game-controls-bar">
+            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">🔄 困难</button>
         
         <div class="game-controls-bar">
             <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">🔄 困难</button>
@@ -931,6 +945,63 @@
             }, 800);
         } else {
             alert('音效系统未初始化，请先移动一次方块！');
+        }
+    }
+
+    // --- 数独查看答案逻辑 (V4.4) ---
+    function checkSudokuAnswer() {
+        if (!sudokuGameInstance || sudokuGameInstance.isGameOver) {
+            alert('请先开始游戏！');
+            return;
+        }
+        
+        const cell = sudokuGameInstance.selectedCell;
+        if (!cell) {
+            alert('请先选中一个格子！');
+            return;
+        }
+        
+        // 如果该格已经是正确的，不需要查看
+        if (sudokuGameInstance.isCellCorrect(cell.r, cell.c)) {
+            alert('这个格子已经是正确的啦！不用浪费积分哦~ ✨');
+            return;
+        }
+
+        const cost = 1; // 修改为 1
+        const role = app.currentUser;
+        const unit = role === 'girl' ? '甜度' : '积分';
+        const target = role === 'girl' ? '男朋友' : '女朋友';
+        
+        // 修改提示文案
+        if (confirm(`查看此格答案需要扣除 1 ${unit}，并自动转给${target}。\n确定要查看吗？`)) {
+            // 执行交易
+            const success = app.tradePoints(role, cost, '查看数独单格答案');
+            if (success) {
+                // 显示答案
+                sudokuGameInstance.fillAnswer(cell.r, cell.c);
+            }
+        }
+    }
+
+    // V4.4 查看所有答案
+    function checkSudokuAllAnswers() {
+        if (!sudokuGameInstance || sudokuGameInstance.isGameOver) {
+            alert('请先开始游戏！');
+            return;
+        }
+
+        const cost = 10;
+        const role = app.currentUser;
+        const unit = role === 'girl' ? '甜度' : '积分';
+        const target = role === 'girl' ? '男朋友' : '女朋友';
+        
+        if (confirm(`🚀 终极作弊：填充所有答案！\n此操作需要扣除 10 ${unit}，并自动转给${target}。\n确定要“钞能力”通关吗？😎`)) {
+            // 执行交易
+            const success = app.tradePoints(role, cost, '查看数独所有答案');
+            if (success) {
+                // 填充所有答案（直接通关）
+                sudokuGameInstance.fillAllAnswers();
+            }
         }
     }
 
