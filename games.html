@@ -341,7 +341,7 @@
         .numpad {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
+            gap: 5px; /* 减小间隙 */
             width: 96%;
             max-width: 450px;
             margin-top: 10px;
@@ -349,13 +349,16 @@
         .num-btn {
             background: rgba(255,255,255,0.9);
             border: 1px solid rgba(255,255,255,0.5);
-            border-radius: 10px;
-            padding: 12px 0;
-            font-size: 1.3rem;
+            border-radius: 8px; /* 稍微减小圆角 */
+            padding: 10px 0; /* 减小内边距 */
+            font-size: 1.2rem; /* 稍微减小字号 */
             color: #007bff;
             cursor: pointer;
             transition: all 0.2s;
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .num-btn:active { 
             background: rgba(255,255,255,0.7); 
@@ -363,8 +366,43 @@
         }
         .num-btn.erase {
             color: #dc3545;
-            grid-column: span 2; /* 擦除按钮占两格 */
+            /* 擦除按钮保持占两格，因为是5列布局，刚好填满 */
+            grid-column: span 1; /* 改为占1格，使布局更紧凑？不，5列布局，9个数字+擦除=10个，刚好2行 */
         }
+        
+        /* 紧凑型控制栏 */
+        .compact-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4列布局 */
+            gap: 5px;
+            width: 96%;
+            max-width: 450px;
+            margin-top: 5px;
+        }
+        
+        .compact-btn {
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 8px;
+            padding: 8px 2px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 36px;
+            line-height: 1.1;
+        }
+        .compact-btn:active { transform: scale(0.95); }
+        
+        /* 特殊按钮颜色 */
+        .btn-pencil-active { background: rgba(255,255,255,0.5) !important; border-color: white !important; }
+        .btn-hint { background: rgba(255, 193, 7, 0.25) !important; border-color: rgba(255, 193, 7, 0.5) !important; color: #fff9c4 !important; }
+        .btn-cheat { background: rgba(255, 87, 34, 0.25) !important; border-color: rgba(255, 87, 34, 0.5) !important; color: #ffccbc !important; }
+        .btn-clear { background: rgba(220, 53, 69, 0.25) !important; border-color: rgba(220, 53, 69, 0.5) !important; color: #ffcdd2 !important; }
         
         /* 排行榜模态框 */
         .rank-modal {
@@ -525,43 +563,43 @@
             <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(7)">7</button>
             <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(8)">8</button>
             <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(9)">9</button>
-            <button class="num-btn erase" onclick="sudokuGameInstance && sudokuGameInstance.erase()">擦除</button>
+            <button class="num-btn erase" onclick="sudokuGameInstance && sudokuGameInstance.erase()">🗑️</button>
         </div>
         
-        <div class="game-controls-bar" style="margin-top:10px; display: flex; gap: 8px;">
-            <button class="game-btn" id="btn-pencil" onclick="sudokuGameInstance && sudokuGameInstance.togglePencil()" style="flex: 1.2; justify-content:center; min-width: 0;">
-                ✏️ 笔记：<span id="pencil-status">关</span>
+        <!-- 功能按钮区 (第1行) -->
+        <div class="compact-controls">
+            <button class="compact-btn" id="btn-pencil" onclick="sudokuGameInstance && sudokuGameInstance.togglePencil()">
+                ✏️ 笔记
             </button>
-            <button class="game-btn" onclick="if(confirm('确定要自动填充所有候选数字吗？这会覆盖当前的笔记。')) sudokuGameInstance && sudokuGameInstance.autoFillNotes()" style="flex: 1; justify-content:center; padding-left:2px; padding-right:2px; min-width: 0; font-size: 0.85rem;">
+            <button class="compact-btn" onclick="if(confirm('确定自动笔记？')) sudokuGameInstance && sudokuGameInstance.autoFillNotes()">
                 📝 自动
             </button>
-             <button class="game-btn" onclick="if(confirm('确定要清空所有笔记吗？')) sudokuGameInstance && sudokuGameInstance.clearAllNotes()" style="flex: 1; justify-content:center; padding-left:2px; padding-right:2px; min-width: 0; font-size: 0.85rem;">
-                🗑️ 清空
+            <button class="compact-btn btn-clear" onclick="if(confirm('确定清空笔记？')) sudokuGameInstance && sudokuGameInstance.clearAllNotes()">
+                🧹 清空
+            </button>
+            <button class="compact-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">
+                🔄 重开
+            </button>
+        </div>
+
+        <!-- 辅助与难度 (第2行) -->
+        <div class="compact-controls">
+            <button class="compact-btn btn-hint" onclick="checkSudokuAnswer()">
+                💡 单格<br><span style="font-size:0.6rem">(-1)</span>
+            </button>
+            <button class="compact-btn btn-cheat" onclick="checkSudokuAllAnswers()">
+                🚀 全解<br><span style="font-size:0.6rem">(-10)</span>
+            </button>
+            <button class="compact-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hell')" style="border-color: rgba(255,0,0,0.5);">
+                🔥 地狱
+            </button>
+            <button class="compact-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('extreme')" style="border-color: rgba(128,0,128,0.6);">
+                💀 极限
             </button>
         </div>
         
-        <!-- V4.4 查看答案区域 -->
-        <div class="game-controls-bar" style="margin-top:10px; display: flex; gap: 8px;">
-            <button class="game-btn" onclick="checkSudokuAnswer()" style="flex: 1; background: rgba(255, 193, 7, 0.2); border-color: rgba(255, 193, 7, 0.5); color: #ffeb3b; padding: 8px 4px; font-size: 0.8rem;">
-                💡 单格 (-1)
-            </button>
-            <button class="game-btn" onclick="checkSudokuAllAnswers()" style="flex: 1; background: rgba(255, 87, 34, 0.2); border-color: rgba(255, 87, 34, 0.5); color: #ff5722; padding: 8px 4px; font-size: 0.8rem;">
-                🚀 全解 (-10)
-            </button>
-        </div>
-        
-        <div class="game-controls-bar">
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">🔄 困难</button>
-        
-        <div class="game-controls-bar">
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hard')">🔄 困难</button>
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('hell')" style="background: rgba(255,0,0,0.3); border-color: rgba(255,0,0,0.5);">🔥 地狱级</button>
-            <button class="game-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('extreme')" style="background: rgba(128,0,128,0.4); border-color: rgba(128,0,128,0.6); color: #fff; font-weight: bold;">💀 数据极限</button>
-        </div>
-        
-        <div style="color:white; font-size:0.9rem; text-align:center; margin-top:15px;">
-            点击格子选择，然后输入数字 🔢<br>
-            每行、每列、每个3x3宫格不能重复
+        <div style="color:white; font-size:0.8rem; text-align:center; margin-top:10px; opacity: 0.8;">
+            点击灰色数字可高亮相同项 ✨
         </div>
     </div>
 </div>
