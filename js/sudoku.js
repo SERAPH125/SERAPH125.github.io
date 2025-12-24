@@ -52,6 +52,9 @@ class SudokuGame {
      * @param {string} difficulty - 难度：'hard', 'hell', 'extreme'
      */
     start(difficulty = 'hard') {
+        // #region agent log
+        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:start',message:'SudokuGame.start called',data:{difficulty},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         this.difficulty = difficulty;
         this.mistakes = 0;
         this.isGameOver = false;
@@ -69,47 +72,18 @@ class SudokuGame {
         }
         
         // 生成题目
-        this.generateBoard();
+        try {
+            this.generateBoard();
+        } catch (e) {
+            // #region agent log
+            fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:start',message:'Error in generateBoard',data:{error:e.message, stack:e.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+            // #endregion
+            console.error(e);
+        }
         this.render();
         
         if(this.callbacks.onMistakesChange) {
             this.callbacks.onMistakesChange(this.mistakes, this.maxMistakes);
-        }
-    }
-
-    /**
-     * 生成数独题目
-     */
-    generateBoard() {
-        // 1. 生成完整解
-        this.solution = this.generateSolution();
-        
-        // 2. 根据难度挖空
-        let holes = 50; // 困难：挖掉50个，留31个提示
-        if (this.difficulty === 'hell') {
-            holes = 62; // 地狱级：挖掉62个，只留19个提示
-        } else if (this.difficulty === 'extreme') {
-            holes = 70; // 数据极限：挖掉70个，只留11个提示（接近理论极限）
-        }
-        
-        // 深拷贝
-        this.initialBoard = this.solution.map(row => [...row]);
-        this.currentBoard = this.solution.map(row => [...row]);
-        
-        // 初始化笔记数据
-        this.marks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
-        
-        // 随机挖空
-        let count = 0;
-        while(count < holes) {
-            let r = Math.floor(Math.random() * 9);
-            let c = Math.floor(Math.random() * 9);
-            
-            if(this.currentBoard[r][c] !== 0) {
-                this.currentBoard[r][c] = 0; // 0 表示空
-                this.initialBoard[r][c] = 0;
-                count++;
-            }
         }
     }
 
@@ -124,30 +98,126 @@ class SudokuGame {
     }
 
     /**
-     * 回溯填充数独
+     * 回溯填充数独（求解器）
      * @param {Array} board - 数独矩阵
+     * @param {boolean} countOnly - 是否只计算解的数量（用于唯一解检查）
+     * @param {object} counter - 用于存储解的数量 { count: 0 }
      * @returns {boolean} 是否成功填充
      */
-    fillBoard(board) {
+    fillBoard(board, countOnly = false, counter = { count: 0 }) {
+        // #region agent log
+        // logging sparingly to avoid spam, only log on first call or important branches if needed, but fillBoard is recursive
+        // fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:fillBoard',message:'fillBoard called',data:{countOnly},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
         for(let r = 0; r < 9; r++) {
             for(let c = 0; c < 9; c++) {
                 if(board[r][c] === 0) {
-                    // 随机顺序尝试数字，增加随机性
                     let nums = [1,2,3,4,5,6,7,8,9];
-                    nums.sort(() => Math.random() - 0.5);
+                    // 只有在非计数模式下才打乱顺序，增加随机性；计数模式下顺序无所谓，但保持顺序可能更快
+                    if (!countOnly) {
+                        nums.sort(() => Math.random() - 0.5);
+                    }
                     
                     for(let num of nums) {
                         if(this.isValid(board, r, c, num)) {
                             board[r][c] = num;
-                            if(this.fillBoard(board)) return true;
+                            
+                            if (countOnly) {
+                                // 继续寻找下一个解
+                                if (this.fillBoard(board, true, counter)) return true; // 找到2个解就提前返回
+                            } else {
+                                if (this.fillBoard(board)) return true;
+                            }
+                            
                             board[r][c] = 0; // 回溯
                         }
                     }
-                    return false;
+                    return false; // 当前格无解
                 }
             }
         }
+        // 填满了
+        if (countOnly) {
+            counter.count++;
+            // 如果找到多于1个解，不需要继续找了，直接返回 true 表示已发现多解
+            if (counter.count > 1) return true; 
+            return false; // 继续回溯找其他解
+        }
         return true;
+    }
+
+    /**
+     * 检查数独是否有唯一解
+     * @param {Array} board - 挖空后的数独矩阵
+     * @returns {boolean} 是否有唯一解
+     */
+    hasUniqueSolution(board) {
+        // 深拷贝一份用于计算
+        const tempBoard = board.map(row => [...row]);
+        const counter = { count: 0 };
+        this.fillBoard(tempBoard, true, counter);
+        return counter.count === 1;
+    }
+
+    /**
+     * 生成数独题目 (确保唯一解)
+     */
+    generateBoard() {
+        // #region agent log
+        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:generateBoard',message:'generateBoard start',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
+        // 1. 生成完整解
+        this.solution = this.generateSolution();
+        
+        // 2. 根据难度尝试挖空
+        // 难度控制策略：
+        // Hard: 尝试尽可能多的挖空，但保持唯一解。通常能剩 30-35 个提示。
+        // Hell: 尝试更激进的挖空，或者减少初始提示。
+        // Extreme: 理论极限。
+        
+        // 为了简化且保证性能，我们采用随机挖空 + 唯一解检查
+        // 难度越高，我们在挖空时可以偏向于移除特定模式（如对称）或者纯随机尝试更多次
+        
+        // 深拷贝完整解作为初始状态
+        this.initialBoard = this.solution.map(row => [...row]);
+        this.currentBoard = this.solution.map(row => [...row]);
+
+        let cells = [];
+        for(let r=0; r<9; r++) for(let c=0; c<9; c++) cells.push({r,c});
+        cells.sort(() => Math.random() - 0.5); // 随机顺序
+        
+        // 目标提示数（仅作为参考停止条件，主要靠 unique 检查）
+        let targetClues = 30;
+        if (this.difficulty === 'hell') targetClues = 25;
+        if (this.difficulty === 'extreme') targetClues = 20;
+        
+        let currentClues = 81;
+
+        for(let cell of cells) {
+            if (currentClues <= targetClues) break; // 达到难度目标
+            
+            let r = cell.r;
+            let c = cell.c;
+            let backup = this.initialBoard[r][c];
+            
+            this.initialBoard[r][c] = 0; // 尝试挖掉
+            
+            // 必须保证唯一解
+            if (!this.hasUniqueSolution(this.initialBoard)) {
+                this.initialBoard[r][c] = backup; // 填回，导致多解，不能挖
+            } else {
+                currentClues--;
+            }
+        }
+        
+        // 同步 currentBoard
+        this.currentBoard = this.initialBoard.map(row => [...row]);
+        
+        // 初始化笔记
+        this.marks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+        // #region agent log
+        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:generateBoard',message:'generateBoard end',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
+        // #endregion
     }
 
     /**
@@ -182,9 +252,17 @@ class SudokuGame {
      * 渲染游戏界面
      */
     render() {
-        if(!this.boardEl) return;
+        if(!this.boardEl) {
+            // #region agent log
+            fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:render',message:'boardEl not found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+            // #endregion
+            return;
+        }
         
         this.boardEl.innerHTML = '';
+        // #region agent log
+        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:render',message:'render start',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4'})}).catch(()=>{});
+        // #endregion
         
         for(let r = 0; r < 9; r++) {
             for(let c = 0; c < 9; c++) {

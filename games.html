@@ -652,11 +652,18 @@
     let sudokuTimer = null;
 
     function startGame(type) {
+        // #region agent log
+        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'games.html:startGame',message:'startGame called',data:{type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
         const container = document.getElementById('game-container');
         const match3UI = document.getElementById('match3-ui');
         const game2048UI = document.getElementById('game2048-ui');
         const sudokuUI = document.getElementById('sudoku-ui');
         
+        // #region agent log
+        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'games.html:startGame',message:'UI elements found',data:{container:!!container, match3UI:!!match3UI, game2048UI:!!game2048UI, sudokuUI:!!sudokuUI},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
+        // #endregion
+
         container.style.display = 'flex';
         currentGameType = type;
         
