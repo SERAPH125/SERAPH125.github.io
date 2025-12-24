@@ -277,6 +277,7 @@
         #sudoku-board {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
+            grid-template-rows: repeat(9, 1fr); /* 强制行高与列宽一致 */
             width: 96%;
             max-width: 450px;
             aspect-ratio: 1/1;
@@ -295,6 +296,25 @@
             user-select: none;
             position: relative;
             transition: background 0.2s;
+            padding: 0; /* 确保无内边距影响 */
+            overflow: hidden; /* 防止内容撑大 */
+        }
+        /* 笔记标记样式 */
+        .cell-marks {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .mark-num {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.5rem; /* 极小字体 */
+            color: #888;
+            line-height: 1;
         }
         .sudoku-cell.fixed { 
             font-weight: bold; 
@@ -505,6 +525,18 @@
             <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(8)">8</button>
             <button class="num-btn" onclick="sudokuGameInstance && sudokuGameInstance.inputNumber(9)">9</button>
             <button class="num-btn erase" onclick="sudokuGameInstance && sudokuGameInstance.erase()">擦除</button>
+        </div>
+        
+        <div class="game-controls-bar" style="margin-top:10px; display: flex; gap: 8px;">
+            <button class="game-btn" id="btn-pencil" onclick="sudokuGameInstance && sudokuGameInstance.togglePencil()" style="flex: 1.2; justify-content:center; min-width: 0;">
+                ✏️ 笔记：<span id="pencil-status">关</span>
+            </button>
+            <button class="game-btn" onclick="if(confirm('确定要自动填充所有候选数字吗？这会覆盖当前的笔记。')) sudokuGameInstance && sudokuGameInstance.autoFillNotes()" style="flex: 1; justify-content:center; padding-left:2px; padding-right:2px; min-width: 0; font-size: 0.85rem;">
+                📝 自动
+            </button>
+             <button class="game-btn" onclick="if(confirm('确定要清空所有笔记吗？')) sudokuGameInstance && sudokuGameInstance.clearAllNotes()" style="flex: 1; justify-content:center; padding-left:2px; padding-right:2px; min-width: 0; font-size: 0.85rem;">
+                🗑️ 清空
+            </button>
         </div>
         
         <div class="game-controls-bar">

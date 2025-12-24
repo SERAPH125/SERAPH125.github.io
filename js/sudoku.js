@@ -24,11 +24,27 @@ class SudokuGame {
         this.initialBoard = []; // 初始题目（不可变）
         this.currentBoard = []; // 当前状态
         this.solution = []; // 答案
+        
+        // 笔记功能
+        this.isPencilMode = false;
+        this.marks = []; // 9x9 数组，每个元素是 Set<number>
+        
         this.mistakes = 0;
         this.maxMistakes = 3;
         this.isGameOver = false;
         this.startTime = null;
         this.elapsedTime = 0;
+        
+        // 音效系统
+        if (typeof SoundManager !== 'undefined') {
+            this.sound = new SoundManager('sudoku_sound');
+            // 数独也可以有自己的风格，默认用 soft
+            if(!localStorage.getItem('sudoku_sound_style')) {
+                localStorage.setItem('sudoku_sound_style', 'soft');
+            }
+        } else {
+            this.sound = null;
+        }
     }
 
     /**
@@ -79,6 +95,9 @@ class SudokuGame {
         // 深拷贝
         this.initialBoard = this.solution.map(row => [...row]);
         this.currentBoard = this.solution.map(row => [...row]);
+        
+        // 初始化笔记数据
+        this.marks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
         
         // 随机挖空
         let count = 0;
@@ -174,9 +193,32 @@ class SudokuGame {
                 
                 const value = this.currentBoard[r][c];
                 
-                // 显示数字
+                // 显示数字或笔记
                 if(value !== 0) {
                     cell.innerText = value;
+                } else {
+                    // 显示笔记
+                    const cellMarks = this.marks[r][c];
+                    if(cellMarks.size > 0) {
+                        const marksContainer = document.createElement('div');
+                        marksContainer.className = 'cell-marks';
+                        // 1-9 占位
+                        for(let i=1; i<=9; i++) {
+                            const markEl = document.createElement('div');
+                            markEl.className = 'mark-num';
+                            if(cellMarks.has(i)) {
+                                markEl.innerText = i;
+                                // 如果该数字也是当前高亮数字，给笔记也加点颜色？
+                                if(this.selectedCell && 
+                                   this.currentBoard[this.selectedCell.r][this.selectedCell.c] === i) {
+                                    markEl.style.color = '#007bff';
+                                    markEl.style.fontWeight = 'bold';
+                                }
+                            }
+                            marksContainer.appendChild(markEl);
+                        }
+                        cell.appendChild(marksContainer);
+                    }
                 }
                 
                 // 样式处理
@@ -224,11 +266,74 @@ class SudokuGame {
      */
     selectCell(r, c) {
         if(this.isGameOver) return;
-        // 初始数字不可选择
-        if(this.initialBoard[r][c] !== 0) return;
         
+        // V4.1: 允许选择初始数字以高亮相同数字，但后续操作会拦截修改
         this.selectedCell = {r, c};
+        
+        // 播放轻微点击音效
+        if(this.sound) this.sound.play('move');
+        
         this.render();
+    }
+
+    /**
+     * 自动填充所有候选笔记
+     */
+    autoFillNotes() {
+        if(this.isGameOver) return;
+        
+        // 遍历所有格子
+        for(let r = 0; r < 9; r++) {
+            for(let c = 0; c < 9; c++) {
+                // 只对空白格操作
+                if(this.currentBoard[r][c] === 0) {
+                    this.marks[r][c].clear(); // 先清空旧笔记
+                    
+                    // 检查 1-9 每个数字是否可能
+                    for(let num = 1; num <= 9; num++) {
+                        if(this.isValid(this.currentBoard, r, c, num)) {
+                            this.marks[r][c].add(num);
+                        }
+                    }
+                }
+            }
+        }
+        
+        if(this.sound) this.sound.play('spawn'); // 播放音效
+        this.render();
+    }
+
+    /**
+     * 清空所有笔记
+     */
+    clearAllNotes() {
+        if(this.isGameOver) return;
+        
+        let hasCleared = false;
+        for(let r = 0; r < 9; r++) {
+            for(let c = 0; c < 9; c++) {
+                if(this.marks[r][c].size > 0) {
+                    this.marks[r][c].clear();
+                    hasCleared = true;
+                }
+            }
+        }
+        
+        if(hasCleared) {
+            if(this.sound) this.sound.play('spawn'); // 播放音效
+            this.render();
+        }
+    }
+
+    /**
+     * 切换笔记模式
+     */
+    togglePencil() {
+        this.isPencilMode = !this.isPencilMode;
+        const btnText = document.getElementById('pencil-status');
+        const btn = document.getElementById('btn-pencil');
+        if(btnText) btnText.innerText = this.isPencilMode ? '开' : '关';
+        if(btn) btn.style.background = this.isPencilMode ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.25)';
     }
 
     /**
@@ -241,18 +346,47 @@ class SudokuGame {
         const {r, c} = this.selectedCell;
         
         // 不可修改初始数字
-        if(this.initialBoard[r][c] !== 0) return;
+        if(this.initialBoard[r][c] !== 0) {
+            return;
+        }
         
         // 擦除
         if(num === 0) {
             this.currentBoard[r][c] = 0;
+            this.marks[r][c].clear(); // 同时清除笔记
+            if(this.sound) this.sound.play('spawn'); 
             this.render();
             return;
         }
         
-        // 填入数字
-        this.currentBoard[r][c] = num;
+        // 笔记模式逻辑
+        if(this.isPencilMode) {
+            // 如果该格已有确定的数字，笔记模式下点击无效，或者你希望先清除数字再记笔记？
+            // 通常逻辑：如果有数字，先清除数字？或者如果数字不对，才允许改？
+            // 简单逻辑：如果有非0数字，笔记模式不生效，或者覆盖？
+            // 这里采用：如果当前格是空的，则切换标记；如果已有数字，先不动（需先擦除）
+            if(this.currentBoard[r][c] === 0) {
+                if(this.marks[r][c].has(num)) {
+                    this.marks[r][c].delete(num);
+                } else {
+                    this.marks[r][c].add(num);
+                }
+                if(this.sound) this.sound.play('move'); // 轻微音效
+                this.render();
+            }
+            return;
+        }
         
+        // 正常填数模式
+        this.currentBoard[r][c] = num;
+        this.marks[r][c].clear(); // 填入数字后清除该格笔记
+        
+        // 自动清除同行、同列、同宫格的其他格子的该数字标记 (智能辅助)
+        this.autoClearMarks(r, c, num);
+        
+        // 播放填入音效
+        if(this.sound) this.sound.play('merge', 100); 
+
         // 检查正确性
         if(num !== this.solution[r][c]) {
             this.mistakes++;
@@ -279,6 +413,26 @@ class SudokuGame {
         }
         
         this.render();
+    }
+    
+    /**
+     * 自动清除关联区域的笔记
+     */
+    autoClearMarks(r, c, num) {
+        // 行
+        for(let i=0; i<9; i++) if(i!==c) this.marks[r][i].delete(num);
+        // 列
+        for(let i=0; i<9; i++) if(i!==r) this.marks[i][c].delete(num);
+        // 宫
+        let boxR = Math.floor(r/3)*3;
+        let boxC = Math.floor(c/3)*3;
+        for(let i=0; i<3; i++) {
+            for(let j=0; j<3; j++) {
+                if(boxR+i !== r || boxC+j !== c) {
+                    this.marks[boxR+i][boxC+j].delete(num);
+                }
+            }
+        }
     }
     
     /**

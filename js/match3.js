@@ -20,15 +20,7 @@ class Match3Game {
         
         // 音效系统（复用2048的SoundManager）
         if (typeof SoundManager !== 'undefined') {
-            this.sound = new SoundManager();
-            // 消消乐使用独立的音效设置
-            this.sound.enabled = localStorage.getItem('match3_sound') !== 'false';
-            // 重写setEnabled方法，使用独立的localStorage键
-            const originalSetEnabled = this.sound.setEnabled.bind(this.sound);
-            this.sound.setEnabled = (enabled) => {
-                this.sound.enabled = enabled;
-                localStorage.setItem('match3_sound', enabled);
-            };
+            this.sound = new SoundManager('match3_sound');
         } else {
             this.sound = null;
             console.warn('SoundManager not available');
