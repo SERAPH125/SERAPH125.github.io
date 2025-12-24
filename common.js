@@ -478,10 +478,15 @@ const app = {
         // 检查分数是否达标
         if (score >= minScore) {
             // 检查今天是否已经领取过游戏奖励
-            const todayStr = this.getTodayStr();
-            const lastGameReward = localStorage.getItem(`game_reward_${gameName}_${todayStr}`);
+            const todayStr = this.getTodayStr(); // 统一使用 utils.getTodayStr()
+            const rewardKey = `game_reward_${gameName}_${todayStr}`; // V4.9 Fix: 确保 key 使用正确的日期
             
-            if (lastGameReward) {
+            // Debug: 打印日期和 Key
+            console.log(`Checking game reward for ${gameName}: ${rewardKey}`);
+            
+            const lastGameReward = localStorage.getItem(rewardKey);
+            
+            if (lastGameReward === 'true') {
                 return false; // 今天已经领过奖励
             } else {
                 // 首次达标，发放奖励
@@ -494,7 +499,7 @@ const app = {
                     this.executeChange(reward, reason); // 男生加积分
                 }
                 
-                localStorage.setItem(`game_reward_${gameName}_${todayStr}`, 'true');
+                localStorage.setItem(rewardKey, 'true');
                 return true; // 奖励发放成功
             }
         }

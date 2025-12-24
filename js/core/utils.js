@@ -2,7 +2,7 @@
 // 存放日期格式化、辅助计算等通用函数
 
 const utils = {
-    // 获取本地时间字符串 (YYYY-MM-DD)
+    // 获取本地时间字符串 (YYYY-MM-DD)，强制使用本地时间而非UTC
     getTodayStr() {
         const d = new Date();
         const year = d.getFullYear();

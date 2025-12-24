@@ -456,7 +456,7 @@ Object.assign(app, {
     },
 
     checkDailySignIn() {
-        // 核心签到逻辑修正版
+        // 核心签到逻辑修正版 (V4.8 Fix)
         const todayStr = app.getTodayStr(); // 获取本地日期 YYYY-MM-DD
         const lastSignInField = this.currentUser === 'boy' ? 'lastSignInDate_Boy' : 'lastSignInDate_Girl';
         const partnerField = this.currentUser === 'boy' ? 'lastSignInDate_Girl' : 'lastSignInDate_Boy';
@@ -472,17 +472,25 @@ Object.assign(app, {
                 streak = 1; // 第一次签到
             } else {
                 // 计算日期差 (天数)
-                const d1 = new Date(lastDateStr);
-                const d2 = new Date(todayStr);
+                // V4.9 Fix: 修复时区导致的时间计算错误，统一使用本地日期字符串比较
+                // 将日期字符串解析为当天的 00:00:00 (本地时间)
+                // 注意：直接 new Date("YYYY-MM-DD") 可能会解析为 UTC，导致时区偏差
+                // 使用 replace(/-/g, '/') 兼容性更好，且通常解析为本地时间
+                const d1 = new Date(lastDateStr.replace(/-/g, '/'));
+                const d2 = new Date(todayStr.replace(/-/g, '/'));
+                
+                // 清除时间部分，只比较日期
+                d1.setHours(0,0,0,0);
+                d2.setHours(0,0,0,0);
+                
                 const diffTime = Math.abs(d2 - d1);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // 使用 round 避免浮点误差
                 
                 if (diffDays === 1) {
                     streak++; // 连续签到
                 } else if (diffDays > 1) {
                     streak = 1; // 断签重置
                 }
-                // 如果 diffDays === 0，说明今天已经签过（理论上会被外层 if 拦截，但为了保险）
             }
             
             // 更新连续签到天数
@@ -495,22 +503,31 @@ Object.assign(app, {
             let icon = this.getTimeIcon();
             let extraReward = false;
 
-            // 3. 检查双人签到 (读取对方的签到日期)
-            // 注意：对方的签到日期也必须是 todayStr 才能算双人签到
+            // 3. 检查双人签到 & 连击奖励 (支持叠加)
             const partnerLastDate = this.data[partnerField];
             const partnerSignIn = partnerLastDate === todayStr;
 
-            if (partnerSignIn) {
-                reward = 5;
-                title = "❤️ 心有灵犀！";
-                subText = "另一半也签到了！触发双倍甜蜜暴击！";
-                icon = "👩‍❤️‍👨";
-            } else if (streak % 7 === 0) {
+            // 连击奖励
+            if (streak % 7 === 0) {
                 reward = 20; 
                 title = "🎉 连击大礼包！";
                 subText = `太棒了！已连续打卡 ${streak} 天！`;
                 icon = "🎁";
                 extraReward = true;
+            }
+
+            // 双人签到奖励 (叠加)
+            if (partnerSignIn) {
+                const bonus = 5;
+                reward += bonus;
+                
+                if (extraReward) {
+                    subText += ` (+${bonus} 双人加成)`;
+                } else {
+                    title = "❤️ 心有灵犀！";
+                    subText = "另一半也签到了！触发甜蜜暴击！";
+                    icon = "👩‍❤️‍👨";
+                }
             }
 
             // 4. 更新数据
@@ -523,8 +540,14 @@ Object.assign(app, {
                 time: new Date().toLocaleTimeString()
             });
             
-            // 执行加分 (包含保存数据)
-            this.executeChange(reward, `每日签到 (${this.currentUser === 'boy' ? '刘智勇' : '周金霞'}) ${partnerSignIn ? '+ 双人加成' : ''}`);
+            // 执行加分 (区分角色)
+            const reason = `每日签到 (${this.currentUser === 'boy' ? '刘智勇' : '周金霞'}) ${partnerSignIn ? '+ 双人' : ''} ${extraReward ? '+ 连击' : ''}`;
+            
+            if (this.currentUser === 'girl') {
+                this.addGirlSweetness(reward, reason);
+            } else {
+                this.executeChange(reward, reason);
+            }
             
             // 显示弹窗
             this.showSignInModal(false, title, subText, icon, reward, extraReward);
@@ -551,9 +574,14 @@ Object.assign(app, {
             document.getElementById('signin-icon').innerText = icon;
             const rewardEl = document.getElementById('signin-reward-text');
             rewardEl.style.display = 'flex';
+            
+            // 动态显示单位
+            const unitName = this.currentUser === 'girl' ? '甜度' : '积分';
+            const unitIcon = this.currentUser === 'girl' ? '🍬' : '💎';
+
             rewardEl.innerHTML = isBigReward 
-                ? `<span>🎁</span> 连击奖励 +${reward} 分` 
-                : `<span>💎</span> 积分 +${reward}`;
+                ? `<span>🎁</span> 连击奖励 +${reward} ${unitName}` 
+                : `<span>${unitIcon}</span> ${unitName} +${reward}`;
         }
 
         const dotsContainer = document.getElementById('streak-dots');
