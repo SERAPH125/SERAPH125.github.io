@@ -221,6 +221,17 @@ class SudokuGame {
         this.selectedCell = null;
         this.startTime = Date.now();
         this.elapsedTime = 0;
+
+        // 初始化笔记模式为关闭状态
+        this.isPencilMode = false;
+        const btn = document.getElementById('btn-pencil');
+        if(btn) {
+            btn.innerHTML = '✏️ 笔记关';
+            btn.style.background = 'rgba(255,255,255,0.25)';
+            btn.style.border = 'none';
+            btn.style.color = '';
+            btn.style.boxShadow = 'none';
+        }
         
         // 根据难度设置错误次数限制
         // V4.7 Update: 统一所有难度允许3次错误，降低挫败感
@@ -645,10 +656,25 @@ class SudokuGame {
      */
     togglePencil() {
         this.isPencilMode = !this.isPencilMode;
-        const btnText = document.getElementById('pencil-status');
         const btn = document.getElementById('btn-pencil');
-        if(btnText) btnText.innerText = this.isPencilMode ? '开' : '关';
-        if(btn) btn.style.background = this.isPencilMode ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.25)';
+        if(btn) {
+            // 更新按钮文本显示状态
+            btn.innerHTML = this.isPencilMode ? '✏️ 笔记开' : '✏️ 笔记关';
+
+            if(this.isPencilMode) {
+                // 笔记开启：绿色背景，白色边框，更明显的视觉反馈
+                btn.style.background = '#28a745';
+                btn.style.border = '2px solid #ffffff';
+                btn.style.color = '#ffffff';
+                btn.style.boxShadow = '0 2px 4px rgba(40, 167, 69, 0.3)';
+            } else {
+                // 笔记关闭：默认样式
+                btn.style.background = 'rgba(255,255,255,0.25)';
+                btn.style.border = 'none';
+                btn.style.color = '';
+                btn.style.boxShadow = 'none';
+            }
+        }
     }
 
     /**
