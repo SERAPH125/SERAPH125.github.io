@@ -575,13 +575,12 @@
             <button class="compact-btn" onclick="if(sudokuGameInstance) sudokuGameInstance.start('extreme')" style="border-color: rgba(128,0,128,0.6);">
                 💀 极限
             </button>
-            <button class="compact-btn btn-clear" onclick="if(confirm('确定清空笔记？')) sudokuGameInstance && sudokuGameInstance.clearAllNotes()">
-                🧹 清空
+            <button class="compact-btn" id="btn-pencil" onclick="sudokuGameInstance && sudokuGameInstance.togglePencil()">
+                ✏️ 笔记
             </button>
             <button class="compact-btn" onclick="if(confirm('确定自动笔记？')) sudokuGameInstance && sudokuGameInstance.autoFillNotes()">
                 📝 自动
             </button>
-
         </div>
 
         <!-- 辅助与难度 (第2行) -->
@@ -595,8 +594,8 @@
             <button class="compact-btn btn-cheat" onclick="checkSudokuAllAnswers()">
                 🚀 全解<br><span style="font-size:0.6rem">(-10)</span>
             </button>
-            <button class="compact-btn" id="btn-pencil" onclick="sudokuGameInstance && sudokuGameInstance.togglePencil()">
-                ✏️ 笔记
+            <button class="compact-btn btn-clear" onclick="if(confirm('确定清空笔记？')) sudokuGameInstance && sudokuGameInstance.clearAllNotes()">
+                🧹 清空
             </button>
 
         </div>
