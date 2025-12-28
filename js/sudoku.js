@@ -29,22 +29,25 @@
  * 所有题目均经过验证：恰好17个提示数，且有唯一解
  */
 const EXTREME_SUDOKU_PUZZLES = [
-    // 题目1：经典17提示数独 (Origin 1)
     { puzzle: "000000000000003085001020000000507000004000100090000000500000073002010000000040009", solution: "987654321246173985351928746128537694634892157795461832519286473472319568863745219" },
-    // 题目2：Origin 1 旋转90度
     { puzzle: "005000000000900000020040100000005000410000200000007030000010000007000080903000050", solution: "845761329671932548329548167732485916418693275596127834254816793167359482983274651" },
-    // 题目3：Origin 1 旋转180度
     { puzzle: "900040000000010200370000005000000090001000400000705000000020100580300000000000000", solution: "912547368865913274374682915238164597751298436496735821647829153589371642123456789" },
-    // 题目4：Origin 1 旋转270度
     { puzzle: "050000309080000700000010000030700000002000014000500000001040020000009000000000500", solution: "156472389284953761397618452438721695572396814619584237761845923845239176923167548" },
-    // 题目5：Gordon Royle #1 (Origin 2)
     { puzzle: "000000010400000000020000000000050407008000300001090000300400200050100000000806000", solution: "693784512487512936125963874932651487568247391741398625319475268856129743274836159" },
-    // 题目6：Origin 2 旋转90度
     { puzzle: "003000040050000200000180000814000000000905000600000000002034000000000001000007000", solution: "283759146751463289469182573814326957327945618695871324172634895546298731938517462" },
-    // 题目7：Origin 2 旋转180度
     { puzzle: "000608000000001050002004003000090100003000800704050000000000020000000004010000000", solution: "951638472347921658862574913526893147193742865784156239478369521639215784215487396" },
-    // 题目8：Origin 2 旋转270度
-    { puzzle: "000700000100000000000430200000000006000509000000000418000081000002000050040000300", solution: "264715839137892645598436271423178596816549723759623418375281964982364157641957382" }
+    { puzzle: "000700000100000000000430200000000006000509000000000418000081000002000050040000300", solution: "264715839137892645598436271423178596816549723759623418375281964982364157641957382" },
+    { puzzle: "020000000000600003074080000000003002080040010600500000000010780500000900000000040", solution: "126937854859624173374185629417893562985246317632571498263419785548762931791358246" },
+	{ puzzle: "000000012000003000000000040000000050006010000070002000000008000200300000400000100", solution: "934765812512483769768921345849637251326514978175892436693148527251379684487256193" },
+    { puzzle: "000000010400000000020000000000050407008000300001090000300400200050100000000806000", solution: "693784512487512936125963874932651487568247391741398625319475268856129743274836159" },
+    { puzzle: "000000010000000200030000000000004050006000300001070000200500000000801000000000600", solution: "852436719914758236637912845329684157476125398581379462268543971793861524145297683" },
+    { puzzle: "100000000000020000000003000000000405006000000070800000020050000000100300000000060", solution: "194786523358921674762543891213679485586214739479835216621357948947168352835492167" },
+    { puzzle: "100000000000020000000003000000040500006000000000700000020050000000001800000000060", solution: "178564329693128457542973186719642538286315794435789612821456973967231845354897261" },
+    { puzzle: "000000012000000030000004000500100000040000200000003000005006000020000800007000000", solution: "798635412654812937213974568536128794941567283872493651185746329429351876367289145" },
+    { puzzle: "000000010000000200000000030000405000000100000020006000050020000000000704000003000", solution: "569237418438561279217849536986475321743182695125396847851724963392618754674953182" },
+    { puzzle: "000000010000000200000000030000405000000600000070008000020010000000000309000004000", solution: "763592814859143267142867935218435796394671582576928143627319458481756329935284671" },
+    { puzzle: "000000010000000200000000030000405000000600000020007000080020000000000309000004000", solution: "739248615418356297652179438873415926594632871126897543987523164245761389361984752" },
+    { puzzle: "000000010000000200000000030000405000000600000010007000020080000000000309000004000", solution: "698342715537861294142579638976415823254638971813927456429183567781256349365794182" }
 ];
 
 
@@ -353,6 +356,7 @@ class SudokuGame {
 
     /**
      * 从内置题目库加载Extreme难度题目
+     * 策略：优先未解 -> 其次解题次数最少 -> 随机
      * @returns {boolean} 是否成功加载
      */
     loadExtremePuzzle() {
@@ -360,22 +364,52 @@ class SudokuGame {
             console.warn('Extreme题目库为空，回退到生成模式');
             return false;
         }
+
+        // 读取历史进度
+        let progress = {};
+        try {
+            progress = JSON.parse(localStorage.getItem('sudoku_extreme_progress') || '{}');
+        } catch (e) {
+            console.error('读取进度失败', e);
+        }
+
+        // 1. 筛选出所有题目及其完成次数
+        const puzzlesWithStats = EXTREME_SUDOKU_PUZZLES.map(item => ({
+            ...item,
+            solvedCount: progress[item.puzzle] || 0
+        }));
+
+        // 2. 优先找未解题目 (count === 0)
+        let candidates = puzzlesWithStats.filter(p => p.solvedCount === 0);
+
+        // 3. 如果都解过了，找完成次数最少的题目
+        if (candidates.length === 0) {
+            const minCount = Math.min(...puzzlesWithStats.map(p => p.solvedCount));
+            candidates = puzzlesWithStats.filter(p => p.solvedCount === minCount);
+            console.log(`所有题目已完成，进入循环模式 (最少次数: ${minCount})`);
+        } else {
+            console.log(`发现 ${candidates.length} 道新题目，优先推荐`);
+        }
+
+        // 4. 从候选列表中随机选一个
+        const selected = candidates[Math.floor(Math.random() * candidates.length)];
         
-        // 循环使用题目库
-        const puzzleData = EXTREME_SUDOKU_PUZZLES[extremePuzzleIndex % EXTREME_SUDOKU_PUZZLES.length];
-        extremePuzzleIndex++;
+        // 记录当前题目字符串，用于胜利时保存进度
+        this.currentPuzzleStr = selected.puzzle;
+
+        console.log('加载题目:', selected.puzzle.substring(0, 10) + '...', '已解次数:', selected.solvedCount);
         
         // 转换为数组格式
-        this.initialBoard = stringToBoard(puzzleData.puzzle);
+        this.initialBoard = stringToBoard(selected.puzzle);
         
         // 如果题目库中自带解，直接使用；否则现场计算
-        if (puzzleData.solution) {
-            this.solution = stringToBoard(puzzleData.solution);
+        if (selected.solution) {
+            this.solution = stringToBoard(selected.solution);
         } else {
             // 现场求解
             const computedSolution = this.solve(this.initialBoard);
             if (!computedSolution) {
-                console.error('内置题目无解！', puzzleData.puzzle);
+                console.error('内置题目无解！', selected.puzzle);
                 return false; // 加载失败
             }
             this.solution = computedSolution;
@@ -387,6 +421,22 @@ class SudokuGame {
         this.marks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
         
         return true;
+    }
+
+    /**
+     * 保存当前题目的完成进度
+     */
+    saveProgress() {
+        if (this.difficulty !== 'extreme' || !this.currentPuzzleStr) return;
+
+        try {
+            const progress = JSON.parse(localStorage.getItem('sudoku_extreme_progress') || '{}');
+            progress[this.currentPuzzleStr] = (progress[this.currentPuzzleStr] || 0) + 1;
+            localStorage.setItem('sudoku_extreme_progress', JSON.stringify(progress));
+            console.log('进度已保存，当前题目完成次数:', progress[this.currentPuzzleStr]);
+        } catch (e) {
+            console.error('保存进度失败', e);
+        }
     }
 
     /**
@@ -746,6 +796,7 @@ class SudokuGame {
             // 检查是否完成
             if(this.checkWin()) {
                 this.isGameOver = true;
+                this.saveProgress(); // 保存进度
                 this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
                 if(this.callbacks.onGameOver) {
                     this.callbacks.onGameOver(true, this.elapsedTime); // 胜利，传递用时
@@ -826,6 +877,7 @@ class SudokuGame {
         // 检查是否获胜
         if(this.checkWin()) {
             this.isGameOver = true;
+            this.saveProgress(); // 保存进度
             this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
             if(this.callbacks.onGameOver) {
                 this.callbacks.onGameOver(true, this.elapsedTime);
@@ -854,6 +906,7 @@ class SudokuGame {
         
         // 触发胜利
         this.isGameOver = true;
+        this.saveProgress(); // 保存进度
         this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
         if(this.callbacks.onGameOver) {
             this.callbacks.onGameOver(true, this.elapsedTime);
