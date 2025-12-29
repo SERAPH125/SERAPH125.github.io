@@ -240,15 +240,15 @@ class SudokuGame {
         // V4.7 Update: 统一所有难度允许3次错误，降低挫败感
         this.maxMistakes = 3; 
         
-        // 旧逻辑备注：
-        // if (difficulty === 'extreme') {
-        //     this.maxMistakes = 1; // 数据极限：只允许1次错误
-        // } else if (difficulty === 'hell') {
-        //     this.maxMistakes = 2; // 地狱级：允许2次错误
-        // } else {
-        //     this.maxMistakes = 3; // 困难：允许3次错误
-        // }
-        
+        // 尝试加载存档
+        if (this.loadGameState(difficulty)) {
+            this.render();
+            if(this.callbacks.onMistakesChange) {
+                this.callbacks.onMistakesChange(this.mistakes, this.maxMistakes);
+            }
+            return;
+        }
+
         // 生成题目
         try {
             this.generateBoard();
@@ -788,19 +788,25 @@ class SudokuGame {
             // 超过最大错误次数，游戏失败
             if(this.mistakes >= this.maxMistakes) {
                 this.isGameOver = true;
+                this.clearGameState(); // 失败也清除存档？通常是的，重新开始
                 if(this.callbacks.onGameOver) {
                     this.callbacks.onGameOver(false); // 失败
                 }
+            } else {
+                this.saveGameState(); // 记录错误次数
             }
         } else {
             // 检查是否完成
             if(this.checkWin()) {
                 this.isGameOver = true;
                 this.saveProgress(); // 保存进度
-                this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+                this.clearGameState(); // 清除存档
+                this.elapsedTime = this.getElapsedTime();
                 if(this.callbacks.onGameOver) {
                     this.callbacks.onGameOver(true, this.elapsedTime); // 胜利，传递用时
                 }
+            } else {
+                this.saveGameState(); // 保存当前状态
             }
         }
         
@@ -878,10 +884,13 @@ class SudokuGame {
         if(this.checkWin()) {
             this.isGameOver = true;
             this.saveProgress(); // 保存进度
-            this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+            this.clearGameState(); // 清除存档
+            this.elapsedTime = this.getElapsedTime();
             if(this.callbacks.onGameOver) {
                 this.callbacks.onGameOver(true, this.elapsedTime);
             }
+        } else {
+            this.saveGameState();
         }
     }
 
@@ -907,7 +916,8 @@ class SudokuGame {
         // 触发胜利
         this.isGameOver = true;
         this.saveProgress(); // 保存进度
-        this.elapsedTime = Math.floor((Date.now() - this.startTime) / 1000);
+        this.clearGameState(); // 清除存档
+        this.elapsedTime = this.getElapsedTime();
         if(this.callbacks.onGameOver) {
             this.callbacks.onGameOver(true, this.elapsedTime);
         }
@@ -919,8 +929,84 @@ class SudokuGame {
      */
     getElapsedTime() {
         if(this.startTime) {
-            return Math.floor((Date.now() - this.startTime) / 1000);
+            // elapsedTime 是之前保存的基础时间，加上本次游戏开始后的增量
+            return this.elapsedTime + Math.floor((Date.now() - this.startTime) / 1000);
         }
         return this.elapsedTime;
+    }
+
+    /**
+     * 保存当前游戏状态（用于意外退出恢复）
+     */
+    saveGameState() {
+        if(this.isGameOver) return;
+        
+        const state = {
+            difficulty: this.difficulty,
+            initialBoard: this.initialBoard,
+            currentBoard: this.currentBoard,
+            solution: this.solution,
+            mistakes: this.mistakes,
+            elapsedTime: this.getElapsedTime(), // 保存当前已经过的时间
+            saveTime: Date.now(), 
+            puzzleStr: this.currentPuzzleStr || null,
+            marks: this.marks.map(row => row.map(set => Array.from(set))) // Set转数组才能JSON化
+        };
+        
+        try {
+            localStorage.setItem('sudoku_current_save', JSON.stringify(state));
+        } catch (e) {
+            console.error('保存存档失败', e);
+        }
+    }
+
+    /**
+     * 清除当前游戏存档
+     */
+    clearGameState() {
+        localStorage.removeItem('sudoku_current_save');
+    }
+
+    /**
+     * 尝试加载游戏存档
+     * @param {string} difficulty - 请求的难度
+     * @returns {boolean} 是否成功加载
+     */
+    loadGameState(difficulty) {
+        try {
+            const saved = localStorage.getItem('sudoku_current_save');
+            if (!saved) return false;
+            
+            const state = JSON.parse(saved);
+            
+            // 只有当存档难度与请求难度一致时才加载
+            if (state.difficulty !== difficulty) return false;
+            
+            console.log('发现未完成的存档，正在恢复...');
+            
+            this.difficulty = state.difficulty;
+            this.initialBoard = state.initialBoard;
+            this.currentBoard = state.currentBoard;
+            this.solution = state.solution;
+            this.mistakes = state.mistakes || 0;
+            this.currentPuzzleStr = state.puzzleStr;
+            
+            // 恢复时间
+            this.elapsedTime = state.elapsedTime || 0;
+            this.startTime = Date.now(); 
+            
+            // 恢复笔记 (Array -> Set)
+            if (state.marks) {
+                this.marks = state.marks.map(row => row.map(arr => new Set(arr)));
+            } else {
+                this.marks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
+            }
+            
+            return true;
+        } catch (e) {
+            console.error('读取存档失败', e);
+            this.clearGameState(); // 出错则清除坏档
+            return false;
+        }
     }
 }
