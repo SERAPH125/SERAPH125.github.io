@@ -138,6 +138,59 @@
         .plan-item.completed .btn-add-progress {
             display: none;
         }
+        .btn-view-records {
+            background: rgba(255,255,255,0.6);
+            color: var(--accent-pink);
+            border: 1px solid var(--accent-pink);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-view-records:hover {
+            background: var(--accent-pink);
+            color: white;
+            transform: translateY(-2px);
+        }
+        .btn-view-records:active {
+            transform: scale(0.95);
+        }
+        .record-item {
+            background: rgba(255,255,255,0.6);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .record-item-content {
+            flex: 1;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+        .record-item-date {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+        .btn-delete-record {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            opacity: 0.5;
+            transition: all 0.2s;
+        }
+        .btn-delete-record:hover {
+            color: var(--danger);
+            opacity: 1;
+        }
         .overall-progress {
             background: linear-gradient(135deg, #a18cd1, #fbc2eb);
             color: white;
@@ -265,7 +318,7 @@
 <div class="container">
     <header>
         <h1>📋 小周的年度计划 <span class="version-tag">V3.6</span></h1>
-        <div class="love-days">2025年度目标 💕</div>
+        <div class="love-days">2026年度目标 💕</div>
     </header>
 
     <div class="nav-tabs">
@@ -298,26 +351,78 @@
 <button class="btn-add-plan" onclick="app.showAddPlanModal()" title="添加新计划">➕</button>
 
 <!-- 新增计划弹窗 -->
-<div class="modal-overlay" id="add-plan-modal" style="display:none;">
-    <div class="modal" style="width:85%; max-width:350px;">
-        <span style="font-size:3rem; display:block; margin-bottom:15px;">➕</span>
-        <h3 style="margin:0 0 15px 0;">添加新计划</h3>
-        <input type="text" id="plan-name-input" placeholder="计划名称" style="margin-bottom:10px;">
-        <select id="plan-category-select" style="width:100%; padding:15px; border:2px solid transparent; background:rgba(255,255,255,0.6); border-radius:18px; font-size:1rem; margin-bottom:10px; outline:none;">
-            <option value="读书清单📖">读书清单📖</option>
-            <option value="电影清单🎬">电影清单🎬</option>
-            <option value="休闲娱乐">休闲娱乐</option>
-            <option value="身体健康">身体健康</option>
-            <option value="日常生活">日常生活</option>
-            <option value="体验突破">体验突破</option>
-            <option value="自我提升">自我提升</option>
-        </select>
-        <input type="number" id="plan-target-input" placeholder="目标数量（1表示单次任务）" min="1" value="1" style="margin-bottom:10px;">
-        <input type="text" id="plan-icon-input" placeholder="图标（如：📖）" maxlength="2" style="margin-bottom:15px;">
-        <div style="display:flex; gap:10px;">
-            <button onclick="document.getElementById('add-plan-modal').style.display='none'" style="flex:1; background:#f0f0f0; border:none; padding:12px; border-radius:12px;">取消</button>
-            <button onclick="app.addNewPlan()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold;">添加</button>
+<div class="modal-overlay" id="add-plan-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('add-plan-modal').style.display='none'">
+    <div class="modal" style="width:90%; max-width:400px; padding:30px 25px;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <span style="font-size:3.5rem; display:block; margin-bottom:10px;">✨</span>
+            <h3 style="margin:0 0 8px 0; color:var(--text-main); font-size:1.3rem;">添加新计划</h3>
+            <p style="margin:0; color:var(--text-light); font-size:0.85rem;">记录你的年度目标，一步步实现梦想</p>
         </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">📝 计划名称</label>
+            <input type="text" id="plan-name-input" placeholder="例如：看一次日出" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">📂 分类</label>
+            <select id="plan-category-select" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box; cursor:pointer;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
+                <option value="读书清单📖">📖 读书清单</option>
+                <option value="电影清单🎬">🎬 电影清单</option>
+                <option value="休闲娱乐">🎮 休闲娱乐</option>
+                <option value="身体健康">💪 身体健康</option>
+                <option value="日常生活">🏠 日常生活</option>
+                <option value="体验突破">🚀 体验突破</option>
+                <option value="自我提升">📚 自我提升</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">🎯 目标数量</label>
+            <input type="number" id="plan-target-input" placeholder="例如：1（单次任务）或 20（阶段性任务）" min="1" value="1" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
+            <p style="margin:6px 0 0 0; color:var(--text-light); font-size:0.75rem; line-height:1.4;">💡 提示：输入 1 表示单次任务（如"看日出"），输入大于 1 的数字表示阶段性任务（如"看20部电影"）</p>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">🎨 图标（可选）</label>
+            <input type="text" id="plan-icon-input" placeholder="例如：📖 🎬 🌅" maxlength="2" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1.2rem; text-align:center; outline:none; transition:all 0.3s; box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('add-plan-modal').style.display='none'" style="flex:1; background:rgba(255,255,255,0.6); color:var(--text-main); border:2px solid rgba(255,255,255,0.5); padding:14px; border-radius:12px; font-weight:500; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.8)'" onmouseout="this.style.background='rgba(255,255,255,0.6)'">取消</button>
+            <button onclick="app.addNewPlan()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(161,140,209,0.3); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='translateY(-2px)'">✨ 添加计划</button>
+        </div>
+    </div>
+</div>
+
+<!-- 记录内容弹窗（用于阶段性任务） -->
+<div class="modal-overlay" id="record-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('record-modal').style.display='none'">
+    <div class="modal" style="width:90%; max-width:400px; padding:30px 25px;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <span style="font-size:3rem; display:block; margin-bottom:10px;" id="record-icon">🎬</span>
+            <h3 style="margin:0 0 8px 0; color:var(--text-main); font-size:1.2rem;" id="record-title">记录完成内容</h3>
+            <p style="margin:0; color:var(--text-light); font-size:0.85rem;" id="record-hint">填写具体内容，例如电影名称</p>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <input type="text" id="record-content-input" placeholder="例如：《肖申克的救赎》" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('record-modal').style.display='none'" style="flex:1; background:rgba(255,255,255,0.6); color:var(--text-main); border:2px solid rgba(255,255,255,0.5); padding:14px; border-radius:12px; font-weight:500; cursor:pointer;">取消</button>
+            <button onclick="app.confirmRecord()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(161,140,209,0.3);">✓ 确认记录</button>
+        </div>
+    </div>
+</div>
+
+<!-- 查看记录列表弹窗 -->
+<div class="modal-overlay" id="records-list-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('records-list-modal').style.display='none'">
+    <div class="modal" style="width:90%; max-width:400px; padding:25px; max-height:70vh; overflow-y:auto;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <h3 style="margin:0 0 8px 0; color:var(--text-main); font-size:1.2rem;" id="records-list-title">已完成记录</h3>
+        </div>
+        <div id="records-list-content" style="max-height:50vh; overflow-y:auto;"></div>
+        <button onclick="document.getElementById('records-list-modal').style.display='none'" style="width:100%; margin-top:15px; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">关闭</button>
     </div>
 </div>
 
@@ -403,6 +508,7 @@ const annualPlanTemplate = [
 
 Object.assign(app, {
     currentCategory: null, // 当前选中的分类（首次加载时自动选择第一个）
+    pendingRecordItemId: null, // 待记录内容的计划ID
     
     init() {
         this.initCommon();
@@ -424,10 +530,18 @@ Object.assign(app, {
             // 首次使用，初始化数据
             this.data.annualPlan = annualPlanTemplate.map((item, index) => ({
                 id: Date.now() + index,
-                ...item
+                ...item,
+                records: [] // 初始化records字段
             }));
             this.saveData();
         } else {
+            // 确保已有数据包含records字段
+            this.data.annualPlan.forEach(item => {
+                if (!item.records) {
+                    item.records = [];
+                }
+            });
+            
             // 检查是否有新增的任务（通过比较数量）
             if (this.data.annualPlan.length < annualPlanTemplate.length) {
                 // 合并新任务
@@ -438,7 +552,8 @@ Object.assign(app, {
                     if (!exists) {
                         this.data.annualPlan.push({
                             id: Date.now() + Math.random(),
-                            ...template
+                            ...template,
+                            records: [] // 初始化records字段
                         });
                     }
                 });
@@ -515,6 +630,10 @@ Object.assign(app, {
                 const isCompleted = item.completed;
                 const progress = item.target > 1 ? `${item.current}/${item.target}` : '';
                 const progressPercent = item.target > 1 ? Math.min(100, (item.current / item.target) * 100) : (isCompleted ? 100 : 0);
+                // 判断是否需要记录内容（电影清单、读书清单等）
+                const needRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
+                const records = item.records || [];
+                const hasRecords = records.length > 0;
                 
                 html += `
                     <div class="plan-item ${isCompleted ? 'completed' : ''}">
@@ -530,7 +649,13 @@ Object.assign(app, {
                                 </div>
                                 <span class="plan-progress">${progress}</span>
                                 ${!isCompleted ? `<button class="btn-add-progress" onclick="event.stopPropagation(); app.addProgress(${item.id})">+1</button>` : ''}
+                                ${hasRecords ? `<button class="btn-view-records" onclick="event.stopPropagation(); app.viewRecords(${item.id})" title="查看记录">📋</button>` : ''}
                             </div>
+                            ${hasRecords ? `
+                                <div style="margin-top:10px; padding-left:36px; font-size:0.8rem; color:var(--text-light);">
+                                    <span style="cursor:pointer; text-decoration:underline;" onclick="app.viewRecords(${item.id})">已记录 ${records.length} 项，点击查看</span>
+                                </div>
+                            ` : ''}
                         ` : ''}
                     </div>
                 `;
@@ -584,8 +709,59 @@ Object.assign(app, {
         const item = this.data.annualPlan.find(p => p.id === id);
         if (!item || item.target <= 1) return;
         
+        // 判断是否需要记录内容（电影清单、读书清单）
+        const needRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
+        
+        if (needRecord) {
+            // 需要记录内容，弹出输入框
+            this.pendingRecordItemId = id;
+            document.getElementById('record-icon').innerText = item.icon;
+            document.getElementById('record-title').innerText = `记录${item.name}`;
+            const hintText = item.category === '电影清单🎬' ? '填写电影名称，例如：《肖申克的救赎》' : '填写书名，例如：《活着》';
+            document.getElementById('record-hint').innerText = hintText;
+            document.getElementById('record-content-input').value = '';
+            document.getElementById('record-content-input').placeholder = hintText;
+            document.getElementById('record-modal').style.display = 'flex';
+            document.getElementById('record-content-input').focus();
+        } else {
+            // 不需要记录内容，直接增加进度
+            this.doAddProgress(id, null);
+        }
+    },
+
+    // 确认记录内容
+    confirmRecord() {
+        const content = document.getElementById('record-content-input').value.trim();
+        if (!content) {
+            alert('请输入内容！');
+            return;
+        }
+        
+        const id = this.pendingRecordItemId;
+        this.doAddProgress(id, content);
+        document.getElementById('record-modal').style.display = 'none';
+        this.pendingRecordItemId = null;
+    },
+
+    // 执行增加进度的实际逻辑
+    doAddProgress(id, recordContent) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item || item.target <= 1) return;
+        
         if (item.current < item.target) {
             item.current++;
+            
+            // 如果需要记录内容，保存到records数组
+            if (recordContent) {
+                if (!item.records) {
+                    item.records = [];
+                }
+                item.records.push({
+                    content: recordContent,
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString()
+                });
+            }
             
             // 检查是否完成
             if (item.current >= item.target) {
@@ -595,10 +771,60 @@ Object.assign(app, {
                 uiManager.createPetal();
                 this.showToast(`🎉🎉🎉 完成了：${item.name}！太厉害了！`);
             } else {
-                this.showToast(`进度更新：${item.name} (${item.current}/${item.target}) ✨`);
+                const msg = recordContent ? `已记录：${recordContent} ✨` : `进度更新：${item.name} (${item.current}/${item.target}) ✨`;
+                this.showToast(msg);
             }
             
             this.saveData();
+            this.render();
+        }
+    },
+
+    // 查看记录列表
+    viewRecords(id) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item || !item.records || item.records.length === 0) {
+            alert('暂无记录');
+            return;
+        }
+        
+        document.getElementById('records-list-title').innerText = `${item.icon} ${item.name} - 已完成记录`;
+        
+        let html = '';
+        item.records.forEach((record, index) => {
+            html += `
+                <div class="record-item">
+                    <div class="record-item-content">
+                        <div>${index + 1}. ${record.content}</div>
+                        <div class="record-item-date">${record.date} ${record.time}</div>
+                    </div>
+                    <button class="btn-delete-record" onclick="app.deleteRecord(${id}, ${index})" title="删除记录">🗑️</button>
+                </div>
+            `;
+        });
+        
+        document.getElementById('records-list-content').innerHTML = html || '<div style="text-align:center; padding:20px; color:var(--text-light);">暂无记录</div>';
+        document.getElementById('records-list-modal').style.display = 'flex';
+    },
+
+    // 删除记录
+    deleteRecord(itemId, recordIndex) {
+        const item = this.data.annualPlan.find(p => p.id === itemId);
+        if (!item || !item.records) return;
+        
+        if (confirm('确定要删除这条记录吗？')) {
+            item.records.splice(recordIndex, 1);
+            // 如果删除记录后，当前进度应该相应减少
+            if (item.current > 0) {
+                item.current--;
+            }
+            // 如果进度减少后未完成，取消完成状态
+            if (item.current < item.target) {
+                item.completed = false;
+            }
+            this.saveData();
+            this.viewRecords(itemId); // 刷新记录列表
+            this.render(); // 刷新主列表
         }
     },
 
