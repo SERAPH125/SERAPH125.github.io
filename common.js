@@ -19,7 +19,9 @@ const app = {
         girlSweetness: 0,
         girlHistory: [],
         // 纪念日 (V3.4)
-        nextAnniversary: null // { name: '生日', date: '2023-12-25' }
+        nextAnniversary: null, // { name: '生日', date: '2023-12-25' }
+        // 年度计划 (V3.6)
+        annualPlan: [] // [{ id, category, name, target, current, completed, icon }]
     },
     currentUser: 'boy', // 默认 'boy', 可切换为 'girl'
     deductStep: 0,
@@ -111,6 +113,8 @@ const app = {
         // 相册不再合并，而是独立同步
         // remoteData.album = mergeArray(this.data.album, remoteData.album);
         remoteData.inventory = mergeArray(this.data.inventory, remoteData.inventory);
+        // 年度计划合并（基于ID去重）
+        remoteData.annualPlan = mergeArray(this.data.annualPlan, remoteData.annualPlan || []);
 
         // 如果本地有新签到，优先使用本地分数（因为它包含了签到奖励）
         if (useLocalForAuth) {
@@ -138,6 +142,8 @@ const app = {
         // 甜度系统兼容
         if (this.data.girlSweetness === undefined) this.data.girlSweetness = 0;
         if (this.data.girlHistory === undefined) this.data.girlHistory = [];
+        // 年度计划兼容
+        if (this.data.annualPlan === undefined) this.data.annualPlan = [];
 
         this.fixHistoryIds();
         this.saveToLocal();
@@ -240,6 +246,8 @@ const app = {
             // 甜度系统兼容
             if (this.data.girlSweetness === undefined) this.data.girlSweetness = 0;
             if (this.data.girlHistory === undefined) this.data.girlHistory = [];
+            // 年度计划兼容
+            if (this.data.annualPlan === undefined) this.data.annualPlan = [];
         }
     },
 

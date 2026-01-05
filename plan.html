@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>年度计划 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        /* 年度计划特定样式 */
+        .plan-category {
+            margin-bottom: 25px;
+        }
+        .category-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 15px;
+            border-left: 4px solid var(--accent-pink);
+        }
+        .category-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .category-progress {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+        .plan-item {
+            background: rgba(255,255,255,0.7);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s;
+            border: 1px solid rgba(255,255,255,0.5);
+            position: relative;
+        }
+        .plan-item.completed {
+            background: rgba(255,255,255,0.4);
+            opacity: 0.7;
+        }
+        .plan-item-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            width: 100%;
+            min-height: 32px;
+        }
+        .plan-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            background: white;
+            margin-top: 2px;
+        }
+        .plan-checkbox.checked {
+            background: var(--accent-pink);
+            border-color: var(--accent-pink);
+        }
+        .plan-checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            display: none;
+        }
+        .plan-checkbox.checked::after {
+            display: block;
+        }
+        .plan-name {
+            font-weight: 500;
+            color: var(--text-main);
+            flex: 1;
+            line-height: 1.5;
+            word-break: break-word;
+            font-size: 0.95rem;
+        }
+        .plan-item.completed .plan-name {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+        .plan-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+            padding-left: 36px;
+        }
+        .plan-progress {
+            font-size: 0.85rem;
+            color: var(--accent-pink);
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .plan-progress-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(255,154,158,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .plan-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9a9e, #fecfef);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+        .btn-add-progress {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+            white-space: nowrap;
+        }
+        .btn-add-progress:active {
+            transform: scale(0.95);
+        }
+        .plan-item.completed .btn-add-progress {
+            display: none;
+        }
+        .overall-progress {
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            color: white;
+            padding: 20px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .overall-progress-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        .overall-progress-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+            font-family: 'Georgia', serif;
+        }
+        .overall-progress-bar {
+            background: rgba(255,255,255,0.3);
+            height: 10px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+        .overall-progress-fill {
+            height: 100%;
+            background: white;
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        /* 分类标签 */
+        .plan-category-tabs {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            padding-bottom: 5px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .plan-category-tabs::-webkit-scrollbar {
+            height: 4px;
+        }
+        .plan-category-tab {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.5);
+            border-radius: 20px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        .plan-category-tab.active {
+            background: white;
+            color: var(--accent-pink);
+            border-color: var(--accent-pink);
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .plan-category-tab:hover {
+            background: rgba(255,255,255,0.7);
+        }
+        /* 添加计划按钮 */
+        .btn-add-plan {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(161, 140, 209, 0.4);
+            transition: transform 0.2s;
+            z-index: 100;
+        }
+        .btn-add-plan:active {
+            transform: scale(0.9);
+        }
+        /* 删除按钮 */
+        .btn-delete-plan {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.5;
+            transition: all 0.2s;
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-left: auto;
+        }
+        .plan-item:hover .btn-delete-plan {
+            opacity: 1;
+            background: rgba(255,154,158,0.1);
+        }
+        .btn-delete-plan:hover {
+            color: var(--danger);
+            background: rgba(255,154,158,0.2);
+            transform: scale(1.1);
+        }
+        .btn-delete-plan:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>📋 小周的年度计划 <span class="version-tag">V3.6</span></h1>
+        <div class="love-days">2025年度目标 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="album.html" class="nav-btn">🖼️ 相册</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+        <a href="games.html" class="nav-btn">🎮 游戏</a>
+        <a href="plan.html" class="nav-btn active">📋 计划</a>
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
+    </div>
+
+    <!-- 总体进度 -->
+    <div class="overall-progress">
+        <div class="overall-progress-title">年度计划完成度</div>
+        <div class="overall-progress-value" id="overall-progress-value">0%</div>
+        <div class="overall-progress-bar">
+            <div class="overall-progress-fill" id="overall-progress-fill" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- 分类标签 -->
+    <div class="plan-category-tabs" id="category-tabs"></div>
+
+    <!-- 计划列表 -->
+    <div id="plan-list"></div>
+</div>
+
+<!-- 添加计划按钮 -->
+<button class="btn-add-plan" onclick="app.showAddPlanModal()" title="添加新计划">➕</button>
+
+<!-- 新增计划弹窗 -->
+<div class="modal-overlay" id="add-plan-modal" style="display:none;">
+    <div class="modal" style="width:85%; max-width:350px;">
+        <span style="font-size:3rem; display:block; margin-bottom:15px;">➕</span>
+        <h3 style="margin:0 0 15px 0;">添加新计划</h3>
+        <input type="text" id="plan-name-input" placeholder="计划名称" style="margin-bottom:10px;">
+        <select id="plan-category-select" style="width:100%; padding:15px; border:2px solid transparent; background:rgba(255,255,255,0.6); border-radius:18px; font-size:1rem; margin-bottom:10px; outline:none;">
+            <option value="读书清单📖">读书清单📖</option>
+            <option value="电影清单🎬">电影清单🎬</option>
+            <option value="休闲娱乐">休闲娱乐</option>
+            <option value="身体健康">身体健康</option>
+            <option value="日常生活">日常生活</option>
+            <option value="体验突破">体验突破</option>
+            <option value="自我提升">自我提升</option>
+        </select>
+        <input type="number" id="plan-target-input" placeholder="目标数量（1表示单次任务）" min="1" value="1" style="margin-bottom:10px;">
+        <input type="text" id="plan-icon-input" placeholder="图标（如：📖）" maxlength="2" style="margin-bottom:15px;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="document.getElementById('add-plan-modal').style.display='none'" style="flex:1; background:#f0f0f0; border:none; padding:12px; border-radius:12px;">取消</button>
+            <button onclick="app.addNewPlan()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold;">添加</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/core/sound-manager.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/core/utils.js"></script>
+<script src="js/core/constants.js"></script>
+<script src="js/ui/ui-manager.js"></script>
+<script src="common.js"></script>
+<script>
+// 年度计划初始数据
+const annualPlanTemplate = [
+    // 一、读书清单📖（15本）
+    { category: '读书清单📖', name: '《活着》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《兄弟》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《被讨厌的勇气》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《西西弗神话》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《瓦尔登湖》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《百年孤独》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《围城》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《我与地坛》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《文化苦旅》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《悉达多》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《牛虻》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《相约星期二》', target: 1, current: 0, completed: false, icon: '📖' },
+    { category: '读书清单📖', name: '《老实人启蒙》', target: 1, current: 0, completed: false, icon: '📖' },
+    
+    // 二、电影清单🎬（20部）
+    { category: '电影清单🎬', name: '看电影', target: 20, current: 0, completed: false, icon: '🎬' },
+    
+    // 三、休闲娱乐
+    { category: '休闲娱乐', name: '看一次日出🌅', target: 1, current: 0, completed: false, icon: '🌅' },
+    { category: '休闲娱乐', name: '看一次日落🌄', target: 1, current: 0, completed: false, icon: '🌄' },
+    { category: '休闲娱乐', name: '看一场烟花🎆', target: 1, current: 0, completed: false, icon: '🎆' },
+    { category: '休闲娱乐', name: '滑雪', target: 1, current: 0, completed: false, icon: '⛷️' },
+    { category: '休闲娱乐', name: '卡丁车', target: 1, current: 0, completed: false, icon: '🏎️' },
+    { category: '休闲娱乐', name: '射箭', target: 1, current: 0, completed: false, icon: '🏹' },
+    { category: '休闲娱乐', name: '攀岩', target: 1, current: 0, completed: false, icon: '🧗' },
+    { category: '休闲娱乐', name: '山间民宿体验', target: 1, current: 0, completed: false, icon: '🏡' },
+    { category: '休闲娱乐', name: '放风筝🪁', target: 1, current: 0, completed: false, icon: '🪁' },
+    { category: '休闲娱乐', name: '按摩💆‍♀️', target: 1, current: 0, completed: false, icon: '💆‍♀️' },
+    
+    // 四、身体健康
+    { category: '身体健康', name: '瘦到105斤', target: 1, current: 0, completed: false, icon: '⚖️' },
+    { category: '身体健康', name: '骑车20次🚴', target: 20, current: 0, completed: false, icon: '🚴' },
+    { category: '身体健康', name: '一周无麸质饮食', target: 1, current: 0, completed: false, icon: '🥗' },
+    { category: '身体健康', name: '挑战一个月不喝奶茶🥤', target: 1, current: 0, completed: false, icon: '🥤' },
+    { category: '身体健康', name: '挑战一个月不吃甜品🍮', target: 1, current: 0, completed: false, icon: '🍮' },
+    { category: '身体健康', name: '种牙🦷', target: 1, current: 0, completed: false, icon: '🦷' },
+    { category: '身体健康', name: '九价💉', target: 1, current: 0, completed: false, icon: '💉' },
+    
+    // 五、日常生活
+    { category: '日常生活', name: '平常的日子里早起一周', target: 1, current: 0, completed: false, icon: '🌅' },
+    { category: '日常生活', name: '拍个写真', target: 1, current: 0, completed: false, icon: '📸' },
+    { category: '日常生活', name: '去一个新城市旅游', target: 1, current: 0, completed: false, icon: '✈️' },
+    { category: '日常生活', name: '远距离旅游一次', target: 1, current: 0, completed: false, icon: '🌍' },
+    { category: '日常生活', name: '爬3座山', target: 3, current: 0, completed: false, icon: '⛰️' },
+    { category: '日常生活', name: '看一次海', target: 1, current: 0, completed: false, icon: '🌊' },
+    { category: '日常生活', name: '学会游泳', target: 1, current: 0, completed: false, icon: '🏊' },
+    { category: '日常生活', name: '每月买一束花', target: 12, current: 0, completed: false, icon: '🌸' },
+    { category: '日常生活', name: '早起去早市感受烟火气', target: 1, current: 0, completed: false, icon: '🌆' },
+    { category: '日常生活', name: '挑战一个月不网购', target: 1, current: 0, completed: false, icon: '🛒' },
+    
+    // 六、体验突破
+    { category: '体验突破', name: '找一百位陌生人说话🗣️', target: 100, current: 0, completed: false, icon: '🗣️' },
+    { category: '体验突破', name: '看一次话剧', target: 1, current: 0, completed: false, icon: '🎭' },
+    { category: '体验突破', name: '随机公交下站感受生活', target: 1, current: 0, completed: false, icon: '🚌' },
+    { category: '体验突破', name: '超长距离骑行', target: 1, current: 0, completed: false, icon: '🚴' },
+    { category: '体验突破', name: '户外露营🏕️', target: 1, current: 0, completed: false, icon: '🏕️' },
+    { category: '体验突破', name: '完成十公里以上的徒步', target: 1, current: 0, completed: false, icon: '🥾' },
+    { category: '体验突破', name: '本人开车自驾游', target: 1, current: 0, completed: false, icon: '🚗' },
+    { category: '体验突破', name: '一个人自由行', target: 1, current: 0, completed: false, icon: '🎒' },
+    { category: '体验突破', name: '去酒吧', target: 1, current: 0, completed: false, icon: '🍷' },
+    { category: '体验突破', name: '学一支简单的舞蹈💃', target: 1, current: 0, completed: false, icon: '💃' },
+    { category: '体验突破', name: '拿着相机去扫街', target: 1, current: 0, completed: false, icon: '📷' },
+    { category: '体验突破', name: '挑战一周只花80', target: 1, current: 0, completed: false, icon: '💰' },
+    { category: '体验突破', name: '给五年后的自己写一封信', target: 1, current: 0, completed: false, icon: '✉️' },
+    
+    // 七、自我提升
+    { category: '自我提升', name: '每月写一篇反思总结', target: 12, current: 0, completed: false, icon: '✍️' },
+    { category: '自我提升', name: '去图书馆看一天书', target: 1, current: 0, completed: false, icon: '📚' }
+];
+
+Object.assign(app, {
+    currentCategory: null, // 当前选中的分类（首次加载时自动选择第一个）
+    
+    init() {
+        this.initCommon();
+        // 延迟初始化，确保数据已加载
+        setTimeout(() => {
+            this.initAnnualPlan();
+            this.render();
+        }, 200);
+    },
+
+    // 初始化年度计划数据
+    initAnnualPlan() {
+        // 确保 annualPlan 字段存在
+        if (!this.data.annualPlan) {
+            this.data.annualPlan = [];
+        }
+        
+        if (this.data.annualPlan.length === 0) {
+            // 首次使用，初始化数据
+            this.data.annualPlan = annualPlanTemplate.map((item, index) => ({
+                id: Date.now() + index,
+                ...item
+            }));
+            this.saveData();
+        } else {
+            // 检查是否有新增的任务（通过比较数量）
+            if (this.data.annualPlan.length < annualPlanTemplate.length) {
+                // 合并新任务
+                annualPlanTemplate.forEach(template => {
+                    const exists = this.data.annualPlan.find(p => 
+                        p.category === template.category && p.name === template.name
+                    );
+                    if (!exists) {
+                        this.data.annualPlan.push({
+                            id: Date.now() + Math.random(),
+                            ...template
+                        });
+                    }
+                });
+                this.saveData();
+            }
+        }
+    },
+
+    render() {
+        const planList = document.getElementById('plan-list');
+        const categoryTabs = document.getElementById('category-tabs');
+        if (!planList || !categoryTabs) return;
+
+        // 确保数据已初始化
+        if (!this.data.annualPlan || this.data.annualPlan.length === 0) {
+            planList.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-light);">正在加载计划数据...</div>';
+            return;
+        }
+
+        // 按分类分组
+        const categories = {};
+        this.data.annualPlan.forEach(item => {
+            if (!categories[item.category]) {
+                categories[item.category] = [];
+            }
+            categories[item.category].push(item);
+        });
+
+        // 渲染分类标签（不包含"全部"）
+        const allCategories = Object.keys(categories).sort();
+        
+        // 如果当前分类为空或者是"全部"，默认选择"休闲娱乐"，如果没有则选择第一个分类
+        if (!this.currentCategory || this.currentCategory === '全部') {
+            if (categories['休闲娱乐']) {
+                this.currentCategory = '休闲娱乐';
+            } else if (allCategories.length > 0) {
+                this.currentCategory = allCategories[0];
+            }
+        }
+        
+        let tabsHtml = '';
+        allCategories.forEach(cat => {
+            const isActive = cat === this.currentCategory;
+            const count = categories[cat]?.length || 0;
+            tabsHtml += `
+                <div class="plan-category-tab ${isActive ? 'active' : ''}" onclick="app.switchCategory('${cat}')">
+                    ${cat} ${count > 0 ? `(${count})` : ''}
+                </div>
+            `;
+        });
+        categoryTabs.innerHTML = tabsHtml;
+
+        // 根据当前分类过滤数据（只显示当前分类）
+        let displayItems = [];
+        if (categories[this.currentCategory]) {
+            displayItems.push({ category: this.currentCategory, items: categories[this.currentCategory] });
+        }
+
+        // 渲染计划列表
+        let html = '';
+        displayItems.forEach(({ category, items }) => {
+            const completed = items.filter(i => i.completed).length;
+            const total = items.length;
+            
+            html += `
+                <div class="plan-category">
+                    <div class="category-header">
+                        <div class="category-title">${category}</div>
+                        <div class="category-progress">${completed}/${total}</div>
+                    </div>
+            `;
+            
+            items.forEach(item => {
+                const isCompleted = item.completed;
+                const progress = item.target > 1 ? `${item.current}/${item.target}` : '';
+                const progressPercent = item.target > 1 ? Math.min(100, (item.current / item.target) * 100) : (isCompleted ? 100 : 0);
+                
+                html += `
+                    <div class="plan-item ${isCompleted ? 'completed' : ''}">
+                        <div class="plan-item-content" onclick="app.togglePlanItem(${item.id})">
+                            <div class="plan-checkbox ${isCompleted ? 'checked' : ''}"></div>
+                            <span class="plan-name">${item.icon} ${item.name}</span>
+                            <button class="btn-delete-plan" onclick="event.stopPropagation(); app.deletePlan(${item.id})" title="删除计划">🗑️</button>
+                        </div>
+                        ${item.target > 1 ? `
+                            <div class="plan-actions">
+                                <div class="plan-progress-bar">
+                                    <div class="plan-progress-fill" style="width: ${progressPercent}%"></div>
+                                </div>
+                                <span class="plan-progress">${progress}</span>
+                                ${!isCompleted ? `<button class="btn-add-progress" onclick="event.stopPropagation(); app.addProgress(${item.id})">+1</button>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+        });
+        
+        if (html === '') {
+            html = '<div style="text-align:center; padding:40px; color:var(--text-light);">该分类下暂无计划</div>';
+        }
+        
+        planList.innerHTML = html;
+        
+        // 更新总体进度
+        this.updateOverallProgress();
+    },
+
+    // 切换分类
+    switchCategory(category) {
+        this.currentCategory = category;
+        this.render();
+    },
+
+    // 切换单次任务完成状态
+    togglePlanItem(id) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item) return;
+        
+        // 如果是阶段性任务（target > 1），点击不切换完成状态，只显示进度
+        if (item.target > 1) {
+            return;
+        }
+        
+        // 单次任务：切换完成状态
+        item.completed = !item.completed;
+        if (item.completed) {
+            item.current = 1;
+            uiManager.createPetal();
+            uiManager.createPetal();
+            this.showToast(`太棒了！完成了：${item.name} 🎉`);
+        } else {
+            item.current = 0;
+        }
+        
+        this.saveData();
+    },
+
+    // 增加阶段性任务进度
+    addProgress(id) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item || item.target <= 1) return;
+        
+        if (item.current < item.target) {
+            item.current++;
+            
+            // 检查是否完成
+            if (item.current >= item.target) {
+                item.completed = true;
+                uiManager.createPetal();
+                uiManager.createPetal();
+                uiManager.createPetal();
+                this.showToast(`🎉🎉🎉 完成了：${item.name}！太厉害了！`);
+            } else {
+                this.showToast(`进度更新：${item.name} (${item.current}/${item.target}) ✨`);
+            }
+            
+            this.saveData();
+        }
+    },
+
+    // 更新总体进度
+    updateOverallProgress() {
+        const total = this.data.annualPlan.length;
+        let completed = 0;
+        let totalProgress = 0;
+        
+        this.data.annualPlan.forEach(item => {
+            if (item.completed) {
+                completed++;
+                totalProgress += 100;
+            } else if (item.target > 1) {
+                // 阶段性任务按百分比计算
+                totalProgress += (item.current / item.target) * 100;
+            }
+        });
+        
+        const percent = total > 0 ? Math.round(totalProgress / total) : 0;
+        
+        const valueEl = document.getElementById('overall-progress-value');
+        const fillEl = document.getElementById('overall-progress-fill');
+        
+        if (valueEl) valueEl.innerText = `${percent}%`;
+        if (fillEl) fillEl.style.width = `${percent}%`;
+    },
+
+    // 显示新增计划弹窗
+    showAddPlanModal() {
+        document.getElementById('add-plan-modal').style.display = 'flex';
+        document.getElementById('plan-name-input').value = '';
+        document.getElementById('plan-target-input').value = '1';
+        document.getElementById('plan-icon-input').value = '📝';
+        // 如果当前有选中分类，默认设置为该分类
+        if (this.currentCategory !== '全部') {
+            document.getElementById('plan-category-select').value = this.currentCategory;
+        }
+        document.getElementById('plan-name-input').focus();
+    },
+
+    // 添加新计划
+    addNewPlan() {
+        const name = document.getElementById('plan-name-input').value.trim();
+        const category = document.getElementById('plan-category-select').value;
+        const target = parseInt(document.getElementById('plan-target-input').value) || 1;
+        const icon = document.getElementById('plan-icon-input').value.trim() || '📝';
+
+        if (!name) {
+            alert('请输入计划名称！');
+            return;
+        }
+
+        if (target < 1) {
+            alert('目标数量必须大于0！');
+            return;
+        }
+
+        // 添加到数据
+        if (!this.data.annualPlan) {
+            this.data.annualPlan = [];
+        }
+
+        const newPlan = {
+            id: Date.now(),
+            category: category,
+            name: name,
+            target: target,
+            current: 0,
+            completed: false,
+            icon: icon
+        };
+
+        this.data.annualPlan.push(newPlan);
+        this.saveData();
+
+        // 关闭弹窗
+        document.getElementById('add-plan-modal').style.display = 'none';
+        
+        // 切换到新计划所属的分类
+        this.currentCategory = category;
+        
+        this.showToast('计划已添加！✨');
+        this.render();
+    },
+
+    // 删除计划
+    deletePlan(id) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item) return;
+
+        if (confirm(`确定要删除计划"${item.name}"吗？`)) {
+            this.data.annualPlan = this.data.annualPlan.filter(p => p.id !== id);
+            this.saveData();
+            this.showToast('计划已删除');
+            this.render();
+        }
+    }
+});
+
+app.init();
+</script>
+</body>
+</html>
