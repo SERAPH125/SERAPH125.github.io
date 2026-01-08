@@ -80,15 +80,19 @@ const app = {
         // 防止云端旧数据覆盖本地刚刚发生的签到行为
         const todayStr = this.getTodayStr();
         let useLocalForAuth = false;
+        let boySignedIn = false;
+        let girlSignedIn = false;
 
         // 检查本地是否有新的签到
         if (this.data.lastSignInDate_Boy === todayStr && remoteData.lastSignInDate_Boy !== todayStr) {
             remoteData.lastSignInDate_Boy = todayStr;
             useLocalForAuth = true;
+            boySignedIn = true;
         }
         if (this.data.lastSignInDate_Girl === todayStr && remoteData.lastSignInDate_Girl !== todayStr) {
             remoteData.lastSignInDate_Girl = todayStr;
             useLocalForAuth = true;
+            girlSignedIn = true;
         }
 
         // 通用数组合并函数 (基于ID去重)
@@ -117,8 +121,16 @@ const app = {
         remoteData.annualPlan = mergeArray(this.data.annualPlan, remoteData.annualPlan || []);
 
         // 如果本地有新签到，优先使用本地分数（因为它包含了签到奖励）
+        // V4.10 Fix: 修复女生签到后甜度被云端旧数据覆盖的问题
         if (useLocalForAuth) {
-            remoteData.score = this.data.score;
+            // 如果男生签到，优先使用本地积分
+            if (boySignedIn) {
+                remoteData.score = this.data.score;
+            }
+            // 如果女生签到，优先使用本地甜度
+            if (girlSignedIn) {
+                remoteData.girlSweetness = this.data.girlSweetness;
+            }
             // 这里我们信任本地刚刚签到后的状态
         }
         
