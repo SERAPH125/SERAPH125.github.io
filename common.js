@@ -486,11 +486,11 @@ const app = {
             reward = 5;
         } else if (gameName === '2048') {
             minScore = 2048; // 需要达到2048分
-            reward = 15; // 奖励更多
+            reward = 5; // 奖励更多
         } else if (gameName === 'sudoku') {
             // 数独：完成即可获得奖励（score 是转换后的分数，完成时 score > 0）
             minScore = 1; // 只要完成就有奖励
-            reward = 10; // 完成数独奖励
+            reward = 5; // 完成数独奖励
         } else {
             return false; // 未知游戏
         }
