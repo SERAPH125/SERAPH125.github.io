@@ -10,12 +10,57 @@
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="common.css">
     <style>
+        /* 折叠面板样式 */
+        .settings-group {
+            background: rgba(255,255,255,0.6);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+        }
+        .settings-header {
+            padding: 18px 20px;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.3);
+            user-select: none;
+        }
+        .settings-header::after {
+            content: '▼';
+            font-size: 0.8rem;
+            transition: transform 0.3s;
+            opacity: 0.6;
+        }
+        .settings-group.active .settings-header {
+            background: rgba(255,255,255,0.5);
+        }
+        .settings-group.active .settings-header::after {
+            transform: rotate(180deg);
+        }
+        .settings-content {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+        .settings-group.active .settings-content {
+            display: block;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .role-switch-container {
             display: flex;
             background: rgba(255,255,255,0.5);
             border-radius: 15px;
             padding: 5px;
-            margin-bottom: 20px;
             border: 1px solid rgba(255,255,255,0.5);
         }
         .role-option {
@@ -43,7 +88,6 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
-            margin-bottom: 20px;
         }
         .theme-option {
             background: rgba(255,255,255,0.5);
@@ -65,6 +109,18 @@
             border-radius: 50%;
             margin: 0 auto 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .input-group-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .input-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+            display: block;
         }
     </style>
 </head>
@@ -89,63 +145,100 @@
         <a href="settings.html" class="nav-btn active">⚙️ 设置</a>
     </div>
 
-    <h3>👤 身份切换</h3>
-    <div class="role-switch-container">
-        <div class="role-option" id="role-boy" onclick="app.switchUserRole('boy')">
-            <span class="role-icon">👦</span>
-            我是刘智勇
-        </div>
-        <div class="role-option" id="role-girl" onclick="app.switchUserRole('girl')">
-            <span class="role-icon">👧</span>
-            我是周金霞
+    <!-- 1. 生理期记录 (默认展开) -->
+    <div class="settings-group active" id="group-period">
+        <div class="settings-header" onclick="app.toggleGroup('group-period')">🩸 姨妈助手设置</div>
+        <div class="settings-content">
+            <p style="margin:0 0 15px 0; font-size:0.9rem; color:#666; line-height:1.5;">
+                记录她的生理周期，并在主页获得贴心的阶段提示。
+            </p>
+            
+            <div class="input-group-row">
+                <div style="flex:1;">
+                    <label class="input-label">平均周期 (天)</label>
+                    <input type="number" id="period-cycle-input" value="28" placeholder="28" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px;">
+                </div>
+                <div style="flex:1;">
+                    <label class="input-label">经期持续 (天)</label>
+                    <input type="number" id="period-duration-input" value="5" placeholder="5" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px;">
+                </div>
+            </div>
+
+            <label class="input-label">上一次开始日期</label>
+            <input type="date" id="period-date-input" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px; margin-bottom:15px;">
+            
+            <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:12px; width:100%;">💾 保存设置</button>
         </div>
     </div>
 
-    <h3>🎨 主题风格</h3>
-    <div class="role-switch-container">
-        <div class="role-option" id="theme-pink" onclick="app.switchTheme('pink')">
-            <span class="role-icon">🌸</span>
-            恋爱粉
-        </div>
-        <div class="role-option" id="theme-blue" onclick="app.switchTheme('blue')">
-            <span class="role-icon">🌌</span>
-            星空蓝
-        </div>
-        <div class="role-option" id="theme-green" onclick="app.switchTheme('green')">
-            <span class="role-icon">🌿</span>
-            清新绿
+    <!-- 2. 身份切换 -->
+    <div class="settings-group" id="group-role">
+        <div class="settings-header" onclick="app.toggleGroup('group-role')">👤 身份切换</div>
+        <div class="settings-content">
+            <div class="role-switch-container">
+                <div class="role-option" id="role-boy" onclick="app.switchUserRole('boy')">
+                    <span class="role-icon">👦</span>
+                    我是刘智勇
+                </div>
+                <div class="role-option" id="role-girl" onclick="app.switchUserRole('girl')">
+                    <span class="role-icon">👧</span>
+                    我是周金霞
+                </div>
+            </div>
         </div>
     </div>
 
-    <h3>🩸 生理期记录</h3>
-    <div class="sync-panel">
-        <p style="margin:0 0 10px 0; font-size:0.9rem; color:#666;">记录上一次开始日期，自动推算下次时间。</p>
-        <input type="date" id="period-date-input" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
-        <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:10px;">💾 保存日期</button>
-    </div>
-
-    <h3>☁️ 云同步设置</h3>
-    <p style="font-size:0.9rem; color:#666;">配置云端后，两台手机可实时同步数据。</p>
-    
-    <div class="sync-panel">
-        <div class="sync-status">
-            <div class="status-dot" id="sync-dot"></div>
-            <span id="sync-text">未连接云端</span>
+    <!-- 3. 主题风格 -->
+    <div class="settings-group" id="group-theme">
+        <div class="settings-header" onclick="app.toggleGroup('group-theme')">🎨 主题风格</div>
+        <div class="settings-content">
+            <div class="role-switch-container" style="background:transparent; border:none; padding:0; margin:0;">
+                <div class="role-option" id="theme-pink" onclick="app.switchTheme('pink')">
+                    <span class="role-icon">🌸</span>
+                    恋爱粉
+                </div>
+                <div class="role-option" id="theme-blue" onclick="app.switchTheme('blue')">
+                    <span class="role-icon">🌌</span>
+                    星空蓝
+                </div>
+                <div class="role-option" id="theme-green" onclick="app.switchTheme('green')">
+                    <span class="role-icon">🌿</span>
+                    清新绿
+                </div>
+            </div>
         </div>
-        
-        <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
-        <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
-        <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px;">🔌 连接云端</button>
-        <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px;">🔄 强制同步</button>
     </div>
 
-    <h3>📜 历史记录</h3>
-    <div class="history-switches" style="display:flex; gap:10px; margin-bottom:15px;">
-        <button id="tab-sweet" class="btn" style="flex:1; background:var(--accent-pink); color:white;" onclick="app.switchHistoryTab('sweet')">甜蜜瞬间</button>
-        <button id="tab-daily" class="btn" style="flex:1; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink);" onclick="app.switchHistoryTab('daily')">日常与消费</button>
+    <!-- 4. 云同步设置 -->
+    <div class="settings-group" id="group-sync">
+        <div class="settings-header" onclick="app.toggleGroup('group-sync')">☁️ 云同步设置</div>
+        <div class="settings-content">
+            <p style="font-size:0.9rem; color:#666; margin-top:0;">配置云端后，两台手机可实时同步数据。</p>
+            
+            <div class="sync-status">
+                <div class="status-dot" id="sync-dot"></div>
+                <span id="sync-text">未连接云端</span>
+            </div>
+            
+            <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
+            <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
+            <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px; width:100%;">🔌 连接云端</button>
+            <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px; width:100%;">🔄 强制同步</button>
+        </div>
     </div>
-    <div id="sweet-log-list"></div>
-    <div id="daily-log-list" style="display:none;"></div>
+
+    <!-- 5. 历史记录 -->
+    <div class="settings-group" id="group-history">
+        <div class="settings-header" onclick="app.toggleGroup('group-history')">📜 历史记录</div>
+        <div class="settings-content">
+            <div class="history-switches" style="display:flex; gap:10px; margin-bottom:15px;">
+                <button id="tab-sweet" class="btn" style="flex:1; background:var(--accent-pink); color:white;" onclick="app.switchHistoryTab('sweet')">甜蜜瞬间</button>
+                <button id="tab-daily" class="btn" style="flex:1; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink);" onclick="app.switchHistoryTab('daily')">日常与消费</button>
+            </div>
+            <div id="sweet-log-list"></div>
+            <div id="daily-log-list" style="display:none;"></div>
+        </div>
+    </div>
 </div>
 
 <script src="js/core/sound-manager.js"></script>
@@ -195,6 +288,17 @@ Object.assign(app, {
 
         // 渲染生理期
         this.renderPeriod();
+    },
+
+    toggleGroup(id) {
+        // 手风琴效果：展开一个时关闭其他
+        const allGroups = document.querySelectorAll('.settings-group');
+        allGroups.forEach(g => {
+            if (g.id !== id) g.classList.remove('active');
+        });
+        
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle('active');
     },
 
     currentHistoryTab: 'sweet', // default to sweet as it's more positive
@@ -318,18 +422,27 @@ Object.assign(app, {
 
     savePeriod() {
         const date = document.getElementById('period-date-input').value;
-        if(!date) return alert('请选择日期哦！');
+        const cycle = parseInt(document.getElementById('period-cycle-input').value) || 28;
+        const duration = parseInt(document.getElementById('period-duration-input').value) || 5;
+
+        if(!date) return alert('请选择上一次开始日期哦！');
+        
         this.data.periodDate = date;
+        this.data.periodCycle = cycle;
+        this.data.periodDuration = duration;
+        
         this.saveData();
-        this.showToast('日期已记录！我们会提醒你的 ❤️');
-        this.renderPeriod();
+        this.showToast('设置已保存！我们会提醒你的 ❤️');
     },
 
     renderPeriod() {
-        const input = document.getElementById('period-date-input');
-        if(input && this.data.periodDate && !input.value) {
-            input.value = this.data.periodDate;
-        }
+        const dateInput = document.getElementById('period-date-input');
+        const cycleInput = document.getElementById('period-cycle-input');
+        const durationInput = document.getElementById('period-duration-input');
+        
+        if (dateInput && this.data.periodDate) dateInput.value = this.data.periodDate;
+        if (cycleInput) cycleInput.value = this.data.periodCycle || 28;
+        if (durationInput) durationInput.value = this.data.periodDuration || 5;
     }
 });
 

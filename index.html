@@ -643,31 +643,86 @@ Object.assign(app, {
         }
 
         const lastDate = new Date(this.data.periodDate);
+        lastDate.setHours(0,0,0,0);
+        
         const today = new Date();
-        const cycle = 28;
+        today.setHours(0,0,0,0);
         
-        const nextDate = new Date(lastDate);
-        nextDate.setDate(lastDate.getDate() + cycle);
+        // 获取设置 (默认周期28天，经期5天)
+        const cycle = this.data.periodCycle || 28;
+        const duration = this.data.periodDuration || 5;
         
-        const daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+        // 1. 找到最近的一次开始日期 (currentStart <= today)
+        // 或者是未来最近的一次 (如果记录的是未来)
+        let currentStart = new Date(lastDate);
         
-        let msg = '';
-        let color = '';
+        if (currentStart > today) {
+            // 记录的是未来的日期
+            const daysUntil = Math.ceil((currentStart - today) / (1000 * 60 * 60 * 24));
+            display.innerHTML = `
+                <div class="period-info">预计开始：${currentStart.getMonth()+1}月${currentStart.getDate()}日</div>
+                <div style="margin-top:5px; color:#fff">距离下次还剩 <span class="period-days">${daysUntil}</span> 天</div>
+            `;
+            return;
+        }
+        
+        // 推算到本周期
+        while (true) {
+            let nextStart = new Date(currentStart);
+            nextStart.setDate(currentStart.getDate() + cycle);
+            if (nextStart > today) break;
+            currentStart = nextStart;
+        }
 
-        if (daysUntil > 0) {
-            msg = `距离下次还剩 <span class="period-days">${daysUntil}</span> 天`;
-            color = '#fff';
-        } else if (daysUntil === 0) {
-            msg = `就是今天！<br>记得多喝热水，注意保暖哦 ❤️`;
-            color = '#ffcccb';
+        // 2. 计算今天是周期的第几天 (Day 1)
+        const diffTime = today - currentStart;
+        const dayInCycle = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        
+        // 3. 计算下次开始
+        const nextDate = new Date(currentStart);
+        nextDate.setDate(currentStart.getDate() + cycle);
+        const daysUntilNext = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+        
+        // 4. 判定阶段与文案
+        let statusText = "";
+        let adviceText = "";
+        let color = "#fff";
+
+        // 估算排卵日：下次月经前14天
+        const ovulationDay = cycle - 14; 
+
+        if (dayInCycle <= duration) {
+            statusText = `生理期 · 第 ${dayInCycle} 天`;
+            adviceText = "❤️ 辛苦啦，多喝热水，注意保暖哦~";
+            color = "#ffcccb"; // 浅红
+        } else if (dayInCycle < ovulationDay - 5) {
+            statusText = `卵泡期 · 第 ${dayInCycle} 天`;
+            adviceText = "✨ 状态不错，适宜运动和约会！";
+            color = "#e0f7fa"; // 浅蓝
+        } else if (dayInCycle <= ovulationDay + 4) {
+            statusText = `排卵期 · 第 ${dayInCycle} 天`;
+            adviceText = "🥚 易孕期，身体可能会有些微变化~";
+            color = "#fff9c4"; // 浅黄
         } else {
-            msg = `已经推迟 <span class="period-days">${Math.abs(daysUntil)}</span> 天了<br>或者是忘记记录啦？🤔`;
-            color = '#ffd1dc';
+            statusText = `黄体期 · 第 ${dayInCycle} 天`;
+            adviceText = "🍃 情绪可能波动，要保持开心鸭！";
+            color = "#f3e5f5"; // 浅紫
+        }
+        
+        // 临近提醒
+        if (daysUntilNext <= 3) {
+            adviceText = "🩸 亲戚快要造访了，记得备好物资！";
+            color = "#ffd1dc";
+        }
+        
+        if (daysUntilNext === 0) {
+             adviceText = "就是今天！如果没来可能是推迟啦~";
         }
 
         display.innerHTML = `
-            <div class="period-info">上次记录：${this.data.periodDate}</div>
-            <div style="margin-top:5px; color:${color}">${msg}</div>
+            <div class="period-info">${statusText}</div>
+            <div style="font-size:1.05rem; font-weight:bold; margin:8px 0; color:${color}; line-height:1.4;">${adviceText}</div>
+            <div class="period-info" style="font-size:0.8rem; opacity:0.8;">距离下次经期还有 ${daysUntilNext} 天</div>
         `;
     }
 });
