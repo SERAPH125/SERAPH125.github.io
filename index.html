@@ -638,21 +638,54 @@ Object.assign(app, {
         const display = document.getElementById('period-display');
         if (!display) return;
         
-        if (!this.data.periodDate) {
+        const periodData = this.data.periodData;
+        if (!periodData || !periodData.lastRecord) {
             return;
         }
 
-        const lastDate = new Date(this.data.periodDate);
-        const today = new Date();
-        const cycle = 28;
+        const lastRecord = periodData.lastRecord;
+        const todayStr = this.getTodayStr();
+        const today = new Date(todayStr + 'T00:00:00');
+        const lastDate = new Date(lastRecord + 'T00:00:00');
+        const cycle = periodData.averageCycle || 28;
         
-        const nextDate = new Date(lastDate);
-        nextDate.setDate(lastDate.getDate() + cycle);
+        // 计算当前周期第几天
+        const daysSinceLast = Math.floor((today - lastDate) / (1000 * 60 * 60 * 24));
         
-        const daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+        // 使用预测算法计算下次日期范围
+        const prediction = this.predictNextPeriodRange();
+        let nextDate, nextDateStr, daysUntil, rangeInfo = '';
+        
+        if (prediction) {
+            nextDate = prediction.base;
+            daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+            
+            // 格式化日期
+            nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+            
+            // 如果有范围预测，显示范围
+            if (prediction.range > 0 && periodData.stdDeviation) {
+                const minStr = `${prediction.min.getMonth() + 1}/${prediction.min.getDate()}`;
+                const maxStr = `${prediction.max.getMonth() + 1}/${prediction.max.getDate()}`;
+                rangeInfo = `<div class="period-info" style="font-size:0.75rem; margin-top:3px; opacity:0.8;">预计范围：${minStr} - ${maxStr}</div>`;
+            }
+        } else {
+            // 降级到简单计算
+            nextDate = new Date(lastDate);
+            nextDate.setDate(lastDate.getDate() + cycle);
+            daysUntil = Math.ceil((nextDate - today) / (1000 * 60 * 60 * 24));
+            nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+        }
         
         let msg = '';
         let color = '';
+        let statsInfo = '';
+        let currentCycleInfo = '';
+
+        // 当前周期信息
+        if (daysSinceLast >= 0 && daysSinceLast <= 7) {
+            currentCycleInfo = `<div class="period-info" style="font-size:0.8rem; margin-top:5px; opacity:0.9;">当前周期第 <strong>${daysSinceLast + 1}</strong> 天</div>`;
+        }
 
         if (daysUntil > 0) {
             msg = `距离下次还剩 <span class="period-days">${daysUntil}</span> 天`;
@@ -665,10 +698,37 @@ Object.assign(app, {
             color = '#ffd1dc';
         }
 
+        // 显示周期统计信息（简化版，只显示关键信息）
+        const recordCount = periodData.records.length;
+        if (recordCount >= 2 && periodData.minCycle && periodData.maxCycle) {
+            const regularity = periodData.stdDeviation ? 
+                (periodData.stdDeviation < 3 ? '规律' : periodData.stdDeviation < 5 ? '较规律' : '不规律') : '';
+            statsInfo = `<div class="period-info" style="font-size:0.75rem; margin-top:6px; opacity:0.85;">
+                平均${periodData.averageCycle}天 ${regularity ? `(${regularity})` : ''} | ${recordCount}次记录
+            </div>`;
+        } else if (recordCount > 0) {
+            statsInfo = `<div class="period-info" style="font-size:0.75rem; margin-top:6px; opacity:0.85;">
+                ${cycle}天周期 | ${recordCount}次记录
+            </div>`;
+        }
+
         display.innerHTML = `
-            <div class="period-info">上次记录：${this.data.periodDate}</div>
-            <div style="margin-top:5px; color:${color}">${msg}</div>
+            <div class="period-info">上次记录：${lastRecord}</div>
+            ${currentCycleInfo}
+            <div class="period-info" style="font-size:0.85rem; margin-top:3px;">预计下次：${nextDateStr}</div>
+            ${rangeInfo}
+            <div style="margin-top:8px; color:${color}">${msg}</div>
+            ${statsInfo}
         `;
+        
+        // 检查提醒
+        const reminder = this.checkPeriodReminder();
+        if (reminder && periodData.reminder && periodData.reminder.enabled) {
+            // 延迟显示提醒，避免干扰正常显示
+            setTimeout(() => {
+                this.showToast(reminder.message, 3000);
+            }, 500);
+        }
     }
 });
 

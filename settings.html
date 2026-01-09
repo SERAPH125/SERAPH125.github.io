@@ -66,6 +66,36 @@
             margin: 0 auto 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        /* 折叠面板样式 */
+        .collapse-panel {
+            margin-bottom: 15px;
+        }
+        .collapse-header {
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .collapse-header:hover {
+            background: rgba(255,255,255,0.8) !important;
+        }
+        .collapse-header.active + .collapse-content {
+            display: block !important;
+        }
+        .collapse-header.active .collapse-icon {
+            transform: rotate(180deg);
+        }
+        .collapse-content {
+            animation: slideDown 0.3s ease-out;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 1000px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -89,63 +119,171 @@
         <a href="settings.html" class="nav-btn active">⚙️ 设置</a>
     </div>
 
-    <h3>👤 身份切换</h3>
-    <div class="role-switch-container">
-        <div class="role-option" id="role-boy" onclick="app.switchUserRole('boy')">
-            <span class="role-icon">👦</span>
-            我是刘智勇
+    <!-- 身份切换 - 折叠面板 -->
+    <div class="collapse-panel" style="margin-bottom:15px;">
+        <div class="collapse-header" onclick="app.toggleSection('role')" style="display:flex; align-items:center; justify-content:space-between; padding:12px 15px; background:rgba(255,255,255,0.6); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.5);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">👤</span>
+                <span style="font-weight:500;">身份切换</span>
+            </div>
+            <span class="collapse-icon" style="transition:transform 0.3s;">▼</span>
         </div>
-        <div class="role-option" id="role-girl" onclick="app.switchUserRole('girl')">
-            <span class="role-icon">👧</span>
-            我是周金霞
+        <div id="role-content" class="collapse-content" style="display:none; padding:15px; background:rgba(255,255,255,0.4); border-radius:0 0 12px 12px; margin-top:-5px;">
+            <div class="role-switch-container">
+                <div class="role-option" id="role-boy" onclick="app.switchUserRole('boy')">
+                    <span class="role-icon">👦</span>
+                    我是刘智勇
+                </div>
+                <div class="role-option" id="role-girl" onclick="app.switchUserRole('girl')">
+                    <span class="role-icon">👧</span>
+                    我是周金霞
+                </div>
+            </div>
         </div>
     </div>
 
-    <h3>🎨 主题风格</h3>
-    <div class="role-switch-container">
-        <div class="role-option" id="theme-pink" onclick="app.switchTheme('pink')">
-            <span class="role-icon">🌸</span>
-            恋爱粉
+    <!-- 主题风格 - 折叠面板 -->
+    <div class="collapse-panel" style="margin-bottom:15px;">
+        <div class="collapse-header" onclick="app.toggleSection('theme')" style="display:flex; align-items:center; justify-content:space-between; padding:12px 15px; background:rgba(255,255,255,0.6); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.5);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">🎨</span>
+                <span style="font-weight:500;">主题风格</span>
+            </div>
+            <span class="collapse-icon" style="transition:transform 0.3s;">▼</span>
         </div>
-        <div class="role-option" id="theme-blue" onclick="app.switchTheme('blue')">
-            <span class="role-icon">🌌</span>
-            星空蓝
-        </div>
-        <div class="role-option" id="theme-green" onclick="app.switchTheme('green')">
-            <span class="role-icon">🌿</span>
-            清新绿
+        <div id="theme-content" class="collapse-content" style="display:none; padding:15px; background:rgba(255,255,255,0.4); border-radius:0 0 12px 12px; margin-top:-5px;">
+            <div class="role-switch-container">
+                <div class="role-option" id="theme-pink" onclick="app.switchTheme('pink')">
+                    <span class="role-icon">🌸</span>
+                    恋爱粉
+                </div>
+                <div class="role-option" id="theme-blue" onclick="app.switchTheme('blue')">
+                    <span class="role-icon">🌌</span>
+                    星空蓝
+                </div>
+                <div class="role-option" id="theme-green" onclick="app.switchTheme('green')">
+                    <span class="role-icon">🌿</span>
+                    清新绿
+                </div>
+            </div>
         </div>
     </div>
 
     <h3>🩸 生理期记录</h3>
     <div class="sync-panel">
-        <p style="margin:0 0 10px 0; font-size:0.9rem; color:#666;">记录上一次开始日期，自动推算下次时间。</p>
+        <p style="margin:0 0 10px 0; font-size:0.9rem; color:#666;">记录开始日期，系统会自动计算周期并预测下次时间。</p>
         <input type="date" id="period-date-input" style="padding:10px; width:100%; box-sizing:border-box; border:1px solid #ddd; border-radius:10px; margin-bottom:10px;">
-        <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:10px;">💾 保存日期</button>
-    </div>
-
-    <h3>☁️ 云同步设置</h3>
-    <p style="font-size:0.9rem; color:#666;">配置云端后，两台手机可实时同步数据。</p>
-    
-    <div class="sync-panel">
-        <div class="sync-status">
-            <div class="status-dot" id="sync-dot"></div>
-            <span id="sync-text">未连接云端</span>
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+            <button class="btn" onclick="app.savePeriod()" style="background:var(--accent-pink); color:white; padding:10px; flex:1;">💾 保存日期</button>
+            <button class="btn" onclick="app.savePeriodToday()" style="background:rgba(255,192,203,0.8); color:var(--accent-pink); padding:10px; flex:1;">📅 今天</button>
         </div>
-        
-        <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
-        <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
-        <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px;">🔌 连接云端</button>
-        <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px;">🔄 强制同步</button>
+        <!-- 症状记录（可选） -->
+        <div id="symptoms-panel" style="display:none; padding:10px; background:rgba(255,255,255,0.5); border-radius:8px; margin-top:10px;">
+            <div style="font-size:0.9rem; font-weight:500; margin-bottom:8px;">💊 症状记录（可选）</div>
+            <div style="margin-bottom:8px;">
+                <label style="font-size:0.85rem; color:#666;">疼痛程度：</label>
+                <select id="symptom-pain" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                    <option value="0">无痛</option>
+                    <option value="1">轻微</option>
+                    <option value="2">轻度</option>
+                    <option value="3">中度</option>
+                    <option value="4">重度</option>
+                    <option value="5">非常严重</option>
+                </select>
+            </div>
+            <div style="margin-bottom:8px;">
+                <label style="font-size:0.85rem; color:#666;">情绪：</label>
+                <select id="symptom-mood" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; margin-top:5px;">
+                    <option value="">不记录</option>
+                    <option value="happy">😊 开心</option>
+                    <option value="normal">😐 正常</option>
+                    <option value="sad">😢 低落</option>
+                    <option value="irritable">😠 易怒</option>
+                    <option value="anxious">😰 焦虑</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-size:0.85rem; color:#666;">备注：</label>
+                <input type="text" id="symptom-note" placeholder="其他症状或备注..." style="width:100%; padding:8px; border:1px solid #ddd; border-radius:8px; margin-top:5px; box-sizing:border-box;">
+            </div>
+            <button class="btn" onclick="app.toggleSymptomsPanel()" style="background:transparent; color:var(--accent-pink); padding:8px; margin-top:8px; width:100%; border:1px solid var(--accent-pink);">收起症状记录</button>
+        </div>
+        <button class="btn" onclick="app.toggleSymptomsPanel()" id="show-symptoms-btn" style="background:rgba(255,192,203,0.3); color:var(--accent-pink); padding:8px; width:100%; border:1px solid rgba(255,192,203,0.5);">💊 记录症状（可选）</button>
+    </div>
+    
+    <!-- 周期统计信息 - 折叠面板 -->
+    <div class="collapse-panel" style="margin-bottom:15px;">
+        <div class="collapse-header" onclick="app.togglePeriodStats()" style="display:flex; align-items:center; justify-content:space-between; padding:12px 15px; background:rgba(255,255,255,0.6); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.5);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">📊</span>
+                <span style="font-weight:500;">周期统计</span>
+            </div>
+            <span id="period-stats-icon" class="collapse-icon" style="transition:transform 0.3s;">▼</span>
+        </div>
+        <div id="period-stats-content" class="collapse-content" style="display:none; padding:15px; background:rgba(255,255,255,0.4); border-radius:0 0 12px 12px; margin-top:-5px;">
+            <div id="period-stats"></div>
+        </div>
+    </div>
+    
+    <!-- 历史记录列表 - 折叠面板 -->
+    <div class="collapse-panel">
+        <div class="collapse-header" onclick="app.togglePeriodRecords()" style="display:flex; align-items:center; justify-content:space-between; padding:12px 15px; background:rgba(255,255,255,0.6); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.5);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">📋</span>
+                <span style="font-weight:500;">历史记录</span>
+                <span id="period-records-count" style="font-size:0.85rem; color:var(--text-light); margin-left:5px;">(0)</span>
+            </div>
+            <span id="period-records-icon" class="collapse-icon" style="transition:transform 0.3s;">▼</span>
+        </div>
+        <div id="period-records-content" class="collapse-content" style="display:none; padding:15px; background:rgba(255,255,255,0.4); border-radius:0 0 12px 12px; margin-top:-5px;">
+            <div id="period-records-list"></div>
+        </div>
     </div>
 
-    <h3>📜 历史记录</h3>
-    <div class="history-switches" style="display:flex; gap:10px; margin-bottom:15px;">
-        <button id="tab-sweet" class="btn" style="flex:1; background:var(--accent-pink); color:white;" onclick="app.switchHistoryTab('sweet')">甜蜜瞬间</button>
-        <button id="tab-daily" class="btn" style="flex:1; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink);" onclick="app.switchHistoryTab('daily')">日常与消费</button>
+    <!-- 云同步设置 - 折叠面板 -->
+    <div class="collapse-panel" style="margin-bottom:15px;">
+        <div class="collapse-header" onclick="app.toggleSection('cloud')" style="display:flex; align-items:center; justify-content:space-between; padding:12px 15px; background:rgba(255,255,255,0.6); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.5);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">☁️</span>
+                <span style="font-weight:500;">云同步设置</span>
+                <span id="cloud-sync-status" style="font-size:0.85rem; color:var(--text-light); margin-left:5px;"></span>
+            </div>
+            <span class="collapse-icon" style="transition:transform 0.3s;">▼</span>
+        </div>
+        <div id="cloud-content" class="collapse-content" style="display:none; padding:15px; background:rgba(255,255,255,0.4); border-radius:0 0 12px 12px; margin-top:-5px;">
+            <p style="font-size:0.9rem; color:#666; margin:0 0 10px 0;">配置云端后，两台手机可实时同步数据。</p>
+            <div class="sync-panel">
+                <div class="sync-status">
+                    <div class="status-dot" id="sync-dot"></div>
+                    <span id="sync-text">未连接云端</span>
+                </div>
+                
+                <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
+                <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
+                <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px;">🔌 连接云端</button>
+                <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px;">🔄 强制同步</button>
+            </div>
+        </div>
     </div>
-    <div id="sweet-log-list"></div>
-    <div id="daily-log-list" style="display:none;"></div>
+
+    <!-- 历史记录 - 折叠面板 -->
+    <div class="collapse-panel">
+        <div class="collapse-header" onclick="app.toggleSection('history')" style="display:flex; align-items:center; justify-content:space-between; padding:12px 15px; background:rgba(255,255,255,0.6); border-radius:12px; cursor:pointer; border:1px solid rgba(255,255,255,0.5);">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:1.1rem;">📜</span>
+                <span style="font-weight:500;">历史记录</span>
+            </div>
+            <span class="collapse-icon" style="transition:transform 0.3s;">▼</span>
+        </div>
+        <div id="history-content" class="collapse-content" style="display:none; padding:15px; background:rgba(255,255,255,0.4); border-radius:0 0 12px 12px; margin-top:-5px;">
+            <div class="history-switches" style="display:flex; gap:10px; margin-bottom:15px;">
+                <button id="tab-sweet" class="btn" style="flex:1; background:var(--accent-pink); color:white;" onclick="app.switchHistoryTab('sweet')">甜蜜瞬间</button>
+                <button id="tab-daily" class="btn" style="flex:1; background:transparent; border:1px solid var(--accent-pink); color:var(--accent-pink);" onclick="app.switchHistoryTab('daily')">日常与消费</button>
+            </div>
+            <div id="sweet-log-list"></div>
+            <div id="daily-log-list" style="display:none;"></div>
+        </div>
+    </div>
 </div>
 
 <script src="js/core/sound-manager.js"></script>
@@ -195,6 +333,9 @@ Object.assign(app, {
 
         // 渲染生理期
         this.renderPeriod();
+        this.renderPeriodRecords();
+        this.renderPeriodStats();
+        this.renderReminderSettings();
     },
 
     currentHistoryTab: 'sweet', // default to sweet as it's more positive
@@ -319,17 +460,246 @@ Object.assign(app, {
     savePeriod() {
         const date = document.getElementById('period-date-input').value;
         if(!date) return alert('请选择日期哦！');
-        this.data.periodDate = date;
+        
+        // 检查是否已存在相同日期
+        const periodData = this.data.periodData || { records: [] };
+        const existingRecord = periodData.records.find(r => r.date === date);
+        
+        // 收集症状记录（如果症状面板已展开）
+        const symptomsPanel = document.getElementById('symptoms-panel');
+        let symptoms = null;
+        if (symptomsPanel && symptomsPanel.style.display !== 'none') {
+            const pain = document.getElementById('symptom-pain')?.value || '0';
+            const mood = document.getElementById('symptom-mood')?.value || '';
+            const note = document.getElementById('symptom-note')?.value || '';
+            if (pain !== '0' || mood || note) {
+                symptoms = {
+                    pain: parseInt(pain),
+                    mood: mood,
+                    note: note.trim()
+                };
+            }
+        }
+        
+        if (existingRecord) {
+            if (!confirm('该日期已记录过，是否要更新？')) return;
+            // 更新现有记录
+            existingRecord.id = Date.now();
+            if (symptoms) existingRecord.symptoms = symptoms;
+        } else {
+            // 添加新记录
+            const newRecord = {
+                date: date,
+                id: Date.now()
+            };
+            if (symptoms) newRecord.symptoms = symptoms;
+            periodData.records.push(newRecord);
+        }
+        
+        // 更新最后记录日期
+        periodData.lastRecord = date;
+        
+        // 更新周期统计
+        this.updatePeriodStats();
+        
+        // 保存数据
         this.saveData();
-        this.showToast('日期已记录！我们会提醒你的 ❤️');
+        this.showToast('日期已记录！系统会自动计算周期 ❤️');
+        
+        // 清空输入框和症状记录
+        document.getElementById('period-date-input').value = '';
+        if (symptomsPanel) {
+            document.getElementById('symptom-pain').value = '0';
+            document.getElementById('symptom-mood').value = '';
+            document.getElementById('symptom-note').value = '';
+            symptomsPanel.style.display = 'none';
+            document.getElementById('show-symptoms-btn').style.display = 'block';
+        }
+        
+        // 重新渲染
         this.renderPeriod();
+        this.renderPeriodRecords();
+    },
+
+    toggleSymptomsPanel() {
+        const panel = document.getElementById('symptoms-panel');
+        const btn = document.getElementById('show-symptoms-btn');
+        if (!panel || !btn) return;
+        
+        const isVisible = panel.style.display !== 'none';
+        panel.style.display = isVisible ? 'none' : 'block';
+        btn.style.display = isVisible ? 'block' : 'none';
+    },
+
+    savePeriodToday() {
+        const todayStr = this.getTodayStr();
+        document.getElementById('period-date-input').value = todayStr;
+        this.savePeriod();
     },
 
     renderPeriod() {
         const input = document.getElementById('period-date-input');
-        if(input && this.data.periodDate && !input.value) {
-            input.value = this.data.periodDate;
+        const periodData = this.data.periodData || { records: [], averageCycle: 28 };
+        
+        // 如果有最后记录，显示在输入框中（仅当输入框为空时）
+        if(input && periodData.lastRecord && !input.value) {
+            input.value = periodData.lastRecord;
         }
+        
+        // 渲染统计信息
+        this.renderPeriodStats();
+    },
+
+    togglePeriodStats() {
+        const content = document.getElementById('period-stats-content');
+        const header = content.previousElementSibling;
+        const isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : 'block';
+        header.classList.toggle('active');
+    },
+
+    togglePeriodRecords() {
+        const content = document.getElementById('period-records-content');
+        const header = content.previousElementSibling;
+        const isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : 'block';
+        header.classList.toggle('active');
+    },
+
+    // 通用折叠切换函数
+    toggleSection(section) {
+        const content = document.getElementById(`${section}-content`);
+        if (!content) return;
+        const header = content.previousElementSibling;
+        const isOpen = content.style.display !== 'none';
+        content.style.display = isOpen ? 'none' : 'block';
+        header.classList.toggle('active');
+    },
+
+    renderPeriodStats() {
+        const statsEl = document.getElementById('period-stats');
+        if (!statsEl) return;
+        
+        const periodData = this.data.periodData || { records: [], averageCycle: 28 };
+        const records = periodData.records || [];
+        
+        if (records.length === 0) {
+            statsEl.innerHTML = '<div style="text-align:center; color:#999; padding:10px; font-size:0.9rem;">暂无记录，开始记录后会自动计算周期统计</div>';
+            return;
+        }
+        
+        let statsHtml = '';
+        
+        if (records.length >= 2 && periodData.minCycle && periodData.maxCycle) {
+            statsHtml += `<div style="margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--text-light);">平均周期</span>
+                <strong style="color:var(--accent-pink); font-size:1.1rem;">${periodData.averageCycle} 天</strong>
+            </div>`;
+            statsHtml += `<div style="margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--text-light);">周期范围</span>
+                <span style="font-weight:500;">${periodData.minCycle} - ${periodData.maxCycle} 天</span>
+            </div>`;
+        } else {
+            statsHtml += `<div style="margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--text-light);">当前周期</span>
+                <strong style="color:var(--accent-pink);">${periodData.averageCycle || 28} 天</strong>
+            </div>`;
+            statsHtml += `<div style="margin:5px 0; color:#999; font-size:0.85rem; text-align:center;">（记录${2 - records.length}次后自动计算）</div>`;
+        }
+        
+        statsHtml += `<div style="margin:8px 0; padding-top:8px; border-top:1px solid rgba(0,0,0,0.1); display:flex; justify-content:space-between; align-items:center;">
+            <span style="color:var(--text-light);">已记录</span>
+            <strong>${records.length} 次</strong>
+        </div>`;
+        
+        if (periodData.lastRecord) {
+            const lastDate = new Date(periodData.lastRecord + 'T00:00:00');
+            const cycle = periodData.averageCycle || 28;
+            const nextDate = new Date(lastDate);
+            nextDate.setDate(lastDate.getDate() + cycle);
+            const nextDateStr = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}-${String(nextDate.getDate()).padStart(2, '0')}`;
+            statsHtml += `<div style="margin:8px 0; display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:var(--text-light);">预计下次</span>
+                <strong style="color:var(--accent-pink);">${nextDateStr}</strong>
+            </div>`;
+        }
+        
+        statsEl.innerHTML = statsHtml;
+    },
+
+    renderPeriodRecords() {
+        const listEl = document.getElementById('period-records-list');
+        const countEl = document.getElementById('period-records-count');
+        if (!listEl) return;
+        
+        const periodData = this.data.periodData || { records: [] };
+        const records = periodData.records || [];
+        
+        // 更新计数
+        if (countEl) {
+            countEl.textContent = `(${records.length})`;
+        }
+        
+        if (records.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; color:#999; padding:15px; font-size:0.9rem;">暂无历史记录</div>';
+            return;
+        }
+        
+        // 按日期倒序排列（最新的在前）
+        const sortedRecords = [...records].sort((a, b) => {
+            return new Date(b.date) - new Date(a.date);
+        });
+        
+        listEl.innerHTML = sortedRecords.map((record, index) => {
+            const isLast = record.date === periodData.lastRecord;
+            return `
+                <div class="log-item" style="margin-bottom:8px; padding:10px; background:rgba(255,255,255,0.5); border-radius:8px; ${isLast ? 'border-left:3px solid var(--accent-pink);' : ''}">
+                    <div style="flex:1;">
+                        <div style="font-weight:500; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                            <span>${record.date}</span>
+                            ${isLast ? '<span style="color:var(--accent-pink); font-size:0.75rem; background:rgba(255,192,203,0.3); padding:2px 6px; border-radius:4px;">最新</span>' : ''}
+                        </div>
+                        ${index < sortedRecords.length - 1 ? (() => {
+                            const prevRecord = sortedRecords[index + 1];
+                            const prevDate = new Date(prevRecord.date + 'T00:00:00');
+                            const currDate = new Date(record.date + 'T00:00:00');
+                            const cycle = Math.round((currDate - prevDate) / (1000 * 60 * 60 * 24));
+                            return `<div style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">间隔：${cycle} 天</div>`;
+                        })() : ''}
+                    </div>
+                    <button class="btn-del-log" onclick="app.deletePeriodRecord(${record.id})" style="background:transparent; border:none; color:#ff6b6b; cursor:pointer; font-size:1.1rem; padding:5px 8px; opacity:0.7; transition:opacity 0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">🗑️</button>
+                </div>
+            `;
+        }).join('');
+    },
+
+    deletePeriodRecord(id) {
+        if (!confirm('确定要删除这条记录吗？删除后周期统计会重新计算。')) return;
+        
+        const periodData = this.data.periodData || { records: [] };
+        periodData.records = periodData.records.filter(r => r.id !== id);
+        
+        // 更新最后记录日期
+        if (periodData.records.length > 0) {
+            const sortedRecords = [...periodData.records].sort((a, b) => {
+                return new Date(b.date) - new Date(a.date);
+            });
+            periodData.lastRecord = sortedRecords[0].date;
+        } else {
+            periodData.lastRecord = null;
+        }
+        
+        // 重新计算周期统计
+        this.updatePeriodStats();
+        
+        // 保存数据
+        this.saveData();
+        this.showToast('记录已删除 🗑️');
+        
+        // 重新渲染
+        this.renderPeriod();
+        this.renderPeriodRecords();
+        this.renderPeriodStats();
     }
 });
 
