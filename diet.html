@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="周金霞男友">
+    <title>饮食指南 - 小周的男友养成计划 ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+    <link rel="stylesheet" href="common.css">
+    <style>
+        .diet-card {
+            background: rgba(255,255,255,0.6);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: transform 0.3s;
+        }
+        .diet-card:hover { transform: translateY(-2px); }
+        .diet-card h3 {
+            margin: 0 0 15px 0;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        /* 搜索栏 */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .search-input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border-radius: 20px;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.8);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+            box-sizing: border-box;
+            color: var(--text-main);
+        }
+        .search-input:focus {
+            background: white;
+            border-color: var(--accent-pink);
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.2);
+        }
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            color: var(--text-light);
+        }
+        
+        /* 红绿灯切换 */
+        .traffic-light-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.4);
+            padding: 5px;
+            border-radius: 20px;
+        }
+        .traffic-tab {
+            flex: 1;
+            padding: 10px 5px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            opacity: 0.7;
+            transition: all 0.3s;
+            font-size: 0.9rem;
+            border: 1px solid transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        .traffic-tab.green.active { background: #e8f7f0; color: #00b894; border-color: #00b894; opacity: 1; box-shadow: 0 2px 8px rgba(0, 184, 148, 0.2); }
+        .traffic-tab.yellow.active { background: #fff7e6; color: #fdcb6e; border-color: #fdcb6e; opacity: 1; box-shadow: 0 2px 8px rgba(253, 203, 110, 0.2); }
+        .traffic-tab.red.active { background: #ffeaea; color: #ff7675; border-color: #ff7675; opacity: 1; box-shadow: 0 2px 8px rgba(255, 118, 117, 0.2); }
+        
+        .food-list { display: none; animation: fadeIn 0.3s ease; }
+        .food-list.active { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        
+        .food-item {
+            background: rgba(255,255,255,0.9);
+            padding: 15px;
+            border-radius: 16px;
+            text-align: center;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            color: var(--text-main);
+            transition: all 0.2s;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        .food-item:active { transform: scale(0.96); }
+        .food-item:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        
+        .food-name { font-weight: bold; margin-bottom: 5px; display: block; font-size: 1rem; }
+        .food-cat { 
+            font-size: 0.7rem; 
+            color: white; 
+            background: var(--text-light); 
+            padding: 2px 6px; 
+            border-radius: 8px; 
+            display: inline-block;
+            opacity: 0.7;
+        }
+        .food-desc { display: none; font-size: 0.8rem; color: var(--text-light); margin-top: 8px; line-height: 1.4; text-align: left;}
+        
+        .food-item.expanded .food-desc { display: block; animation: slideDown 0.2s ease; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 搜索结果 */
+        #search-results {
+            margin-bottom: 20px;
+            display: none;
+        }
+        .search-result-title {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="bg-shape shape-1"></div>
+<div class="bg-shape shape-2"></div>
+<div id="sakura-container"></div>
+
+<div class="container">
+    <header>
+        <h1>🥗 桥本饮食指南 <span class="version-tag">Beta</span></h1>
+        <div class="love-days">吃得健康，身体棒棒 💕</div>
+    </header>
+
+    <div class="nav-tabs">
+        <a href="index.html" class="nav-btn">🏠 主页</a>
+        <a href="wishlist.html" class="nav-btn">✨ 愿望</a>
+        <a href="album.html" class="nav-btn">🖼️ 相册</a>
+        <a href="shop.html" class="nav-btn">🎁 商店</a>
+        <a href="games.html" class="nav-btn">🎮 游戏</a>
+        <a href="plan.html" class="nav-btn">📋 计划</a>
+        <a href="diet.html" class="nav-btn active">🥗 饮食</a>
+        <a href="settings.html" class="nav-btn">⚙️ 设置</a>
+    </div>
+
+    <!-- 饮食原则介绍 -->
+    <div class="diet-card">
+        <h3>🥗 桥本饮食核心原则</h3>
+        <div style="font-size:0.9rem; color:var(--text-main); line-height:1.6;">
+            <p>桥本氏甲状腺炎的饮食重点在于<strong>抗炎</strong>和<strong>修复肠漏</strong>。</p>
+            <ul style="padding-left:20px; margin:10px 0;">
+                <li style="margin-bottom:8px;">🚫 <strong>严格无麸质</strong>：麸质是诱发自身免疫攻击的主要元凶，必须严格避免小麦、大麦、黑麦及其制品。</li>
+                <li style="margin-bottom:8px;">📉 <strong>低GI饮食</strong>：稳定血糖是控制炎症的基础，减少精制糖和碳水化合物摄入。</li>
+                <li style="margin-bottom:8px;">🥑 <strong>优质脂肪</strong>：多摄入Omega-3（深海鱼）和单不饱和脂肪酸（橄榄油、牛油果），减少促炎的Omega-6（大豆油、玉米油）。</li>
+                <li style="margin-bottom:8px;">🌈 <strong>彩虹蔬菜</strong>：每天摄入不同颜色的蔬菜，提供丰富的植物营养素和抗氧化剂。</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 完美餐盘搭配 -->
+    <div class="diet-card">
+        <h3>🍽️ 完美餐盘搭配建议</h3>
+        <div style="display:flex; justify-content:center; margin:20px 0;">
+            <div style="width:200px; height:200px; border-radius:50%; background:white; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.1); border:4px solid #f0f0f0; overflow:hidden;">
+                <!-- 蔬菜 1/2 -->
+                <div style="position:absolute; top:0; left:0; width:50%; height:100%; background:#e8f7f0; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#00b894;">
+                    <span style="font-size:2rem;">🥬</span>
+                    <span style="font-weight:bold; font-size:0.9rem;">50%</span>
+                    <span style="font-size:0.8rem;">非淀粉蔬菜</span>
+                </div>
+                <!-- 蛋白质 1/4 -->
+                <div style="position:absolute; top:0; right:0; width:50%; height:50%; background:#ffeaea; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#ff7675;">
+                    <span style="font-size:1.5rem;">🥩</span>
+                    <span style="font-weight:bold; font-size:0.9rem;">25%</span>
+                    <span style="font-size:0.8rem;">优质蛋白</span>
+                </div>
+                <!-- 碳水 1/4 -->
+                <div style="position:absolute; bottom:0; right:0; width:50%; height:50%; background:#fff7e6; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#fdcb6e;">
+                    <span style="font-size:1.5rem;">🍠</span>
+                    <span style="font-weight:bold; font-size:0.9rem;">25%</span>
+                    <span style="font-size:0.8rem;">优质碳水</span>
+                </div>
+                <!-- 中心文字 -->
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:60px; height:60px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--text-light); font-size:0.8rem; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                    搭配<br>比例
+                </div>
+            </div>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-light); text-align:center;">
+            每餐建议：半盘蔬菜 + 一掌心肉类 + 一拳头主食
+        </div>
+    </div>
+
+    <!-- 食物红绿灯 -->
+    <div class="diet-card">
+        <h3>🚥 食物红绿灯查询</h3>
+        <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">桥本氏甲状腺炎饮食建议指南（点击食物查看详情）</p>
+        
+        <!-- 搜索 -->
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="food-search" placeholder="输入食物名称查询（如：面包、西兰花）..." oninput="app.searchFood()">
+        </div>
+        
+        <!-- 搜索结果容器 -->
+        <div id="search-results">
+            <div class="search-result-title">🔎 搜索结果</div>
+            <div class="food-list active" id="search-result-list" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
+        </div>
+
+        <!-- 默认分类展示 -->
+        <div id="default-food-view">
+            <div class="traffic-light-tabs">
+                <div class="traffic-tab green active" onclick="app.switchTraffic('green')">🟢 推荐吃</div>
+                <div class="traffic-tab yellow" onclick="app.switchTraffic('yellow')">🟡 少吃点</div>
+                <div class="traffic-tab red" onclick="app.switchTraffic('red')">🔴 尽量不吃</div>
+            </div>
+            
+            <!-- 绿灯食物容器 -->
+            <div id="food-green" class="food-list active"></div>
+            
+            <!-- 黄灯食物容器 -->
+            <div id="food-yellow" class="food-list"></div>
+            
+            <!-- 红灯食物容器 -->
+            <div id="food-red" class="food-list"></div>
+        </div>
+    </div>
+</div>
+
+<script src="js/core/sound-manager.js"></script>
+<script src="js/core/storage.js"></script>
+<script src="js/core/utils.js"></script>
+<script src="js/core/constants.js"></script>
+<script src="js/ui/ui-manager.js"></script>
+<script src="common.js"></script>
+<script>
+const dietDB = {
+    // 推荐吃
+    green: [
+        { name: "无麸质谷物", desc: "大米、藜麦、荞麦、小米、高粱。麸质是桥本氏甲状腺炎的主要诱因之一。", category: "谷物" },
+        { name: "新鲜蔬菜", desc: "菠菜、胡萝卜、黄瓜等。富含抗氧化剂和纤维（十字花科建议煮熟）。", category: "蔬菜" },
+        { name: "深海鱼", desc: "三文鱼、鳕鱼、沙丁鱼。富含Omega-3脂肪酸，有助于抗炎。", category: "海鲜" },
+        { name: "瘦肉", desc: "鸡肉、火鸡、牛肉。提供优质蛋白质。", category: "肉类" },
+        { name: "低糖水果", desc: "蓝莓、草莓、苹果、梨。抗氧化剂丰富。", category: "水果" },
+        { name: "健康油脂", desc: "牛油果、橄榄油、椰子油。抗炎。", category: "油脂" },
+        { name: "发酵食品", desc: "酸菜、泡菜（无糖）。改善肠道菌群。", category: "其他" },
+        { name: "红薯/紫薯", desc: "优质碳水来源，富含纤维。", category: "谷物" }
+    ],
+    // 慎吃/少吃
+    yellow: [
+        { name: "十字花科", desc: "西兰花、卷心菜、花菜。生吃含硫苷可能抑制甲状腺，煮熟后可安全食用。", category: "蔬菜" },
+        { name: "豆制品", desc: "豆腐、豆浆。大豆异黄酮可能干扰甲状腺激素吸收，需限量并煮熟。", category: "豆类" },
+        { name: "乳制品", desc: "牛奶、奶酪。部分人对酪蛋白或乳糖敏感，建议观察反应或选无乳糖。", category: "乳制品" },
+        { name: "茄科植物", desc: "番茄、土豆、茄子、辣椒。部分人可能引起关节痛或炎症。", category: "蔬菜" },
+        { name: "坚果", desc: "杏仁、核桃。含植酸，大量食用可能影响矿物质吸收。", category: "坚果" },
+        { name: "鸡蛋", desc: "蛋白可能引起过敏反应，若无症状可食用。", category: "蛋类" },
+        { name: "咖啡/茶", desc: "适量饮用，避免过度刺激肾上腺。", category: "饮品" },
+        { name: "白米饭", desc: "高GI食物，建议搭配粗粮食用。", category: "谷物" }
+    ],
+    // 忌口/尽量不吃
+    red: [
+        { name: "麸质谷物", desc: "小麦、大麦、黑麦（面条、面包、馒头、包子、饼干）。分子结构酷似甲状腺组织，易诱发自身免疫攻击。", category: "谷物" },
+        { name: "加工肉类", desc: "香肠、培根、午餐肉。含添加剂和亚硝酸盐，促炎。", category: "肉类" },
+        { name: "精制糖", desc: "白糖、糖果、甜点、含糖饮料。导致血糖波动和慢性炎症。", category: "零食" },
+        { name: "反式脂肪", desc: "人造奶油、起酥油、油炸食品、代可可脂。强烈促炎。", category: "油脂" },
+        { name: "部分海藻", desc: "紫菜、海带。碘含量过高可能加重自身免疫反应（需遵医嘱）。", category: "海鲜" },
+        { name: "快餐", desc: "汉堡、炸鸡。通常含麸质和劣质油脂。", category: "快餐" },
+        { name: "酒精", desc: "增加肝脏负担，影响激素代谢。", category: "饮品" }
+    ]
+};
+
+Object.assign(app, {
+    init() {
+        this.initCommon();
+        setTimeout(() => {
+            this.renderDietList();
+        }, 200);
+    },
+
+    renderDietList() {
+        ['green', 'yellow', 'red'].forEach(type => {
+            const container = document.getElementById(`food-${type}`);
+            if (!container) return;
+            
+            let html = '';
+            dietDB[type].forEach(item => {
+                html += this.createFoodItemHtml(item, type);
+            });
+            container.innerHTML = html;
+        });
+    },
+    
+    createFoodItemHtml(item, type) {
+        const iconMap = {
+            '谷物': '🍚', '蔬菜': '🥬', '水果': '🍎', '肉类': '🥩', 
+            '油脂': '🥑', '其他': '🥢', '豆类': '🥜', '乳制品': '🥛',
+            '坚果': '🌰', '蛋类': '🥚', '饮品': '☕', '零食': '🍭',
+            '海鲜': '🐟', '快餐': '🍔'
+        };
+        const icon = iconMap[item.category] || '🍽️';
+        
+        return `
+            <div class="food-item" onclick="app.toggleFoodDetail(this)">
+                <span class="food-icon">${icon}</span>
+                <span class="food-name">${item.name}</span>
+                <span class="food-cat">${item.category}</span>
+                <div class="food-desc">${item.desc}</div>
+            </div>
+        `;
+    },
+
+    toggleFoodDetail(el) {
+        const isExpanded = el.classList.contains('expanded');
+        document.querySelectorAll('.food-item.expanded').forEach(item => {
+            item.classList.remove('expanded');
+        });
+        if (!isExpanded) {
+            el.classList.add('expanded');
+        }
+    },
+
+    searchFood() {
+        const input = document.getElementById('food-search');
+        const keyword = input.value.trim().toLowerCase();
+        const resultContainer = document.getElementById('search-results');
+        const defaultView = document.getElementById('default-food-view');
+        const listContainer = document.getElementById('search-result-list');
+        
+        if (!keyword) {
+            resultContainer.style.display = 'none';
+            defaultView.style.display = 'block';
+            return;
+        }
+        
+        defaultView.style.display = 'none';
+        resultContainer.style.display = 'block';
+        
+        let results = [];
+        ['green', 'yellow', 'red'].forEach(type => {
+            dietDB[type].forEach(item => {
+                if (item.name.includes(keyword) || item.desc.includes(keyword) || item.category.includes(keyword)) {
+                    results.push({ ...item, type });
+                }
+            });
+        });
+        
+        if (results.length === 0) {
+            listContainer.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-light);">未找到相关食物，建议遵循"红灯停绿灯行"原则</div>';
+        } else {
+            let html = '';
+            results.forEach(item => {
+                const typeText = item.type === 'green' ? '🟢 推荐' : (item.type === 'yellow' ? '🟡 少吃' : '🔴 忌口');
+                const typeColor = item.type === 'green' ? '#00b894' : (item.type === 'yellow' ? '#fdcb6e' : '#ff7675');
+                const iconMap = {
+                    '谷物': '🍚', '蔬菜': '🥬', '水果': '🍎', '肉类': '🥩', 
+                    '油脂': '🥑', '其他': '🥢', '豆类': '🥜', '乳制品': '🥛',
+                    '坚果': '🌰', '蛋类': '🥚', '饮品': '☕', '零食': '🍭',
+                    '海鲜': '🐟', '快餐': '🍔'
+                };
+                const icon = iconMap[item.category] || '🍽️';
+
+                html += `
+                    <div class="food-item" onclick="app.toggleFoodDetail(this)" style="border-left: 5px solid ${typeColor}">
+                        <div style="display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:5px;">
+                            <span class="food-icon" style="margin:0">${icon}</span>
+                            <span style="font-size:0.8rem; color:${typeColor}; font-weight:bold;">${typeText}</span>
+                        </div>
+                        <span class="food-name">${item.name}</span>
+                        <div class="food-desc">${item.desc}</div>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = html;
+        }
+    },
+
+
+    // 切换红绿灯标签
+    switchTraffic(type) {
+        // 更新标签样式
+        document.querySelectorAll('.traffic-tab').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.traffic-tab.${type}`).classList.add('active');
+        
+        // 更新列表显示
+        document.querySelectorAll('.food-list').forEach(el => el.classList.remove('active'));
+        document.getElementById(`food-${type}`).classList.add('active');
+    }
+});
+
+app.init();
+</script>
+</body>
+</html>
