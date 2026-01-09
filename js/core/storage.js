@@ -37,25 +37,14 @@ const storageManager = {
     // 初始化 LeanCloud SDK
     initLeanCloud(callbacks) {
         const { appId, appKey, serverURL } = this.getCloudConfig();
-        // #region agent log
-        fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/core/storage.js:initLeanCloud',message:'Attempting initLeanCloud',data:{appId, serverURL, hasAV: !!window.AV},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-        // #endregion
-
+        
         try {
-            if(!window.AV) {
-                // #region agent log
-                fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/core/storage.js:initLeanCloud',message:'AV not found on window',data:{},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-                // #endregion
-                return;
-            }
+            if(!window.AV) return;
             AV.init({ appId, appKey, serverURL });
             
             // 尝试获取云端数据
             const query = new AV.Query('LoveData');
             query.first().then((data) => {
-                // #region agent log
-                fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/core/storage.js:initLeanCloud',message:'Query success',data:{hasData: !!data},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-                // #endregion
                 if (data) {
                     this.cloudObj = data;
                     callbacks.onCloudDataLoaded(data.get('content'));
@@ -63,16 +52,10 @@ const storageManager = {
                     callbacks.onCloudDataNotFound(AV.Object.extend('LoveData'));
                 }
             }).catch(err => {
-                // #region agent log
-                fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/core/storage.js:initLeanCloud',message:'Query failed',data:{error: err.toString(), code: err.code},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-                // #endregion
                 callbacks.onCloudError(err);
             });
             
         } catch(e) {
-            // #region agent log
-            fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/core/storage.js:initLeanCloud',message:'Exception in initLeanCloud',data:{error: e.toString()},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-            // #endregion
             console.error('LeanCloud init error:', e);
             callbacks.onCloudError(e);
         }

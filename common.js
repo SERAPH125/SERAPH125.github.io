@@ -566,9 +566,6 @@ const app = {
              alert('未填写API域名，尝试使用国际版默认域名...\n如果连接失败，请手动填写正确域名。');
         }
 
-        // #region agent log
-        fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'common.js:connectCloud',message:'Saving cloud config with manual URL',data:{appId, serverURL},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
-        // #endregion
         localStorage.setItem('lean_server_url', serverURL);
 
         // 更新 storageManager 的配置缓存
