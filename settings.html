@@ -222,6 +222,8 @@
             
             <input type="text" id="lean-app-id" placeholder="App ID (LeanCloud)">
             <input type="text" id="lean-app-key" placeholder="App Key (LeanCloud)">
+            <input type="text" id="lean-server-url" placeholder="API域名 (例如: https://xxx.lc-cn-n1-shared.com)">
+            <div style="font-size:0.8rem; color:#999; margin-bottom:10px;">* 国内节点必须填写API域名，国际版可自动生成</div>
             <button class="btn" onclick="app.connectCloud()" style="background:var(--accent-blue); color:white; margin-top:10px; width:100%;">🔌 连接云端</button>
             <button class="btn" onclick="app.forceSync()" style="background:white; color:var(--text-main); margin-top:10px; width:100%;">🔄 强制同步</button>
         </div>
@@ -254,11 +256,15 @@ Object.assign(app, {
         // 优先读取本地存储的配置，如果没有则使用默认值
         const savedAppId = localStorage.getItem('lean_app_id') || "MekXCArJv2zcoNj63pPBf2wz-gzGzoHsz";
         const savedAppKey = localStorage.getItem('lean_app_key') || "4gtuHZVj2S6XlF79Av5l7WKz";
+        const savedServerURL = localStorage.getItem('lean_server_url') || "https://mekxcarj.lc-cn-n1-shared.com";
         
         const appIdEl = document.getElementById('lean-app-id');
         const appKeyEl = document.getElementById('lean-app-key');
+        const serverUrlEl = document.getElementById('lean-server-url');
+        
         if (appIdEl) appIdEl.value = savedAppId;
         if (appKeyEl) appKeyEl.value = savedAppKey;
+        if (serverUrlEl) serverUrlEl.value = savedServerURL;
         
         this.render();
     },

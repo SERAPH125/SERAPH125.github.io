@@ -552,13 +552,23 @@ const app = {
     connectCloud() {
         const appId = document.getElementById('lean-app-id').value.trim();
         const appKey = document.getElementById('lean-app-key').value.trim();
+        let serverURL = document.getElementById('lean-server-url').value.trim();
+
         if(!appId || !appKey) return alert('请输入 App ID 和 Key');
         
         localStorage.setItem('lean_app_id', appId);
         localStorage.setItem('lean_app_key', appKey);
         
-        const prefix = appId.substring(0, 8).toLowerCase();
-        const serverURL = `https://${prefix}.api.lncldglobal.com`;
+        // 如果用户没填 Server URL，尝试自动生成 (仅适用于国际版)
+        if (!serverURL) {
+             const prefix = appId.substring(0, 8).toLowerCase();
+             serverURL = `https://${prefix}.api.lncldglobal.com`;
+             alert('未填写API域名，尝试使用国际版默认域名...\n如果连接失败，请手动填写正确域名。');
+        }
+
+        // #region agent log
+        fetch('http://127.0.0.1:7250/ingest/614104ee-2776-487f-8132-32327212e492',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'common.js:connectCloud',message:'Saving cloud config with manual URL',data:{appId, serverURL},timestamp:Date.now(),sessionId:'debug-session'})}).catch(()=>{});
+        // #endregion
         localStorage.setItem('lean_server_url', serverURL);
 
         // 更新 storageManager 的配置缓存
