@@ -338,20 +338,37 @@ Object.assign(app, {
         const dailyList = document.getElementById('daily-log-list');
         if (!sweetList || !dailyList) return;
 
+        // 辅助函数：判断是否为日常类记录 (签到、消费、游戏奖励)
+        const isDailyRecord = (reason) => {
+            if (!reason) return false;
+            return reason.includes('签到') || reason.includes('游戏挑战成功');
+        };
+
         // --- 准备数据 ---
-        // 1. 甜蜜瞬间：甜度记录(girlHistory) + 手动加分/非签到正分(history > 0 & !签到)
-        const sweetItems = (this.data.girlHistory || []).map(item => ({...item, _type: 'sugar'}));
+        // 1. 甜蜜瞬间：甜度记录(girlHistory) + 手动加分/非签到正分(history > 0 & !签到 & !游戏)
+        // 修改：排除所有包含“签到”或“游戏挑战成功”字样的记录
+        const sweetItems = (this.data.girlHistory || []).filter(item => 
+            !isDailyRecord(item.reason)
+        ).map(item => ({...item, _type: 'sugar'}));
+        
         const scoreLoveItems = (this.data.history || []).filter(item => 
-            item.amount > 0 && !item.reason.includes('签到')
+            item.amount > 0 && !isDailyRecord(item.reason)
         ).map(item => ({...item, _type: 'score'}));
 
         const mergedSweet = [...sweetItems, ...scoreLoveItems].sort((a, b) => b.id - a.id);
 
-        // 2. 日常流水：签到(history includes 签到) + 消费/惩罚(history <= 0)
-        // 注意：history 中包含所有积分记录，需要排除掉上面已经归为“甜蜜瞬间”的
-        const dailyItems = (this.data.history || []).filter(item => 
-            item.amount <= 0 || item.reason.includes('签到')
-        ).sort((a, b) => b.id - a.id);
+        // 2. 日常流水：签到/游戏(reason match) + 消费/惩罚(history <= 0)
+        // 修改：包含所有 history 和 girlHistory 中的签到/游戏记录
+        const dailyScoreItems = (this.data.history || []).filter(item => 
+            item.amount <= 0 || isDailyRecord(item.reason)
+        );
+        
+        const dailySugarItems = (this.data.girlHistory || []).filter(item => 
+            isDailyRecord(item.reason)
+        ).map(item => ({...item, _type: 'sugar'})); // 标记为甜度记录，以便渲染时区分单位
+
+        // 合并并按时间倒序
+        const dailyItems = [...dailyScoreItems, ...dailySugarItems].sort((a, b) => b.id - a.id);
 
         // --- 渲染甜蜜瞬间 ---
         if (mergedSweet.length === 0) {
@@ -387,7 +404,13 @@ Object.assign(app, {
         if (dailyItems.length === 0) {
             dailyList.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">暂无日常记录 🍃</div>';
         } else {
-            dailyList.innerHTML = dailyItems.map(item => `
+            dailyList.innerHTML = dailyItems.map(item => {
+                // 同样适配甜度单位显示
+                const isSugar = item._type === 'sugar';
+                const sign = item.amount > 0 ? '+' : '';
+                const amountDisplay = isSugar ? `${sign}${item.amount} 🍬` : `${sign}${item.amount}`;
+                
+                return `
                 <div class="log-item">
                     <div style="flex:1;">
                         <div style="font-weight:500; color:var(--text-main)">${item.reason.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
@@ -395,12 +418,12 @@ Object.assign(app, {
                     </div>
                     <div style="display:flex; align-items:center;">
                         <div style="font-weight:bold; font-size:1.1rem; margin-right:10px;" class="${item.amount > 0 ? 'plus' : 'minus'}">
-                            ${item.amount > 0 ? '+' : ''}${item.amount}
+                            ${amountDisplay}
                         </div>
-                        <button class="btn-del-log" onclick="app.deleteLog(${item.id}, 'score')">🗑️</button>
+                        <button class="btn-del-log" onclick="app.deleteLog(${item.id}, '${isSugar ? 'sugar' : 'score'}')">🗑️</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         }
     },
 

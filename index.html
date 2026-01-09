@@ -523,6 +523,28 @@ Object.assign(app, {
                 const bonus = 5;
                 reward += bonus;
                 
+                // 修复策略：给先签到的另一半也补发奖励 (公平原则)
+                const partnerReason = `双人签到达成！(另一半也来了) +${bonus} (补发)`;
+                if (this.currentUser === 'boy') {
+                    // 我是男生，说明女生已签到 -> 给女生补甜度 (不触发保存，稍后统一保存)
+                    this.data.girlSweetness = (this.data.girlSweetness || 0) + bonus;
+                    this.data.girlHistory.unshift({
+                        id: Date.now() + 1, // +1 避免ID冲突
+                        time: new Date().toLocaleString(),
+                        reason: partnerReason,
+                        amount: bonus
+                    });
+                } else {
+                    // 我是女生，说明男生已签到 -> 给男生补积分
+                    this.data.score = (this.data.score || 0) + bonus;
+                    this.data.history.unshift({
+                        id: Date.now() + 1,
+                        time: new Date().toLocaleString(),
+                        reason: partnerReason,
+                        amount: bonus
+                    });
+                }
+
                 if (extraReward) {
                     subText += ` (+${bonus} 双人加成)`;
                 } else {
