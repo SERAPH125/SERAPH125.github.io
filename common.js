@@ -110,6 +110,75 @@ const app = {
             return merged.sort((a, b) => b.id - a.id);
         };
 
+        // 专门的计划数据合并函数 (基于ID深度合并)
+        const mergePlans = (localPlans, remotePlans) => {
+             if (!localPlans) return remotePlans || [];
+             if (!remotePlans) return localPlans || [];
+             
+             // 建立 ID 映射
+             const localMap = new Map(localPlans.map(p => [p.id, p]));
+             const remoteMap = new Map(remotePlans.map(p => [p.id, p]));
+             
+             // 获取所有 ID
+             const allIds = new Set([...localMap.keys(), ...remoteMap.keys()]);
+             const mergedPlans = [];
+             
+             allIds.forEach(id => {
+                 const local = localMap.get(id);
+                 const remote = remoteMap.get(id);
+                 
+                 if (local && remote) {
+                     // 两个都有，需要智能合并
+                     // 1. 优先使用已完成的状态
+                     // 2. 优先使用进度更大的
+                     // 3. 优先使用有内容的 review
+                     // 4. 合并 records
+                     
+                     const mergedItem = { ...remote }; // 默认以云端为基础
+                     
+                     // 合并完成状态
+                     if (local.completed || remote.completed) {
+                         mergedItem.completed = true;
+                         // 如果一个是完成，一个是未完成，取完成那个的 current
+                         if (local.completed) mergedItem.current = local.current;
+                         else mergedItem.current = remote.current;
+                     } else {
+                         // 都是未完成，取进度大的
+                         mergedItem.current = Math.max(local.current || 0, remote.current || 0);
+                     }
+                     
+                     // 合并 review (优先取有内容的，如果都有内容，取 updatedTime 较新的，如果没有 time，取内容长度较长的)
+                     if (local.review && !remote.review) {
+                         mergedItem.review = local.review;
+                     } else if (local.review && remote.review) {
+                         const localTime = local.review.updatedAt ? new Date(local.review.updatedAt).getTime() : 0;
+                         const remoteTime = remote.review.updatedAt ? new Date(remote.review.updatedAt).getTime() : 0;
+                         if (localTime > remoteTime) {
+                             mergedItem.review = local.review;
+                         } else if (localTime === remoteTime) {
+                             // 时间一样或都没有时间，取内容长的
+                             if ((local.review.content || '').length > (remote.review.content || '').length) {
+                                 mergedItem.review = local.review;
+                             }
+                         }
+                     }
+                     
+                     // 合并 records
+                     mergedItem.records = mergeArray(local.records || [], remote.records || []);
+                     
+                     mergedPlans.push(mergedItem);
+                 } else if (local) {
+                     // 只有本地有 (新添加的计划)
+                     mergedPlans.push(local);
+                 } else if (remote) {
+                     // 只有云端有 (其他设备添加的计划)
+                     mergedPlans.push(remote);
+                 }
+             });
+             
+             return mergedPlans;
+        };
+
         // 合并各个核心数据列表
         remoteData.history = mergeArray(this.data.history, remoteData.history);
         remoteData.girlHistory = mergeArray(this.data.girlHistory, remoteData.girlHistory); // 甜度记录
@@ -117,8 +186,8 @@ const app = {
         // 相册不再合并，而是独立同步
         // remoteData.album = mergeArray(this.data.album, remoteData.album);
         remoteData.inventory = mergeArray(this.data.inventory, remoteData.inventory);
-        // 年度计划合并（基于ID去重）
-        remoteData.annualPlan = mergeArray(this.data.annualPlan, remoteData.annualPlan || []);
+        // 年度计划合并（改为深度合并）
+        remoteData.annualPlan = mergePlans(this.data.annualPlan, remoteData.annualPlan || []);
 
         // 如果本地有新签到，优先使用本地分数（因为它包含了签到奖励）
         // V4.10 Fix: 修复女生签到后甜度被云端旧数据覆盖的问题
