@@ -871,7 +871,23 @@ Object.assign(app, {
                 }
             });
             
+            // 去重：移除重复的计划项（根据 category + name 判断）
+            const originalLength = this.data.annualPlan.length;
+            const seen = new Map();
+            this.data.annualPlan = this.data.annualPlan.filter(item => {
+                const key = `${item.category}|${item.name}`;
+                if (seen.has(key)) {
+                    // 保留第一个，移除后续重复的
+                    return false;
+                }
+                seen.set(key, true);
+                return true;
+            });
+            const afterDedupLength = this.data.annualPlan.length;
+            const hasDuplicates = originalLength > afterDedupLength;
+            
             // 检查是否有新增的任务（通过比较数量）
+            let hasNewItems = false;
             if (this.data.annualPlan.length < annualPlanTemplate.length) {
                 // 合并新任务
                 annualPlanTemplate.forEach(template => {
@@ -879,6 +895,7 @@ Object.assign(app, {
                         p.category === template.category && p.name === template.name
                     );
                     if (!exists) {
+                        hasNewItems = true;
                         this.data.annualPlan.push({
                             id: Date.now() + Math.random(),
                             ...template,
@@ -886,6 +903,10 @@ Object.assign(app, {
                         });
                     }
                 });
+            }
+            
+            // 如果有去重或新增，保存数据
+            if (hasDuplicates || hasNewItems) {
                 this.saveData();
             }
         }
