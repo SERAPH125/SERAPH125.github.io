@@ -414,6 +414,71 @@
         }
         .plan-item:hover .btn-delete-plan { opacity: 1; background: rgba(255,154,158,0.1); }
         .btn-delete-plan:hover { color: var(--danger); transform: scale(1.1); }
+        
+        /* 读后感相关样式 */
+        .btn-view-review {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+        .btn-view-review:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-add-review {
+            background: rgba(102, 126, 234, 0.15);
+            color: #667eea;
+            border: 1px dashed #667eea;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-add-review:hover {
+            background: rgba(102, 126, 234, 0.25);
+        }
+        .review-preview {
+            margin-top: 10px;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.08));
+            border-radius: 12px;
+            border-left: 3px solid #667eea;
+            margin-left: 36px;
+        }
+        .review-preview-rating {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+        .review-preview-content {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .review-preview-more {
+            font-size: 0.75rem;
+            color: #667eea;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        .review-preview-more:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -423,7 +488,7 @@
 
 <div class="container">
     <header>
-        <h1>📋 小周的年度计划 <span class="version-tag">V3.7</span></h1>
+        <h1>📋 小周的年度计划 <span class="version-tag">V3.8</span></h1>
         <div class="love-days">2026年度目标 💕</div>
     </header>
 
@@ -543,6 +608,61 @@
     </div>
 </div>
 
+<!-- 读后感弹窗 -->
+<div class="modal-overlay" id="review-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('review-modal').style.display='none'">
+    <div class="modal" style="width:90%; max-width:450px; padding:30px 25px;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <span style="font-size:3rem; display:block; margin-bottom:10px;">📖✨</span>
+            <h3 style="margin:0 0 8px 0; color:var(--text-main); font-size:1.2rem;" id="review-title">写下读后感</h3>
+            <p style="margin:0; color:var(--text-light); font-size:0.85rem;" id="review-book-name">《书名》</p>
+        </div>
+        
+        <div style="margin-bottom:15px;">
+            <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">⭐ 评分</label>
+            <div id="review-rating" style="display:flex; gap:8px; justify-content:center; margin-bottom:10px;">
+                <span class="rating-star" data-rating="1" onclick="app.setReviewRating(1)" style="font-size:1.8rem; cursor:pointer; opacity:0.3; transition:all 0.2s;">⭐</span>
+                <span class="rating-star" data-rating="2" onclick="app.setReviewRating(2)" style="font-size:1.8rem; cursor:pointer; opacity:0.3; transition:all 0.2s;">⭐</span>
+                <span class="rating-star" data-rating="3" onclick="app.setReviewRating(3)" style="font-size:1.8rem; cursor:pointer; opacity:0.3; transition:all 0.2s;">⭐</span>
+                <span class="rating-star" data-rating="4" onclick="app.setReviewRating(4)" style="font-size:1.8rem; cursor:pointer; opacity:0.3; transition:all 0.2s;">⭐</span>
+                <span class="rating-star" data-rating="5" onclick="app.setReviewRating(5)" style="font-size:1.8rem; cursor:pointer; opacity:0.3; transition:all 0.2s;">⭐</span>
+            </div>
+        </div>
+        
+        <div style="margin-bottom:20px;">
+            <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">💭 读后感想</label>
+            <textarea id="review-content-input" placeholder="这本书给你带来了什么感悟？记录下来吧..." rows="5" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box; resize:vertical; min-height:100px; line-height:1.6;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)'"></textarea>
+            <p style="margin:6px 0 0 0; color:var(--text-light); font-size:0.75rem;">💡 可以记录：印象深刻的句子、读书心得、推荐理由等</p>
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="app.skipReview()" style="flex:1; background:rgba(255,255,255,0.6); color:var(--text-main); border:2px solid rgba(255,255,255,0.5); padding:14px; border-radius:12px; font-weight:500; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.8)'" onmouseout="this.style.background='rgba(255,255,255,0.6)'">暂时跳过</button>
+            <button onclick="app.saveReview()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(161,140,209,0.3); transition:transform 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">💾 保存读后感</button>
+        </div>
+    </div>
+</div>
+
+<!-- 查看读后感弹窗 -->
+<div class="modal-overlay" id="view-review-modal" style="display:none;" onclick="if(event.target===this) document.getElementById('view-review-modal').style.display='none'">
+    <div class="modal" style="width:90%; max-width:450px; padding:30px 25px; max-height:80vh; overflow-y:auto;">
+        <div style="text-align:center; margin-bottom:20px;">
+            <span style="font-size:2.5rem; display:block; margin-bottom:10px;">📖</span>
+            <h3 style="margin:0 0 8px 0; color:var(--text-main); font-size:1.2rem;" id="view-review-title">《书名》</h3>
+            <div id="view-review-rating" style="margin:10px 0;"></div>
+            <p style="margin:0; color:var(--text-light); font-size:0.8rem;" id="view-review-date">完成于 2026-01-01</p>
+        </div>
+        
+        <div style="background:rgba(255,255,255,0.5); border-radius:15px; padding:20px; margin-bottom:20px; border-left:4px solid var(--accent-pink);">
+            <div style="font-size:0.85rem; color:var(--text-light); margin-bottom:8px;">💭 读后感</div>
+            <div id="view-review-content" style="color:var(--text-main); line-height:1.8; white-space:pre-wrap; font-size:0.95rem;"></div>
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+            <button onclick="app.editReview()" style="flex:1; background:rgba(255,255,255,0.6); color:var(--accent-pink); border:2px solid var(--accent-pink); padding:12px; border-radius:12px; font-weight:500; cursor:pointer; transition:all 0.2s;">✏️ 编辑</button>
+            <button onclick="document.getElementById('view-review-modal').style.display='none'" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:12px; border-radius:12px; font-weight:bold; cursor:pointer;">关闭</button>
+        </div>
+    </div>
+</div>
+
 <script src="js/core/sound-manager.js"></script>
 <script src="js/core/storage.js"></script>
 <script src="js/core/utils.js"></script>
@@ -627,6 +747,9 @@ Object.assign(app, {
     currentCategory: null, // 当前选中的分类
     pendingRecordItemId: null, // 待记录内容的计划ID
     hideCompleted: false, // 是否隐藏已完成
+    pendingReviewItemId: null, // 待写读后感的计划ID
+    currentReviewRating: 0, // 当前选择的评分
+    isEditingReview: false, // 是否正在编辑读后感
     
     init() {
         this.initCommon();
@@ -782,6 +905,9 @@ Object.assign(app, {
                 const needRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
                 const records = item.records || [];
                 const hasRecords = records.length > 0;
+                // 判断是否是书单项目（可以写读后感）
+                const isBook = item.category === '读书清单📖' && item.target === 1;
+                const hasReview = item.review && item.review.content;
                 
                 html += `
                     <div class="plan-item ${isCompleted ? 'completed' : ''}">
@@ -802,6 +928,22 @@ Object.assign(app, {
                             ${hasRecords ? `
                                 <div style="margin-top:10px; padding-left:36px; font-size:0.8rem; color:var(--text-light);">
                                     <span style="cursor:pointer; text-decoration:underline;" onclick="app.viewRecords(${item.id})">已记录 ${records.length} 项，点击查看</span>
+                                </div>
+                            ` : ''}
+                        ` : ''}
+                        ${isBook && isCompleted ? `
+                            <div class="plan-actions" style="margin-top:12px;">
+                                ${hasReview ? `
+                                    <button class="btn-view-review" onclick="event.stopPropagation(); app.viewReview(${item.id})">📝 查看读后感</button>
+                                ` : `
+                                    <button class="btn-add-review" onclick="event.stopPropagation(); app.showReviewModal(${item.id})">✍️ 写读后感</button>
+                                `}
+                            </div>
+                            ${hasReview ? `
+                                <div class="review-preview" onclick="app.viewReview(${item.id})" style="cursor:pointer;">
+                                    <div class="review-preview-rating">${'⭐'.repeat(item.review.rating || 0)}</div>
+                                    <div class="review-preview-content">${item.review.content}</div>
+                                    <div class="review-preview-more">点击查看完整读后感 →</div>
                                 </div>
                             ` : ''}
                         ` : ''}
@@ -838,19 +980,34 @@ Object.assign(app, {
             return;
         }
         
+        // 判断是否是书单项目
+        const isBook = item.category === '读书清单📖';
+        
         // 单次任务：切换完成状态
-        item.completed = !item.completed;
-        if (item.completed) {
+        if (!item.completed) {
+            // 标记为完成
+            item.completed = true;
             item.current = 1;
             uiManager.createPetal();
             uiManager.createPetal();
             this.showToast(`太棒了！完成了：${item.name} 🎉`);
+            
+            this.saveData();
+            this.render();
+            
+            // 如果是书单项目，延迟弹出读后感输入框
+            if (isBook) {
+                setTimeout(() => {
+                    this.showReviewModal(id, true);
+                }, 800);
+            }
         } else {
+            // 取消完成
+            item.completed = false;
             item.current = 0;
+            this.saveData();
+            this.render();
         }
-        
-        this.saveData();
-        this.render();
     },
 
     // 增加阶段性任务进度
@@ -1075,6 +1232,122 @@ Object.assign(app, {
             this.showToast('计划已删除');
             this.render();
         }
+    },
+
+    // ========== 读后感功能 ==========
+    
+    // 显示读后感输入弹窗
+    showReviewModal(id, isNewCompletion = false) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item) return;
+        
+        this.pendingReviewItemId = id;
+        this.isEditingReview = !isNewCompletion && item.review && item.review.content;
+        
+        // 设置弹窗标题
+        document.getElementById('review-title').innerText = this.isEditingReview ? '编辑读后感' : '写下读后感';
+        document.getElementById('review-book-name').innerText = item.name;
+        
+        // 如果是编辑模式，填充已有内容
+        if (this.isEditingReview && item.review) {
+            this.setReviewRating(item.review.rating || 0);
+            document.getElementById('review-content-input').value = item.review.content || '';
+        } else {
+            this.setReviewRating(0);
+            document.getElementById('review-content-input').value = '';
+        }
+        
+        document.getElementById('review-modal').style.display = 'flex';
+        
+        // 自动聚焦到输入框
+        setTimeout(() => {
+            document.getElementById('review-content-input').focus();
+        }, 100);
+    },
+
+    // 设置读后感评分
+    setReviewRating(rating) {
+        this.currentReviewRating = rating;
+        const stars = document.querySelectorAll('.rating-star');
+        stars.forEach((star, index) => {
+            if (index < rating) {
+                star.style.opacity = '1';
+                star.style.transform = 'scale(1.1)';
+            } else {
+                star.style.opacity = '0.3';
+                star.style.transform = 'scale(1)';
+            }
+        });
+    },
+
+    // 保存读后感
+    saveReview() {
+        const content = document.getElementById('review-content-input').value.trim();
+        const rating = this.currentReviewRating;
+        
+        if (!content && rating === 0) {
+            alert('请至少填写读后感或选择评分哦！');
+            return;
+        }
+        
+        const item = this.data.annualPlan.find(p => p.id === this.pendingReviewItemId);
+        if (!item) return;
+        
+        // 保存读后感
+        item.review = {
+            content: content,
+            rating: rating,
+            date: new Date().toLocaleDateString(),
+            time: new Date().toLocaleTimeString(),
+            updatedAt: new Date().toISOString()
+        };
+        
+        this.saveData();
+        document.getElementById('review-modal').style.display = 'none';
+        this.pendingReviewItemId = null;
+        
+        uiManager.createPetal();
+        this.showToast('读后感已保存！📝✨');
+        this.render();
+    },
+
+    // 跳过读后感
+    skipReview() {
+        document.getElementById('review-modal').style.display = 'none';
+        this.pendingReviewItemId = null;
+        this.showToast('可以稍后再写读后感哦 💕');
+    },
+
+    // 查看读后感
+    viewReview(id) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item || !item.review) {
+            alert('暂无读后感');
+            return;
+        }
+        
+        this.pendingReviewItemId = id;
+        
+        document.getElementById('view-review-title').innerText = item.name;
+        document.getElementById('view-review-date').innerText = `完成于 ${item.review.date || '未知日期'}`;
+        
+        // 显示评分
+        const ratingHtml = item.review.rating > 0 
+            ? '⭐'.repeat(item.review.rating) + `<span style="color:var(--text-light); font-size:0.8rem; margin-left:8px;">${item.review.rating}/5分</span>`
+            : '<span style="color:var(--text-light); font-size:0.85rem;">暂无评分</span>';
+        document.getElementById('view-review-rating').innerHTML = ratingHtml;
+        
+        // 显示内容
+        document.getElementById('view-review-content').innerText = item.review.content || '暂无读后感内容';
+        
+        document.getElementById('view-review-modal').style.display = 'flex';
+    },
+
+    // 编辑读后感
+    editReview() {
+        const id = this.pendingReviewItemId;
+        document.getElementById('view-review-modal').style.display = 'none';
+        this.showReviewModal(id);
     }
 });
 
