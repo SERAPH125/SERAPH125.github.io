@@ -11,6 +11,7 @@ const storageManager = {
     
     // 云端对象缓存
     cloudObj: null,
+    planCloudObj: null,
 
     // 初始化配置 (优先读取本地，否则使用默认)
     init() {
@@ -42,12 +43,33 @@ const storageManager = {
             if(!window.AV) return;
             AV.init({ appId, appKey, serverURL });
             
-            // 尝试获取云端数据
-            const query = new AV.Query('LoveData');
-            query.first().then((data) => {
-                if (data) {
-                    this.cloudObj = data;
-                    callbacks.onCloudDataLoaded(data.get('content'));
+            // 尝试获取云端数据 (并行查询主数据和计划数据)
+            const queryLove = new AV.Query('LoveData');
+            const queryPlan = new AV.Query('PlanData');
+            
+            Promise.all([
+                queryLove.first().catch(e => { console.warn('LoveData fetch failed', e); return null; }),
+                queryPlan.first().catch(e => { console.warn('PlanData fetch failed', e); return null; })
+            ]).then(([loveObj, planObj]) => {
+                if (loveObj) {
+                    this.cloudObj = loveObj;
+                    let finalContent = loveObj.get('content') || {};
+                    
+                    // 合并计划数据
+                    if (planObj) {
+                        this.planCloudObj = planObj;
+                        const planContent = planObj.get('content') || {};
+                        // 如果 PlanData 中有数据，覆盖主数据中的 annualPlan
+                        if (planContent.annualPlan) {
+                            finalContent.annualPlan = planContent.annualPlan;
+                        }
+                    } else {
+                        // 如果没有 PlanData，但主数据中有 annualPlan，暂时不需要做特殊处理
+                        // 下次保存时会自动创建 PlanData
+                        console.log('No PlanData found, using data from LoveData');
+                    }
+                    
+                    callbacks.onCloudDataLoaded(finalContent);
                 } else {
                     callbacks.onCloudDataNotFound(AV.Object.extend('LoveData'));
                 }
@@ -77,14 +99,44 @@ const storageManager = {
     saveToCloud(data, callbacks) {
         if (!this.cloudObj) return;
 
-        // 复制数据并排除相册 (相册独立存储)
-        const dataToSync = JSON.parse(JSON.stringify(data));
-        delete dataToSync.album;
+        // 1. 准备主数据 (排除相册和计划)
+        const mainDataToSync = JSON.parse(JSON.stringify(data));
+        delete mainDataToSync.album;
+        const annualPlanData = mainDataToSync.annualPlan; // 暂存计划数据
+        delete mainDataToSync.annualPlan; // 从主数据中移除
 
-        this.cloudObj.set('content', dataToSync);
-        this.cloudObj.save().then(() => {
+        // 2. 准备计划数据
+        const planDataToSync = {
+            annualPlan: annualPlanData || []
+        };
+
+        // 3. 并行保存
+        const promises = [];
+
+        // 保存主数据
+        this.cloudObj.set('content', mainDataToSync);
+        promises.push(this.cloudObj.save());
+
+        // 保存计划数据
+        if (this.planCloudObj) {
+            this.planCloudObj.set('content', planDataToSync);
+            promises.push(this.planCloudObj.save());
+        } else {
+            // 如果还没有 PlanData 对象，创建一个新的
+            const PlanData = AV.Object.extend('PlanData');
+            const newPlanObj = new PlanData();
+            newPlanObj.set('content', planDataToSync);
+            // 存入 promises 并更新 this.planCloudObj
+            promises.push(newPlanObj.save().then(obj => {
+                this.planCloudObj = obj;
+                return obj;
+            }));
+        }
+
+        Promise.all(promises).then(() => {
             if(callbacks && callbacks.onSuccess) callbacks.onSuccess();
         }).catch(err => {
+            console.error('Save to cloud error:', err);
             if(callbacks && callbacks.onError) callbacks.onError(err);
         });
     },

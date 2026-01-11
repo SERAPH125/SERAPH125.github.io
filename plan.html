@@ -10,31 +10,49 @@
     <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
     <link rel="stylesheet" href="common.css">
     <style>
-        /* 年度计划特定样式 */
-        .plan-category {
-            margin-bottom: 25px;
+        /* 年度计划特定样式 - 折叠面板风格 */
+        .plan-category-group {
+            background: rgba(255,255,255,0.4);
+            backdrop-filter: blur(5px);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
             animation: fadeIn 0.5s ease;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        .category-header {
+        .plan-category-header {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.3);
+            user-select: none;
+            border-left: 5px solid var(--accent-pink);
+            transition: background 0.3s;
+        }
+        .plan-category-header:hover {
+            background: rgba(255,255,255,0.4);
+        }
+        .plan-category-group.active .plan-category-header {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .category-title-wrapper {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            padding: 12px 15px;
-            background: rgba(255,255,255,0.4);
-            backdrop-filter: blur(5px);
-            border-radius: 15px;
-            border-left: 5px solid var(--accent-pink);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            gap: 10px;
         }
         .category-title {
             font-size: 1.1rem;
             font-weight: 700;
             color: var(--text-main);
         }
-        .category-progress {
+        .category-progress-badge {
             font-size: 0.85rem;
             color: var(--text-light);
             background: rgba(255,255,255,0.6);
@@ -42,6 +60,31 @@
             border-radius: 10px;
             font-weight: bold;
         }
+        
+        .header-arrow {
+            font-size: 0.8rem;
+            transition: transform 0.3s;
+            opacity: 0.6;
+            color: var(--text-main);
+        }
+        .plan-category-group.active .header-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .plan-category-content {
+            display: none;
+            padding: 15px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+        .plan-category-group.active .plan-category-content {
+            display: block;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .plan-item {
             background: rgba(255,255,255,0.85);
             border-radius: 16px;
@@ -315,42 +358,6 @@
             mask: radial-gradient(transparent 55%, black 56%);
         }
 
-        /* 分类标签 */
-        .plan-category-tabs {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            margin-bottom: 20px;
-            padding: 5px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none; /* Firefox */
-        }
-        .plan-category-tabs::-webkit-scrollbar { display: none; }
-        
-        .plan-category-tab {
-            padding: 10px 18px;
-            background: rgba(255,255,255,0.6);
-            border: 1px solid rgba(255,255,255,0.4);
-            border-radius: 20px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
-            color: var(--text-light);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .plan-category-tab.active {
-            background: white;
-            color: var(--accent-pink);
-            border-color: var(--accent-pink);
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.2);
-            transform: translateY(-2px);
-        }
-        
         /* 筛选栏 */
         .filter-bar {
             display: flex;
@@ -609,9 +616,6 @@
         </div>
     </div>
 
-    <!-- 分类标签 -->
-    <div class="plan-category-tabs" id="category-tabs"></div>
-
     <!-- 计划列表 -->
     <div id="plan-list"></div>
 </div>
@@ -832,7 +836,8 @@ const annualPlanTemplate = [
 ];
 
 Object.assign(app, {
-    currentCategory: null, // 当前选中的分类
+    currentCategory: null, // 已废弃，改为 expandedCategories
+    expandedCategories: new Set(['休闲娱乐']), // 默认展开的分类
     pendingRecordItemId: null, // 待记录内容的计划ID
     hideCompleted: false, // 是否隐藏已完成
     pendingReviewItemId: null, // 待写读后感的计划ID
@@ -933,8 +938,7 @@ Object.assign(app, {
 
     render() {
         const planList = document.getElementById('plan-list');
-        const categoryTabs = document.getElementById('category-tabs');
-        if (!planList || !categoryTabs) return;
+        if (!planList) return;
 
         // 确保数据已初始化
         if (!this.data.annualPlan || this.data.annualPlan.length === 0) {
@@ -951,154 +955,137 @@ Object.assign(app, {
             categories[item.category].push(item);
         });
 
-        // 渲染分类标签（不包含"全部"）
+        // 获取所有分类
         const allCategories = Object.keys(categories).sort();
         
-        // 如果当前分类为空或者是"全部"，默认选择"休闲娱乐"，如果没有则选择第一个分类
-        if (!this.currentCategory || this.currentCategory === '全部') {
-            if (categories['休闲娱乐']) {
-                this.currentCategory = '休闲娱乐';
-            } else if (allCategories.length > 0) {
-                this.currentCategory = allCategories[0];
-            }
-        }
-        
-        let tabsHtml = '';
-        allCategories.forEach(cat => {
-            const isActive = cat === this.currentCategory;
-            // 计算该分类下未完成数量
-            const total = categories[cat]?.length || 0;
-            const completed = categories[cat]?.filter(i => i.completed).length || 0;
-            const uncompleted = total - completed;
-            
-            tabsHtml += `
-                <div class="plan-category-tab ${isActive ? 'active' : ''}" onclick="app.switchCategory('${cat}')">
-                    ${cat} ${uncompleted > 0 ? `<span style="opacity:0.8; font-size:0.8rem">(${uncompleted})</span>` : '✓'}
-                </div>
-            `;
-        });
-        categoryTabs.innerHTML = tabsHtml;
-
-        // 根据当前分类过滤数据（只显示当前分类）
-        let displayItems = [];
-        if (categories[this.currentCategory]) {
-            let items = categories[this.currentCategory];
+        // 渲染计划列表（折叠面板形式）
+        let html = '';
+        allCategories.forEach(category => {
+            let items = categories[category];
+            // 筛选已完成
             if (this.hideCompleted) {
                 items = items.filter(i => !i.completed);
             }
-            if (items.length > 0) {
-                displayItems.push({ category: this.currentCategory, items: items });
-            }
-        }
-
-        // 渲染计划列表
-        let html = '';
-        displayItems.forEach(({ category, items }) => {
+            
             // 计算当前显示的完成进度
             const total = this.data.annualPlan.filter(i => i.category === category).length;
             const completed = this.data.annualPlan.filter(i => i.category === category && i.completed).length;
             
+            // 检查是否展开
+            const isExpanded = this.expandedCategories.has(category);
+            
             html += `
-                <div class="plan-category">
-                    <div class="category-header">
-                        <div class="category-title">${category}</div>
-                        <div class="category-progress">${completed}/${total}</div>
+                <div class="plan-category-group ${isExpanded ? 'active' : ''}" id="category-group-${category}">
+                    <div class="plan-category-header" onclick="app.toggleCategory('${category}')">
+                        <div class="category-title-wrapper">
+                            <span class="category-title">${category}</span>
+                            <span class="category-progress-badge">${completed}/${total}</span>
+                        </div>
+                        <div class="header-arrow">▼</div>
                     </div>
+                    <div class="plan-category-content">
             `;
             
-            items.forEach(item => {
-                const isCompleted = item.completed;
-                const progress = item.target > 1 ? `${item.current}/${item.target}` : '';
-                const progressPercent = item.target > 1 ? Math.min(100, (item.current / item.target) * 100) : (isCompleted ? 100 : 0);
-                // 判断是否需要记录内容（电影清单、读书清单等）
-                const needRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
-                const records = item.records || [];
-                const hasRecords = records.length > 0;
-                // 判断是否是书单项目（可以写读后感）
-                const isBook = item.category === '读书清单📖' && item.target === 1;
-                const hasReview = item.review && item.review.content;
-                
-                html += `
-                    <div class="plan-item ${isCompleted ? 'completed' : ''}">
-                        <div class="plan-item-content" onclick="app.togglePlanItem(${item.id})">
-                            <div class="plan-checkbox ${isCompleted ? 'checked' : ''}"></div>
-                            <span class="plan-name">${item.icon} ${item.name}</span>
-                            <button class="btn-delete-plan" onclick="event.stopPropagation(); app.deletePlan(${item.id})" title="删除计划">🗑️</button>
-                        </div>
-                        ${item.target > 1 ? `
-                            <div class="plan-actions">
-                                <div class="plan-progress-bar">
-                                    <div class="plan-progress-fill" style="width: ${progressPercent}%"></div>
-                                </div>
-                                <span class="plan-progress">${progress}</span>
-                                ${!isCompleted ? `<button class="btn-add-progress" onclick="event.stopPropagation(); app.addProgress(${item.id})">+1</button>` : ''}
-                                ${hasRecords ? `<button class="btn-view-records" onclick="event.stopPropagation(); app.viewRecords(${item.id})" title="查看完整记录">📋</button>` : ''}
+            if (items.length === 0) {
+                 html += '<div style="text-align:center; padding:20px; color:var(--text-light); font-size:0.9rem;">暂无计划或已隐藏完成项</div>';
+            } else {
+                items.forEach(item => {
+                    const isCompleted = item.completed;
+                    const progress = item.target > 1 ? `${item.current}/${item.target}` : '';
+                    const progressPercent = item.target > 1 ? Math.min(100, (item.current / item.target) * 100) : (isCompleted ? 100 : 0);
+                    const records = item.records || [];
+                    const hasRecords = records.length > 0;
+                    const isBook = item.category === '读书清单📖' && item.target === 1;
+                    const hasReview = item.review && item.review.content;
+                    
+                    html += `
+                        <div class="plan-item ${isCompleted ? 'completed' : ''}">
+                            <div class="plan-item-content" onclick="app.togglePlanItem(${item.id})">
+                                <div class="plan-checkbox ${isCompleted ? 'checked' : ''}"></div>
+                                <span class="plan-name">${item.icon} ${item.name}</span>
+                                <button class="btn-delete-plan" onclick="event.stopPropagation(); app.deletePlan(${item.id})" title="删除计划">🗑️</button>
                             </div>
-                            ${hasRecords ? `
-                                <div class="records-collapsible">
-                                    <div class="records-toggle" onclick="app.toggleRecordsList(${item.id})">
-                                        <span class="records-toggle-icon" id="toggle-icon-${item.id}">▶</span>
-                                        <span>已记录 ${records.length} 项</span>
+                            ${item.target > 1 ? `
+                                <div class="plan-actions">
+                                    <div class="plan-progress-bar">
+                                        <div class="plan-progress-fill" style="width: ${progressPercent}%"></div>
                                     </div>
-                                    <div class="records-list" id="records-list-${item.id}">
-                                        ${records.map((record, index) => {
-                                            const isMovie = item.category === '电影清单🎬';
-                                            const hasRating = record.rating && record.rating > 0;
-                                            const hasComment = record.comment && record.comment.trim();
-                                            return `
-                                                <div class="record-item-inline">
-                                                    <div class="record-item-inline-content">
-                                                        <div style="font-weight:500; margin-bottom:4px;">${index + 1}. ${record.content}</div>
-                                                        ${hasComment ? `<div style="color:var(--text-light); font-size:0.8rem; margin-top:4px; padding-left:8px; border-left:2px solid rgba(255,154,158,0.3);">💬 ${record.comment}</div>` : ''}
-                                                    </div>
-                                                    <div class="record-item-inline-meta">
-                                                        ${hasRating ? `<span class="record-item-inline-rating">${'⭐'.repeat(record.rating)}</span>` : ''}
-                                                        <span>${record.date}</span>
-                                                        <button class="record-item-inline-delete" onclick="event.stopPropagation(); app.deleteRecord(${item.id}, ${index})" title="删除记录">🗑️</button>
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }).join('')}
-                                    </div>
+                                    <span class="plan-progress">${progress}</span>
+                                    ${!isCompleted ? `<button class="btn-add-progress" onclick="event.stopPropagation(); app.addProgress(${item.id})">+1</button>` : ''}
+                                    ${hasRecords ? `<button class="btn-view-records" onclick="event.stopPropagation(); app.viewRecords(${item.id})" title="查看完整记录">📋</button>` : ''}
                                 </div>
+                                ${hasRecords ? `
+                                    <div class="records-collapsible">
+                                        <div class="records-toggle" onclick="app.toggleRecordsList(${item.id})">
+                                            <span class="records-toggle-icon" id="toggle-icon-${item.id}">▶</span>
+                                            <span>已记录 ${records.length} 项</span>
+                                        </div>
+                                        <div class="records-list" id="records-list-${item.id}">
+                                            ${records.map((record, index) => {
+                                                const hasRating = record.rating && record.rating > 0;
+                                                const hasComment = record.comment && record.comment.trim();
+                                                return `
+                                                    <div class="record-item-inline">
+                                                        <div class="record-item-inline-content">
+                                                            <div style="font-weight:500; margin-bottom:4px;">${index + 1}. ${record.content}</div>
+                                                            ${hasComment ? `<div style="color:var(--text-light); font-size:0.8rem; margin-top:4px; padding-left:8px; border-left:2px solid rgba(255,154,158,0.3);">💬 ${record.comment}</div>` : ''}
+                                                        </div>
+                                                        <div class="record-item-inline-meta">
+                                                            ${hasRating ? `<span class="record-item-inline-rating">${'⭐'.repeat(record.rating)}</span>` : ''}
+                                                            <span>${record.date}</span>
+                                                            <button class="record-item-inline-delete" onclick="event.stopPropagation(); app.deleteRecord(${item.id}, ${index})" title="删除记录">🗑️</button>
+                                                        </div>
+                                                    </div>
+                                                `;
+                                            }).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
                             ` : ''}
-                        ` : ''}
-                        ${isBook && isCompleted ? `
-                            <div class="plan-actions" style="margin-top:12px;">
+                            ${isBook && isCompleted ? `
+                                <div class="plan-actions" style="margin-top:12px;">
+                                    ${hasReview ? `
+                                        <button class="btn-view-review" onclick="event.stopPropagation(); app.viewReview(${item.id})">📝 查看读后感</button>
+                                    ` : `
+                                        <button class="btn-add-review" onclick="event.stopPropagation(); app.showReviewModal(${item.id})">✍️ 写读后感</button>
+                                    `}
+                                </div>
                                 ${hasReview ? `
-                                    <button class="btn-view-review" onclick="event.stopPropagation(); app.viewReview(${item.id})">📝 查看读后感</button>
-                                ` : `
-                                    <button class="btn-add-review" onclick="event.stopPropagation(); app.showReviewModal(${item.id})">✍️ 写读后感</button>
-                                `}
-                            </div>
-                            ${hasReview ? `
-                                <div class="review-preview" onclick="app.viewReview(${item.id})" style="cursor:pointer;">
-                                    <div class="review-preview-rating">${'⭐'.repeat(item.review.rating || 0)}</div>
-                                    <div class="review-preview-content">${item.review.content}</div>
-                                    <div class="review-preview-more">点击查看完整读后感 →</div>
-                                </div>
+                                    <div class="review-preview" onclick="app.viewReview(${item.id})" style="cursor:pointer;">
+                                        <div class="review-preview-rating">${'⭐'.repeat(item.review.rating || 0)}</div>
+                                        <div class="review-preview-content">${item.review.content}</div>
+                                        <div class="review-preview-more">点击查看完整读后感 →</div>
+                                    </div>
+                                ` : ''}
                             ` : ''}
-                        ` : ''}
-                    </div>
-                `;
-            });
+                        </div>
+                    `;
+                });
+            }
             
-            html += `</div>`;
+            html += `
+                    </div>
+                </div>
+            `;
         });
-        
+
         if (html === '') {
             html = '<div style="text-align:center; padding:40px; color:var(--text-light);">🎉 这里的计划都完成啦！<br>（或者被隐藏了哦）</div>';
         }
-        
+
         planList.innerHTML = html;
-        
+
         // 更新总体进度
         this.updateOverallProgress();
     },
 
-    // 切换分类
-    switchCategory(category) {
-        this.currentCategory = category;
+    // 切换分类折叠状态
+    toggleCategory(category) {
+        if (this.expandedCategories.has(category)) {
+            this.expandedCategories.delete(category);
+        } else {
+            this.expandedCategories.add(category);
+        }
         this.render();
     },
     
@@ -1129,34 +1116,98 @@ Object.assign(app, {
             return;
         }
         
-        // 判断是否是书单项目
-        const isBook = item.category === '读书清单📖';
-        
-        // 单次任务：切换完成状态
+        // 单次任务：点击触发完成确认和感受记录
         if (!item.completed) {
-            // 标记为完成
-            item.completed = true;
-            item.current = 1;
-            uiManager.createPetal();
-            uiManager.createPetal();
-            this.showToast(`太棒了！完成了：${item.name} 🎉`);
+            // 弹出记录弹窗，确认后才算完成
+            this.pendingRecordItemId = id;
+            this.isMovieRecord = false;
+            this.currentMovieRating = 0;
             
-            this.saveData();
-            this.render();
+            const recordIconEl = document.getElementById('record-icon');
+            const recordTitleEl = document.getElementById('record-title');
+            if (recordIconEl) recordIconEl.innerText = item.icon;
+            if (recordTitleEl) recordTitleEl.innerText = `完成：${item.name}`;
             
-            // 如果是书单项目，延迟弹出读后感输入框
-            if (isBook) {
-                setTimeout(() => {
-                    this.showReviewModal(id, true);
-                }, 800);
+            const recordHintEl = document.getElementById('record-hint');
+            const recordContentInputEl = document.getElementById('record-content-input');
+            const recordNameLabelEl = document.getElementById('record-name-label');
+            const movieRatingSectionEl = document.getElementById('movie-rating-section');
+            const movieCommentSectionEl = document.getElementById('movie-comment-section');
+            const recordCommentInputEl = document.getElementById('record-comment-input');
+            
+            if (recordHintEl) recordHintEl.innerText = '写下完成这一刻的感受吧（可选）';
+            if (recordContentInputEl) {
+                recordContentInputEl.value = '';
+                recordContentInputEl.placeholder = '例如：非常开心，终于做到了！';
             }
+            if (recordNameLabelEl) recordNameLabelEl.innerText = '📝 此刻感受';
+            
+            // 隐藏评分区域（单次任务通常不需要评分，除非是书/电影，但那些已特殊处理）
+            if (movieRatingSectionEl) movieRatingSectionEl.style.display = 'none';
+            if (movieCommentSectionEl) movieCommentSectionEl.style.display = 'none';
+            
+            // 显示跳过按钮（允许不写感受直接完成）
+            const skipBtn = document.getElementById('record-skip-btn');
+            const cancelBtn = document.getElementById('record-cancel-btn');
+            if (skipBtn) {
+                skipBtn.style.display = 'block';
+                skipBtn.innerText = '直接完成';
+                skipBtn.onclick = () => {
+                    this.completeSingleItem(id, null);
+                    document.getElementById('record-modal').style.display = 'none';
+                };
+            }
+            if (cancelBtn) cancelBtn.style.flex = '0.5';
+            
+            document.getElementById('record-modal').style.display = 'flex';
+            if (recordContentInputEl) recordContentInputEl.focus();
+            
         } else {
             // 取消完成
-            item.completed = false;
-            item.current = 0;
-            this.saveData();
-            this.render();
+            if (confirm(`确定要将"${item.name}"标记为未完成吗？`)) {
+                item.completed = false;
+                item.current = 0;
+                this.saveData();
+                this.render();
+            }
         }
+    },
+
+    // 执行单次任务完成逻辑
+    completeSingleItem(id, recordData) {
+        const item = this.data.annualPlan.find(p => p.id === id);
+        if (!item) return;
+
+        item.completed = true;
+        item.current = 1;
+        
+        // 保存记录
+        if (recordData) {
+            if (!item.records) item.records = [];
+            // recordData 可能是对象或字符串
+            if (typeof recordData === 'string') {
+                 item.records.push({
+                    content: recordData,
+                    date: new Date().toLocaleDateString(),
+                    time: new Date().toLocaleTimeString()
+                });
+            } else {
+                item.records.push(recordData);
+            }
+        }
+
+        uiManager.createPetal();
+        uiManager.createPetal();
+        this.showToast(`太棒了！完成了：${item.name} 🎉`);
+        
+        this.saveData();
+        this.render();
+        
+        // 如果是书单项目，且没有记录（或者记录了但想写更详细的读后感），可以延迟弹出读后感
+        // 这里策略是：既然已经弹出了感受记录，就不再弹读后感了，除非用户主动去点“写读后感”
+        // 或者我们可以让书单任务在记录时直接就是写读后感（复用 review 字段）
+        // 鉴于目前 records 和 review 并存，我们简单处理：所有记录都进 records
+        // 如果是书单，records 里的内容也可以视为简短读后感
     },
 
     // 增加阶段性任务进度
@@ -1296,7 +1347,14 @@ Object.assign(app, {
         }
         
         const id = this.pendingRecordItemId;
-        this.doAddProgress(id, recordData);
+        
+        // 根据任务类型分发处理逻辑
+        if (item.target > 1) {
+            this.doAddProgress(id, recordData);
+        } else {
+            this.completeSingleItem(id, recordData);
+        }
+        
         document.getElementById('record-modal').style.display = 'none';
         this.pendingRecordItemId = null;
         this.currentMovieRating = 0;
@@ -1438,9 +1496,24 @@ Object.assign(app, {
         document.getElementById('plan-name-input').value = '';
         document.getElementById('plan-target-input').value = '1';
         document.getElementById('plan-icon-input').value = '📝';
-        // 如果当前有选中分类，默认设置为该分类
-        if (this.currentCategory !== '全部') {
-            document.getElementById('plan-category-select').value = this.currentCategory;
+        
+        // 如果有展开的分类，默认选中第一个展开的分类
+        if (this.expandedCategories.size > 0) {
+             const firstExpanded = this.expandedCategories.values().next().value;
+             if (firstExpanded) {
+                 const select = document.getElementById('plan-category-select');
+                 // 检查该选项是否存在（防止默认展开了不存在的分类）
+                 let exists = false;
+                 for (let i = 0; i < select.options.length; i++) {
+                     if (select.options[i].value === firstExpanded) {
+                         exists = true;
+                         break;
+                     }
+                 }
+                 if (exists) {
+                     select.value = firstExpanded;
+                 }
+             }
         }
         document.getElementById('plan-name-input').focus();
     },
@@ -1483,8 +1556,8 @@ Object.assign(app, {
         // 关闭弹窗
         document.getElementById('add-plan-modal').style.display = 'none';
         
-        // 切换到新计划所属的分类
-        this.currentCategory = category;
+        // 确保新计划所属的分类已展开
+        this.expandedCategories.add(category);
         
         this.showToast('计划已添加！✨');
         this.render();
