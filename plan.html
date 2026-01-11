@@ -1153,8 +1153,10 @@ Object.assign(app, {
         this.editingRecordIndex = -1; // -1 表示新增
         this.currentMovieRating = 0;
         
-        document.getElementById('record-icon').innerText = item.icon;
-        document.getElementById('record-title').innerText = `记录${item.name}`;
+        const recordIconEl = document.getElementById('record-icon');
+        const recordTitleEl = document.getElementById('record-title');
+        if (recordIconEl) recordIconEl.innerText = item.icon;
+        if (recordTitleEl) recordTitleEl.innerText = `记录${item.name}`;
         
         let hintText = '';
         if (isMovie) {
@@ -1165,22 +1167,34 @@ Object.assign(app, {
             hintText = '记录本次完成的内容（可选，可直接跳过）';
         }
         
-        document.getElementById('record-hint').innerText = hintText;
-        document.getElementById('record-content-input').value = '';
-        document.getElementById('record-content-input').placeholder = isMovie ? '例如：《肖申克的救赎》' : (item.category === '读书清单📖' ? '例如：《活着》' : '例如：今天和一位咖啡店老板聊天');
-        document.getElementById('record-name-label').innerText = isMovie ? '🎬 电影名称' : (item.category === '读书清单📖' ? '📖 书名' : '📝 记录内容');
+        const recordHintEl = document.getElementById('record-hint');
+        const recordContentInputEl = document.getElementById('record-content-input');
+        const recordNameLabelEl = document.getElementById('record-name-label');
+        const movieRatingSectionEl = document.getElementById('movie-rating-section');
+        const movieCommentSectionEl = document.getElementById('movie-comment-section');
+        const recordCommentInputEl = document.getElementById('record-comment-input');
+        
+        if (recordHintEl) recordHintEl.innerText = hintText;
+        if (recordContentInputEl) {
+            recordContentInputEl.value = '';
+            recordContentInputEl.placeholder = isMovie ? '例如：《肖申克的救赎》' : (item.category === '读书清单📖' ? '例如：《活着》' : '例如：今天和一位咖啡店老板聊天');
+        }
+        if (recordNameLabelEl) recordNameLabelEl.innerText = isMovie ? '🎬 电影名称' : (item.category === '读书清单📖' ? '📖 书名' : '📝 记录内容');
         
         // 显示/隐藏电影评分和短评区域
-        document.getElementById('movie-rating-section').style.display = isMovie ? 'block' : 'none';
-        document.getElementById('movie-comment-section').style.display = isMovie ? 'block' : 'none';
+        if (movieRatingSectionEl) movieRatingSectionEl.style.display = isMovie ? 'block' : 'none';
+        if (movieCommentSectionEl) movieCommentSectionEl.style.display = isMovie ? 'block' : 'none';
         
         // 重置评分和评论
         this.setMovieRating(0);
-        document.getElementById('record-comment-input').value = '';
+        if (recordCommentInputEl) recordCommentInputEl.value = '';
         
         // 根据任务类型显示/隐藏跳过按钮（非电影/书籍任务可以跳过）
         const skipBtn = document.getElementById('record-skip-btn');
         const cancelBtn = document.getElementById('record-cancel-btn');
+        const modalEl = document.getElementById('record-modal');
+        const inputEl = document.getElementById('record-content-input');
+        
         if (skipBtn && cancelBtn) {
             if (mustRecord) {
                 // 电影和书籍必须记录，不显示跳过按钮
@@ -1193,8 +1207,13 @@ Object.assign(app, {
             }
         }
         
-        document.getElementById('record-modal').style.display = 'flex';
-        document.getElementById('record-content-input').focus();
+        if (modalEl) {
+            modalEl.style.display = 'flex';
+        }
+        
+        if (inputEl) {
+            inputEl.focus();
+        }
     },
     
     // 跳过记录（直接增加进度，不记录内容）
