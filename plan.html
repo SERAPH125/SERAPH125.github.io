@@ -479,6 +479,93 @@
         .review-preview-more:hover {
             text-decoration: underline;
         }
+        
+        /* 可折叠记录列表样式 */
+        .records-collapsible {
+            margin-top: 12px;
+            padding-left: 36px;
+        }
+        .records-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 8px 12px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 10px;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            user-select: none;
+        }
+        .records-toggle:hover {
+            background: rgba(255,255,255,0.6);
+        }
+        .records-toggle-icon {
+            transition: transform 0.3s;
+            font-size: 0.9rem;
+        }
+        .records-toggle-icon.expanded {
+            transform: rotate(90deg);
+        }
+        .records-list {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-top: 8px;
+        }
+        .records-list.expanded {
+            max-height: 1000px;
+            transition: max-height 0.5s ease-in;
+        }
+        .record-item-inline {
+            background: rgba(255,255,255,0.6);
+            padding: 10px 12px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            border-left: 3px solid var(--accent-pink);
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .record-item-inline:hover {
+            background: rgba(255,255,255,0.8);
+            transform: translateX(3px);
+        }
+        .record-item-inline-content {
+            flex: 1;
+            color: var(--text-main);
+            line-height: 1.4;
+        }
+        .record-item-inline-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+        .record-item-inline-rating {
+            color: #f5a623;
+            font-size: 0.8rem;
+        }
+        .record-item-inline-delete {
+            background: none;
+            border: none;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            opacity: 0.4;
+            transition: all 0.2s;
+            border-radius: 4px;
+        }
+        .record-item-inline-delete:hover {
+            color: var(--danger);
+            opacity: 1;
+            background: rgba(255,154,158,0.1);
+        }
     </style>
 </head>
 <body>
@@ -590,8 +677,9 @@
             <input type="text" id="record-content-input" placeholder="例如：《肖申克的救赎》" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
         </div>
         
-        <div style="display:flex; gap:10px;">
-            <button onclick="document.getElementById('record-modal').style.display='none'" style="flex:1; background:rgba(255,255,255,0.6); color:var(--text-main); border:2px solid rgba(255,255,255,0.5); padding:14px; border-radius:12px; font-weight:500; cursor:pointer;">取消</button>
+        <div style="display:flex; gap:10px;" id="record-modal-buttons">
+            <button onclick="app.skipRecord()" id="record-skip-btn" style="display:none; flex:1; background:rgba(255,255,255,0.6); color:var(--text-main); border:2px solid rgba(255,255,255,0.5); padding:14px; border-radius:12px; font-weight:500; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.8)'" onmouseout="this.style.background='rgba(255,255,255,0.6)'">跳过记录</button>
+            <button onclick="document.getElementById('record-modal').style.display='none'" id="record-cancel-btn" style="flex:1; background:rgba(255,255,255,0.6); color:var(--text-main); border:2px solid rgba(255,255,255,0.5); padding:14px; border-radius:12px; font-weight:500; cursor:pointer;">取消</button>
             <button onclick="app.confirmRecord()" style="flex:1; background:linear-gradient(135deg, #a18cd1, #fbc2eb); color:white; border:none; padding:14px; border-radius:12px; font-weight:bold; cursor:pointer; box-shadow:0 4px 15px rgba(161,140,209,0.3);">✓ 确认记录</button>
         </div>
     </div>
@@ -923,11 +1011,34 @@ Object.assign(app, {
                                 </div>
                                 <span class="plan-progress">${progress}</span>
                                 ${!isCompleted ? `<button class="btn-add-progress" onclick="event.stopPropagation(); app.addProgress(${item.id})">+1</button>` : ''}
-                                ${hasRecords ? `<button class="btn-view-records" onclick="event.stopPropagation(); app.viewRecords(${item.id})" title="查看记录">📋</button>` : ''}
+                                ${hasRecords ? `<button class="btn-view-records" onclick="event.stopPropagation(); app.viewRecords(${item.id})" title="查看完整记录">📋</button>` : ''}
                             </div>
                             ${hasRecords ? `
-                                <div style="margin-top:10px; padding-left:36px; font-size:0.8rem; color:var(--text-light);">
-                                    <span style="cursor:pointer; text-decoration:underline;" onclick="app.viewRecords(${item.id})">已记录 ${records.length} 项，点击查看</span>
+                                <div class="records-collapsible">
+                                    <div class="records-toggle" onclick="app.toggleRecordsList(${item.id})">
+                                        <span class="records-toggle-icon" id="toggle-icon-${item.id}">▶</span>
+                                        <span>已记录 ${records.length} 项</span>
+                                    </div>
+                                    <div class="records-list" id="records-list-${item.id}">
+                                        ${records.map((record, index) => {
+                                            const isMovie = item.category === '电影清单🎬';
+                                            const hasRating = record.rating && record.rating > 0;
+                                            const hasComment = record.comment && record.comment.trim();
+                                            return `
+                                                <div class="record-item-inline">
+                                                    <div class="record-item-inline-content">
+                                                        <div style="font-weight:500; margin-bottom:4px;">${index + 1}. ${record.content}</div>
+                                                        ${hasComment ? `<div style="color:var(--text-light); font-size:0.8rem; margin-top:4px; padding-left:8px; border-left:2px solid rgba(255,154,158,0.3);">💬 ${record.comment}</div>` : ''}
+                                                    </div>
+                                                    <div class="record-item-inline-meta">
+                                                        ${hasRating ? `<span class="record-item-inline-rating">${'⭐'.repeat(record.rating)}</span>` : ''}
+                                                        <span>${record.date}</span>
+                                                        <button class="record-item-inline-delete" onclick="event.stopPropagation(); app.deleteRecord(${item.id}, ${index})" title="删除记录">🗑️</button>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
                                 </div>
                             ` : ''}
                         ` : ''}
@@ -968,6 +1079,23 @@ Object.assign(app, {
     switchCategory(category) {
         this.currentCategory = category;
         this.render();
+    },
+    
+    // 切换记录列表折叠状态
+    toggleRecordsList(id) {
+        const listEl = document.getElementById(`records-list-${id}`);
+        const iconEl = document.getElementById(`toggle-icon-${id}`);
+        
+        if (listEl && iconEl) {
+            const isExpanded = listEl.classList.contains('expanded');
+            if (isExpanded) {
+                listEl.classList.remove('expanded');
+                iconEl.classList.remove('expanded');
+            } else {
+                listEl.classList.add('expanded');
+                iconEl.classList.add('expanded');
+            }
+        }
     },
 
     // 切换单次任务完成状态
@@ -1015,42 +1143,127 @@ Object.assign(app, {
         const item = this.data.annualPlan.find(p => p.id === id);
         if (!item || item.target <= 1) return;
         
-        // 判断是否需要记录内容（电影清单、读书清单）
-        const needRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
+        // 判断是否需要记录内容（电影清单、读书清单必须记录，其他任务可选记录）
+        const mustRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
+        const isMovie = item.category === '电影清单🎬';
         
-        if (needRecord) {
-            // 需要记录内容，弹出输入框
-            this.pendingRecordItemId = id;
-            document.getElementById('record-icon').innerText = item.icon;
-            document.getElementById('record-title').innerText = `记录${item.name}`;
-            const hintText = item.category === '电影清单🎬' ? '填写电影名称，例如：《肖申克的救赎》' : '填写书名，例如：《活着》';
-            document.getElementById('record-hint').innerText = hintText;
-            document.getElementById('record-content-input').value = '';
-            document.getElementById('record-content-input').placeholder = hintText;
-            document.getElementById('record-modal').style.display = 'flex';
-            document.getElementById('record-content-input').focus();
+        // 所有阶段性任务都弹出记录框（电影/书籍必须记录，其他可选）
+        this.pendingRecordItemId = id;
+        this.isMovieRecord = isMovie;
+        this.editingRecordIndex = -1; // -1 表示新增
+        this.currentMovieRating = 0;
+        
+        document.getElementById('record-icon').innerText = item.icon;
+        document.getElementById('record-title').innerText = `记录${item.name}`;
+        
+        let hintText = '';
+        if (isMovie) {
+            hintText = '填写电影名称，打分并写下短评';
+        } else if (item.category === '读书清单📖') {
+            hintText = '填写书名，例如：《活着》';
         } else {
-            // 不需要记录内容，直接增加进度
-            this.doAddProgress(id, null);
+            hintText = '记录本次完成的内容（可选，可直接跳过）';
+        }
+        
+        document.getElementById('record-hint').innerText = hintText;
+        document.getElementById('record-content-input').value = '';
+        document.getElementById('record-content-input').placeholder = isMovie ? '例如：《肖申克的救赎》' : (item.category === '读书清单📖' ? '例如：《活着》' : '例如：今天和一位咖啡店老板聊天');
+        document.getElementById('record-name-label').innerText = isMovie ? '🎬 电影名称' : (item.category === '读书清单📖' ? '📖 书名' : '📝 记录内容');
+        
+        // 显示/隐藏电影评分和短评区域
+        document.getElementById('movie-rating-section').style.display = isMovie ? 'block' : 'none';
+        document.getElementById('movie-comment-section').style.display = isMovie ? 'block' : 'none';
+        
+        // 重置评分和评论
+        this.setMovieRating(0);
+        document.getElementById('record-comment-input').value = '';
+        
+        // 根据任务类型显示/隐藏跳过按钮（非电影/书籍任务可以跳过）
+        const skipBtn = document.getElementById('record-skip-btn');
+        const cancelBtn = document.getElementById('record-cancel-btn');
+        if (skipBtn && cancelBtn) {
+            if (mustRecord) {
+                // 电影和书籍必须记录，不显示跳过按钮
+                skipBtn.style.display = 'none';
+                cancelBtn.style.flex = '1';
+            } else {
+                // 其他任务可以跳过，显示跳过按钮
+                skipBtn.style.display = 'block';
+                cancelBtn.style.flex = '0.5';
+            }
+        }
+        
+        document.getElementById('record-modal').style.display = 'flex';
+        document.getElementById('record-content-input').focus();
+    },
+    
+    // 跳过记录（直接增加进度，不记录内容）
+    skipRecord() {
+        const id = this.pendingRecordItemId;
+        this.doAddProgress(id, null);
+        document.getElementById('record-modal').style.display = 'none';
+        this.pendingRecordItemId = null;
+        this.currentMovieRating = 0;
+    },
+    
+    // 设置电影评分
+    setMovieRating(rating) {
+        this.currentMovieRating = rating;
+        const stars = document.querySelectorAll('.movie-rating-star');
+        if (stars.length > 0) {
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.style.opacity = '1';
+                    star.style.transform = 'scale(1.1)';
+                } else {
+                    star.style.opacity = '0.3';
+                    star.style.transform = 'scale(1)';
+                }
+            });
         }
     },
 
     // 确认记录内容
     confirmRecord() {
+        const item = this.data.annualPlan.find(p => p.id === this.pendingRecordItemId);
+        if (!item) return;
+        
         const content = document.getElementById('record-content-input').value.trim();
-        if (!content) {
+        const comment = document.getElementById('record-comment-input') ? document.getElementById('record-comment-input').value.trim() : '';
+        const rating = this.currentMovieRating || 0;
+        
+        // 电影和书籍必须填写内容，其他任务可选
+        const mustRecord = item.category === '电影清单🎬' || item.category === '读书清单📖';
+        if (mustRecord && !content) {
             alert('请输入内容！');
             return;
         }
         
+        // 构建记录对象
+        let recordData = null;
+        if (content || comment || rating > 0) {
+            recordData = {
+                content: content || '完成一次',
+                date: new Date().toLocaleDateString(),
+                time: new Date().toLocaleTimeString()
+            };
+            
+            // 如果是电影，添加评分和短评
+            if (this.isMovieRecord) {
+                recordData.rating = rating;
+                recordData.comment = comment;
+            }
+        }
+        
         const id = this.pendingRecordItemId;
-        this.doAddProgress(id, content);
+        this.doAddProgress(id, recordData);
         document.getElementById('record-modal').style.display = 'none';
         this.pendingRecordItemId = null;
+        this.currentMovieRating = 0;
     },
 
     // 执行增加进度的实际逻辑
-    doAddProgress(id, recordContent) {
+    doAddProgress(id, recordData) {
         const item = this.data.annualPlan.find(p => p.id === id);
         if (!item || item.target <= 1) return;
         
@@ -1058,12 +1271,27 @@ Object.assign(app, {
             item.current++;
             
             // 如果需要记录内容，保存到records数组
-            if (recordContent) {
+            if (recordData) {
+                if (!item.records) {
+                    item.records = [];
+                }
+                // recordData 可能是对象（包含评分、评论）或字符串（兼容旧数据）
+                if (typeof recordData === 'string') {
+                    item.records.push({
+                        content: recordData,
+                        date: new Date().toLocaleDateString(),
+                        time: new Date().toLocaleTimeString()
+                    });
+                } else {
+                    item.records.push(recordData);
+                }
+            } else {
+                // 没有记录内容，也创建一个简单记录
                 if (!item.records) {
                     item.records = [];
                 }
                 item.records.push({
-                    content: recordContent,
+                    content: '完成一次',
                     date: new Date().toLocaleDateString(),
                     time: new Date().toLocaleTimeString()
                 });
@@ -1077,7 +1305,8 @@ Object.assign(app, {
                 uiManager.createPetal();
                 this.showToast(`🎉🎉🎉 完成了：${item.name}！太厉害了！`);
             } else {
-                const msg = recordContent ? `已记录：${recordContent} ✨` : `进度更新：${item.name} (${item.current}/${item.target}) ✨`;
+                const displayContent = recordData ? (recordData.content || '完成一次') : '完成一次';
+                const msg = `已记录：${displayContent} ✨ (${item.current}/${item.target})`;
                 this.showToast(msg);
             }
             
