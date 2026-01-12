@@ -136,6 +136,113 @@
             color: var(--text-light);
             margin-bottom: 10px;
         }
+        
+        /* 一周饮食计划 */
+        .week-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.4);
+            padding: 5px;
+            border-radius: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .week-tabs::-webkit-scrollbar { height: 0; }
+        .week-tab {
+            flex-shrink: 0;
+            padding: 8px 12px;
+            border-radius: 15px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            opacity: 0.7;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .week-tab.active {
+            background: rgba(255, 154, 158, 0.3);
+            color: var(--accent-pink);
+            border-color: var(--accent-pink);
+            opacity: 1;
+            box-shadow: 0 2px 8px rgba(255, 154, 158, 0.2);
+        }
+        
+        .day-meal-plan {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .day-meal-plan.active { display: block; }
+        
+        .meal-section {
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid var(--accent-pink);
+        }
+        .meal-title {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .meal-content {
+            font-size: 0.9rem;
+            color: var(--text-main);
+            line-height: 1.8;
+        }
+        .meal-content strong {
+            color: var(--accent-pink);
+            font-weight: 600;
+        }
+        
+        /* 折叠面板样式（参考设置页面） */
+        .diet-group {
+            background: rgba(255,255,255,0.6);
+            border-radius: 15px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.3s ease;
+        }
+        .diet-header {
+            padding: 18px 20px;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: rgba(255,255,255,0.3);
+            user-select: none;
+        }
+        .diet-header::after {
+            content: '▼';
+            font-size: 0.8rem;
+            transition: transform 0.3s;
+            opacity: 0.6;
+        }
+        .diet-group.active .diet-header {
+            background: rgba(255,255,255,0.5);
+        }
+        .diet-group.active .diet-header::after {
+            transform: rotate(180deg);
+        }
+        .diet-content {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+        .diet-group.active .diet-content {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -161,86 +268,114 @@
     </div>
 
     <!-- 饮食原则介绍 -->
-    <div class="diet-card">
-        <h3>🥗 桥本饮食核心原则</h3>
-        <div style="font-size:0.9rem; color:var(--text-main); line-height:1.6;">
-            <p>桥本氏甲状腺炎的饮食重点在于<strong>抗炎</strong>和<strong>修复肠漏</strong>。</p>
-            <ul style="padding-left:20px; margin:10px 0;">
-                <li style="margin-bottom:8px;">🚫 <strong>严格无麸质</strong>：麸质是诱发自身免疫攻击的主要元凶，必须严格避免小麦、大麦、黑麦及其制品。</li>
-                <li style="margin-bottom:8px;">📉 <strong>低GI饮食</strong>：稳定血糖是控制炎症的基础，减少精制糖和碳水化合物摄入。</li>
-                <li style="margin-bottom:8px;">🥑 <strong>优质脂肪</strong>：多摄入Omega-3（深海鱼）和单不饱和脂肪酸（橄榄油、牛油果），减少促炎的Omega-6（大豆油、玉米油）。</li>
-                <li style="margin-bottom:8px;">🌈 <strong>彩虹蔬菜</strong>：每天摄入不同颜色的蔬菜，提供丰富的植物营养素和抗氧化剂。</li>
-            </ul>
+    <div class="diet-group active" id="group-principles">
+        <div class="diet-header" onclick="app.toggleDietGroup('group-principles')">🥗 桥本饮食核心原则</div>
+        <div class="diet-content">
+            <div style="font-size:0.9rem; color:var(--text-main); line-height:1.6;">
+                <p>桥本氏甲状腺炎的饮食重点在于<strong>抗炎</strong>和<strong>修复肠漏</strong>。</p>
+                <ul style="padding-left:20px; margin:10px 0;">
+                    <li style="margin-bottom:8px;">🚫 <strong>严格无麸质</strong>：麸质是诱发自身免疫攻击的主要元凶，必须严格避免小麦、大麦、黑麦及其制品。</li>
+                    <li style="margin-bottom:8px;">📉 <strong>低GI饮食</strong>：稳定血糖是控制炎症的基础，减少精制糖和碳水化合物摄入。</li>
+                    <li style="margin-bottom:8px;">🥑 <strong>优质脂肪</strong>：多摄入Omega-3（深海鱼）和单不饱和脂肪酸（橄榄油、牛油果），减少促炎的Omega-6（大豆油、玉米油）。</li>
+                    <li style="margin-bottom:8px;">🌈 <strong>彩虹蔬菜</strong>：每天摄入不同颜色的蔬菜，提供丰富的植物营养素和抗氧化剂。</li>
+                </ul>
+            </div>
         </div>
     </div>
 
     <!-- 完美餐盘搭配 -->
-    <div class="diet-card">
-        <h3>🍽️ 完美餐盘搭配建议</h3>
-        <div style="display:flex; justify-content:center; margin:20px 0;">
-            <div style="width:200px; height:200px; border-radius:50%; background:white; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.1); border:4px solid #f0f0f0; overflow:hidden;">
-                <!-- 蔬菜 1/2 -->
-                <div style="position:absolute; top:0; left:0; width:50%; height:100%; background:#e8f7f0; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#00b894;">
-                    <span style="font-size:2rem;">🥬</span>
-                    <span style="font-weight:bold; font-size:0.9rem;">50%</span>
-                    <span style="font-size:0.8rem;">非淀粉蔬菜</span>
-                </div>
-                <!-- 蛋白质 1/4 -->
-                <div style="position:absolute; top:0; right:0; width:50%; height:50%; background:#ffeaea; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#ff7675;">
-                    <span style="font-size:1.5rem;">🥩</span>
-                    <span style="font-weight:bold; font-size:0.9rem;">25%</span>
-                    <span style="font-size:0.8rem;">优质蛋白</span>
-                </div>
-                <!-- 碳水 1/4 -->
-                <div style="position:absolute; bottom:0; right:0; width:50%; height:50%; background:#fff7e6; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#fdcb6e;">
-                    <span style="font-size:1.5rem;">🍠</span>
-                    <span style="font-weight:bold; font-size:0.9rem;">25%</span>
-                    <span style="font-size:0.8rem;">优质碳水</span>
-                </div>
-                <!-- 中心文字 -->
-                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:60px; height:60px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--text-light); font-size:0.8rem; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
-                    搭配<br>比例
+    <div class="diet-group " id="group-plate">
+        <div class="diet-header" onclick="app.toggleDietGroup('group-plate')">🍽️ 完美餐盘搭配建议</div>
+        <div class="diet-content">
+            <div style="display:flex; justify-content:center; margin:20px 0;">
+                <div style="width:200px; height:200px; border-radius:50%; background:white; position:relative; box-shadow:0 4px 15px rgba(0,0,0,0.1); border:4px solid #f0f0f0; overflow:hidden;">
+                    <!-- 蔬菜 1/2 -->
+                    <div style="position:absolute; top:0; left:0; width:50%; height:100%; background:#e8f7f0; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#00b894;">
+                        <span style="font-size:2rem;">🥬</span>
+                        <span style="font-weight:bold; font-size:0.9rem;">50%</span>
+                        <span style="font-size:0.8rem;">非淀粉蔬菜</span>
+                    </div>
+                    <!-- 蛋白质 1/4 -->
+                    <div style="position:absolute; top:0; right:0; width:50%; height:50%; background:#ffeaea; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#ff7675;">
+                        <span style="font-size:1.5rem;">🥩</span>
+                        <span style="font-weight:bold; font-size:0.9rem;">25%</span>
+                        <span style="font-size:0.8rem;">优质蛋白</span>
+                    </div>
+                    <!-- 碳水 1/4 -->
+                    <div style="position:absolute; bottom:0; right:0; width:50%; height:50%; background:#fff7e6; display:flex; align-items:center; justify-content:center; flex-direction:column; color:#fdcb6e;">
+                        <span style="font-size:1.5rem;">🍠</span>
+                        <span style="font-weight:bold; font-size:0.9rem;">25%</span>
+                        <span style="font-size:0.8rem;">优质碳水</span>
+                    </div>
+                    <!-- 中心文字 -->
+                    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:60px; height:60px; background:white; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:var(--text-light); font-size:0.8rem; box-shadow:0 2px 5px rgba(0,0,0,0.1);">
+                        搭配<br>比例
+                    </div>
                 </div>
             </div>
-        </div>
-        <div style="font-size:0.85rem; color:var(--text-light); text-align:center;">
-            每餐建议：半盘蔬菜 + 一掌心肉类 + 一拳头主食
+            <div style="font-size:0.85rem; color:var(--text-light); text-align:center;">
+                每餐建议：半盘蔬菜 + 一掌心肉类 + 一拳头主食
+            </div>
         </div>
     </div>
 
     <!-- 食物红绿灯 -->
-    <div class="diet-card">
-        <h3>🚥 食物红绿灯查询</h3>
-        <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">桥本氏甲状腺炎饮食建议指南（点击食物查看详情）</p>
-        
-        <!-- 搜索 -->
-        <div class="search-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" class="search-input" id="food-search" placeholder="输入食物名称查询（如：面包、西兰花）..." oninput="app.searchFood()">
-        </div>
-        
-        <!-- 搜索结果容器 -->
-        <div id="search-results">
-            <div class="search-result-title">🔎 搜索结果</div>
-            <div class="food-list active" id="search-result-list" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
-        </div>
-
-        <!-- 默认分类展示 -->
-        <div id="default-food-view">
-            <div class="traffic-light-tabs">
-                <div class="traffic-tab green active" onclick="app.switchTraffic('green')">🟢 推荐吃</div>
-                <div class="traffic-tab yellow" onclick="app.switchTraffic('yellow')">🟡 少吃点</div>
-                <div class="traffic-tab red" onclick="app.switchTraffic('red')">🔴 尽量不吃</div>
+    <div class="diet-group" id="group-traffic">
+        <div class="diet-header" onclick="app.toggleDietGroup('group-traffic')">🚥 食物红绿灯查询</div>
+        <div class="diet-content">
+            <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">桥本氏甲状腺炎饮食建议指南（点击食物查看详情）</p>
+            
+            <!-- 搜索 -->
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="food-search" placeholder="输入食物名称查询（如：面包、西兰花）..." oninput="app.searchFood()">
             </div>
             
-            <!-- 绿灯食物容器 -->
-            <div id="food-green" class="food-list active"></div>
+            <!-- 搜索结果容器 -->
+            <div id="search-results">
+                <div class="search-result-title">🔎 搜索结果</div>
+                <div class="food-list active" id="search-result-list" style="display:grid; grid-template-columns: 1fr; gap:10px;"></div>
+            </div>
+
+            <!-- 默认分类展示 -->
+            <div id="default-food-view">
+                <div class="traffic-light-tabs">
+                    <div class="traffic-tab green active" onclick="app.switchTraffic('green')">🟢 推荐吃</div>
+                    <div class="traffic-tab yellow" onclick="app.switchTraffic('yellow')">🟡 少吃点</div>
+                    <div class="traffic-tab red" onclick="app.switchTraffic('red')">🔴 尽量不吃</div>
+                </div>
+                
+                <!-- 绿灯食物容器 -->
+                <div id="food-green" class="food-list active"></div>
+                
+                <!-- 黄灯食物容器 -->
+                <div id="food-yellow" class="food-list"></div>
+                
+                <!-- 红灯食物容器 -->
+                <div id="food-red" class="food-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 一周饮食计划 -->
+    <div class="diet-group active" id="group-week-plan">
+        <div class="diet-header" onclick="app.toggleDietGroup('group-week-plan')">📅 一周饮食计划</div>
+        <div class="diet-content">
+            <p style="font-size:0.85rem; color:var(--text-light); margin-bottom:15px;">桥本饮食专属周计划，照着吃更健康 💪</p>
             
-            <!-- 黄灯食物容器 -->
-            <div id="food-yellow" class="food-list"></div>
+            <!-- 周标签页 -->
+            <div class="week-tabs">
+                <div class="week-tab active" onclick="app.switchDay(0)">周一</div>
+                <div class="week-tab" onclick="app.switchDay(1)">周二</div>
+                <div class="week-tab" onclick="app.switchDay(2)">周三</div>
+                <div class="week-tab" onclick="app.switchDay(3)">周四</div>
+                <div class="week-tab" onclick="app.switchDay(4)">周五</div>
+                <div class="week-tab" onclick="app.switchDay(5)">周六</div>
+                <div class="week-tab" onclick="app.switchDay(6)">周日</div>
+            </div>
             
-            <!-- 红灯食物容器 -->
-            <div id="food-red" class="food-list"></div>
+            <!-- 每日饮食计划容器 -->
+            <div id="week-meal-plans"></div>
         </div>
     </div>
 </div>
@@ -292,6 +427,7 @@ Object.assign(app, {
         this.initCommon();
         setTimeout(() => {
             this.renderDietList();
+            this.renderWeekMealPlan();
         }, 200);
     },
 
@@ -402,6 +538,155 @@ Object.assign(app, {
         // 更新列表显示
         document.querySelectorAll('.food-list').forEach(el => el.classList.remove('active'));
         document.getElementById(`food-${type}`).classList.add('active');
+    },
+
+    // 一周饮食计划数据
+    weekMealPlan: [
+        {
+            breakfast: "蒸红薯 1个 (150g)<br>水煮蛋 1个<br><strong>无糖椰奶/温水</strong> 200ml",
+            lunch: "糙米饭 1碗 (100g)<br><strong>香菇炒鸡胸肉</strong> (鸡50g，香菇4朵)<br>凉拌菠菜 100g<br>冬瓜瘦肉汤 1小碗",
+            dinner: "玉米粥 1碗 (80g)<br><strong>清蒸鲈鱼</strong> 60g<br>清炒西兰花 100g (焯水)",
+            snack: "<strong>上午</strong>：蓝莓 100g<br><strong>下午</strong>：<strong>巴西坚果 2颗</strong> + 巴旦木 5颗"
+        },
+        {
+            breakfast: "小米粥 1碗 (80g)<br>蒸南瓜 100g<br>煮鹌鹑蛋 3个",
+            lunch: "藜麦饭 1碗 (100g)<br>番茄炒蛋 (蛋1个，番茄100g)<br>凉拌黄瓜 80g<br><strong>青菜豆腐汤</strong> 1小碗",
+            dinner: "紫薯 1个 (150g)<br>清炖牛肉 50g (可加胡萝卜)<br>清炒油麦菜 100g",
+            snack: "<strong>上午</strong>：圣女果 150g<br><strong>下午</strong>：水煮蛋 1个"
+        },
+        {
+            breakfast: "<strong>无麸质燕麦粥</strong> 1碗 (燕麦20g + <strong>温水/椰奶</strong>200ml，可加奇亚籽)<br>香蕉 1根<br><strong>水煮蛋 1个</strong>",
+            lunch: "白米饭 1碗 (100g)<br><strong>彩椒炒鸡丁</strong> (鸡胸肉50g，彩椒50g)<br>蒜蓉娃娃菜 100g<br>丝瓜蛋花汤 1小碗",
+            dinner: "山药粥 1碗 (80g)<br>香煎豆腐 80g<br>清炒芦笋 100g",
+            snack: "<strong>上午</strong>：苹果 1个 (150g)<br><strong>下午</strong>：原味嫩豆腐块 80g"
+        },
+        {
+            breakfast: "蒸山药 100g<br>水煮蛋 1个<br><strong>无糖椰奶/温水</strong> 200ml",
+            lunch: "糙米饭 1碗 (100g)<br>清炒瘦猪肉 50g<br>炒胡萝卜丝 80g<br>冬瓜汤 1小碗",
+            dinner: "蔬菜粥 1碗 (米+青菜50g)<br>清蒸鸡胸肉 50g<br>清炒生菜 100g",
+            snack: "<strong>上午</strong>：草莓 100g<br><strong>下午</strong>：<strong>烤口蘑 5-6个</strong> (或蒸玉米半根)"
+        },
+        {
+            breakfast: "南瓜粥 1碗 (80g)<br>蔬菜鸡蛋饼 (蛋1个+青菜50g，用<strong>鹰嘴豆粉/无麸质面粉</strong>)",
+            lunch: "杂粮饭 1碗 (米+小米，100g)<br>红烧茄子 100g (少油糖)<br>清炒荷兰豆 80g<br><strong>菌菇汤</strong> 1小碗 (香菇、海鲜菇)",
+            dinner: "大米粥 1碗 (80g)<br><strong>香煎三文鱼 60g</strong> (本周海鲜安排)<br>凉拌芹菜 100g",
+            snack: "<strong>上午</strong>：柚子 2瓣<br><strong>下午</strong>：无盐核桃 10颗"
+        },
+        {
+            breakfast: "小米粥 半碗<br>蒸紫薯 1个 (150g)<br>水煮蛋 1个",
+            lunch: "白米饭 1碗 (100g)<br>清炒牛柳 50g<br>炒包菜 100g<br>番茄蛋汤 1小碗",
+            dinner: "紫薯粥 1碗 (80g)<br><strong>肉末蒸蛋</strong> (蛋1个，瘦肉末30g)<br>清炒空心菜 100g",
+            snack: "<strong>上午</strong>：猕猴桃 1个<br><strong>下午</strong>：黄瓜条 100g + <strong>葵花籽</strong> 一小把"
+        },
+        {
+            breakfast: "煮玉米 1根<br>水煮蛋 1个<br><strong>无糖燕麦奶/温水</strong> 200ml",
+            lunch: "藜麦饭 1碗 (100g)<br><strong>清蒸桂鱼/鳊鱼</strong> 60g<br>清炒藕片 80g<br>冬瓜丸子汤 (瘦肉丸30g)",
+            dinner: "杂粮粥 1碗 (80g)<br>清炒鸡胸肉 50g<br><strong>凉拌黑木耳 50g</strong>",
+            snack: "<strong>上午</strong>：樱桃 100g<br><strong>下午</strong>：蒸山药 1小块 + <strong>巴西坚果 2颗</strong>"
+        }
+    ],
+
+    // 渲染一周饮食计划
+    renderWeekMealPlan() {
+        const container = document.getElementById('week-meal-plans');
+        if (!container) return;
+        
+        const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+        const mealIcons = {
+            breakfast: '🌅',
+            lunch: '☀️',
+            dinner: '🌙',
+            snack: '🍎'
+        };
+        const mealTitles = {
+            breakfast: '早餐',
+            lunch: '午餐',
+            dinner: '晚餐',
+            snack: '加餐'
+        };
+        const mealTimeRanges = {
+            breakfast: '7:30-8:30',
+            lunch: '12:00-13:00',
+            dinner: '18:00-19:00',
+            snack: '随时'
+        };
+        
+        let html = '';
+        this.weekMealPlan.forEach((day, index) => {
+            html += `
+                <div class="day-meal-plan ${index === 0 ? 'active' : ''}" data-day="${index}">
+                    <div class="meal-section">
+                        <div class="meal-title">
+                            <span>${mealIcons.breakfast}</span>
+                            <span>${mealTitles.breakfast} (${mealTimeRanges.breakfast})</span>
+                        </div>
+                        <div class="meal-content">${day.breakfast}</div>
+                    </div>
+                    <div class="meal-section">
+                        <div class="meal-title">
+                            <span>${mealIcons.lunch}</span>
+                            <span>${mealTitles.lunch} (${mealTimeRanges.lunch})</span>
+                        </div>
+                        <div class="meal-content">${day.lunch}</div>
+                    </div>
+                    <div class="meal-section">
+                        <div class="meal-title">
+                            <span>${mealIcons.dinner}</span>
+                            <span>${mealTitles.dinner} (${mealTimeRanges.dinner})</span>
+                        </div>
+                        <div class="meal-content">${day.dinner}</div>
+                    </div>
+                    <div class="meal-section">
+                        <div class="meal-title">
+                            <span>${mealIcons.snack}</span>
+                            <span>${mealTitles.snack}</span>
+                        </div>
+                        <div class="meal-content">${day.snack}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    },
+
+    // 切换日期
+    switchDay(dayIndex) {
+        // 更新标签样式
+        document.querySelectorAll('.week-tab').forEach((el, index) => {
+            if (index === dayIndex) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+        
+        // 更新内容显示
+        document.querySelectorAll('.day-meal-plan').forEach((el, index) => {
+            if (index === dayIndex) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+    },
+
+    // 切换折叠面板（手风琴效果）
+    toggleDietGroup(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        
+        // 如果点击的是已展开的面板，则关闭它；否则展开它并关闭其他面板
+        const isActive = el.classList.contains('active');
+        
+        // 关闭所有面板
+        document.querySelectorAll('.diet-group').forEach(g => {
+            g.classList.remove('active');
+        });
+        
+        // 如果点击的面板原本是关闭的，则展开它
+        if (!isActive) {
+            el.classList.add('active');
+        }
     }
 });
 
