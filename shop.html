@@ -173,11 +173,19 @@ Object.assign(app, {
                 return this.showToast('甜度不足哦，快去让他夸夸你！💕');
             }
             if (confirm(`确认兑换【${p.name}】吗？\n(消耗 ${p.price} 甜度)`)) {
-                // 使用 addGirlSweetness 记录负数，自动计入历史
-                app.addGirlSweetness(-p.price, `兑换权益：${p.name}`);
-                this.addInventoryItem(p, 'used'); 
-                // this.saveData(); // addGirlSweetness 已经包含了 saveData
-                this.showToast('兑换成功！快去找他兑现吧！👑');
+                try {
+                    this.addInventoryItem(p, 'unused');
+                    app.addGirlSweetness(-p.price, `兑换权益：${p.name}`);
+                    this.showToast('兑换成功！快去找他兑现吧！👑');
+                    this.switchShopTab('inventory');
+                } catch (e) {
+                    console.error('购买失败', e);
+                    this.showToast('购买失败，请重试');
+                    const itemIndex = this.data.inventory.findIndex(i => i.productId === p.id);
+                    if (itemIndex !== -1) {
+                        this.data.inventory.splice(itemIndex, 1);
+                    }
+                }
             }
         } else {
             // 原有男友购买逻辑
@@ -185,10 +193,19 @@ Object.assign(app, {
                 return this.showToast('积分不足哦，快去赚积分吧！🥺');
             }
             if (confirm(`确认兑换 ${p.name} 吗？\n(消耗 ${p.price} 积分，物品将放入背包)`)) {
-                this.executeChange(-p.price, `购买商品：${p.name}`);
-                this.addInventoryItem(p);
-                // this.saveData(); // executeChange 已经包含了 saveData
-                this.showToast('兑换成功！已放入背包 🎒');
+                try {
+                    this.addInventoryItem(p);
+                    this.executeChange(-p.price, `购买商品：${p.name}`);
+                    this.showToast('兑换成功！已放入背包 🎒');
+                    this.switchShopTab('inventory');
+                } catch (e) {
+                    console.error('购买失败', e);
+                    this.showToast('购买失败，请重试');
+                    const itemIndex = this.data.inventory.findIndex(i => i.productId === p.id);
+                    if (itemIndex !== -1) {
+                        this.data.inventory.splice(itemIndex, 1);
+                    }
+                }
             }
         }
     },
@@ -196,12 +213,12 @@ Object.assign(app, {
     addInventoryItem(p, status = 'unused') {
         if (!this.data.inventory) this.data.inventory = [];
         this.data.inventory.unshift({
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             productId: p.id,
             name: p.name,
             icon: p.icon,
             price: p.price,
-            owner: p.owner || 'boy', // 记录物品归属
+            owner: p.owner || 'boy',
             buyTime: new Date().toLocaleString(),
             status: status
         });
@@ -230,12 +247,17 @@ Object.assign(app, {
         if (!this.pendingUseItem) return;
         
         const item = this.data.inventory.find(i => i.id === this.pendingUseItem);
-        if (item) {
-            item.status = 'used';
-            item.useTime = new Date().toLocaleString();
-            this.saveData();
-            this.showToast('使用成功！要开心哦 ❤️');
+        if (!item || item.status === 'used') {
+            this.showToast('该物品已被使用');
+            document.getElementById('use-modal').style.display = 'none';
+            this.pendingUseItem = null;
+            return;
         }
+        
+        item.status = 'used';
+        item.useTime = new Date().toLocaleString();
+        this.saveData();
+        this.showToast('使用成功！要开心哦 ❤️');
         
         document.getElementById('use-modal').style.display = 'none';
         this.pendingUseItem = null;
