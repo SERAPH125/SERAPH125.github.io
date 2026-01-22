@@ -560,6 +560,10 @@ const app = {
             // 数独：完成即可获得奖励（score 是转换后的分数，完成时 score > 0）
             minScore = 1; // 只要完成就有奖励
             reward = 5; // 完成数独奖励
+        } else if (gameName === 'minesweeper') {
+            // 扫雷：完成即可获得奖励
+            minScore = 1;
+            reward = 5;
         } else {
             return false; // 未知游戏
         }

@@ -33,7 +33,25 @@
             background: rgba(255,255,255,0.3);
             user-select: none;
             border-left: 5px solid var(--accent-pink);
-            transition: background 0.3s;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        /* 进度条背景层 */
+        .plan-category-header::before {
+            content: '';
+            position: absolute;
+            left: 0; bottom: 0; top: 0;
+            width: var(--progress-width, 0%);
+            background: linear-gradient(90deg, rgba(255, 154, 158, 0.15), rgba(254, 207, 239, 0.15));
+            transition: width 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 0;
+            pointer-events: none;
+        }
+        /* 内容层级提升 */
+        .plan-category-header > * {
+            position: relative;
+            z-index: 1;
         }
         .plan-category-header:hover {
             background: rgba(255,255,255,0.4);
@@ -316,46 +334,31 @@
             opacity: 0.8;
         }
         
-        /* 环形进度条 */
+        /* 环形进度条 (SVG版优化) */
         .circular-chart {
             display: block;
-            margin: 0;
-            width: 80px;
-            height: 80px;
-            position: relative;
-            z-index: 2;
-            background: conic-gradient(white 0%, rgba(255,255,255,0.2) 0%);
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(255,255,255,0.3);
-            transition: background 1s ease;
+            margin: 0 auto;
+            max-width: 80px;
+            max-height: 80px;
         }
-        .circular-chart::after {
-            content: attr(data-percent);
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            background: transparent;
-            color: white;
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 2.5;
+        }
+        .circle {
+            fill: none;
+            stroke: white;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.6s ease;
+        }
+        .percentage {
+            fill: white;
+            font-family: 'Georgia', sans-serif;
             font-weight: bold;
-            font-size: 1.2rem;
-            font-family: 'Georgia', serif;
-        }
-        .circular-chart-inner {
-            position: absolute;
-            top: 6px; left: 6px; right: 6px; bottom: 6px;
-            background: rgba(161, 140, 209, 0.1); /* 模拟镂空，实际上由于父级背景，这里不需要颜色，或者半透明 */
-            background-color: transparent; 
-            border-radius: 50%;
-            z-index: 1;
-        }
-        /* 由于conic-gradient是实心的，为了做成环形，需要在中间盖一个圆，颜色与父容器背景一致不太容易，
-           因为父容器是渐变。所以我们用 mask 或者 simpler approach: 
-           让 circular-chart 本身是实心饼图，中间覆盖一个伪元素模拟环形。
-           但这里背景复杂，用 mask 最稳妥。
-        */
-        .circular-chart {
-            -webkit-mask: radial-gradient(transparent 55%, black 56%);
-            mask: radial-gradient(transparent 55%, black 56%);
+            font-size: 0.5em;
+            text-anchor: middle;
         }
 
         /* 筛选栏 */
@@ -604,8 +607,12 @@
             <div class="overall-progress-value" id="overall-progress-text">0%</div>
             <div class="overall-progress-subtitle">坚持就是胜利，慢慢来 💕</div>
         </div>
-        <div class="circular-chart" id="overall-progress-chart" data-percent="0%">
-            <div class="circular-chart-inner"></div>
+        <div style="width:80px; height:80px; position:relative;">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" id="overall-progress-path" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="20.35" class="percentage" id="overall-progress-text-svg">0%</text>
+            </svg>
         </div>
     </div>
 
@@ -639,15 +646,23 @@
         
         <div style="margin-bottom:15px;">
             <label style="display:block; margin-bottom:6px; color:var(--text-main); font-size:0.9rem; font-weight:500;">📂 分类</label>
-            <select id="plan-category-select" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box; cursor:pointer;" onfocus="this.style.borderColor='var(--accent-pink)'; this.style.background='white';" onblur="this.style.borderColor='rgba(255,255,255,0.5)'; this.style.background='rgba(255,255,255,0.7)';">
-                <option value="读书清单📖">📖 读书清单</option>
-                <option value="电影清单🎬">🎬 电影清单</option>
-                <option value="休闲娱乐">🎮 休闲娱乐</option>
-                <option value="身体健康">💪 身体健康</option>
-                <option value="日常生活">🏠 日常生活</option>
-                <option value="体验突破">🚀 体验突破</option>
-                <option value="自我提升">📚 自我提升</option>
-            </select>
+            <div style="position:relative;">
+                <select id="plan-category-select" style="width:100%; padding:14px; border:2px solid rgba(255,255,255,0.5); background:rgba(255,255,255,0.7); border-radius:12px; font-size:1rem; outline:none; transition:all 0.3s; box-sizing:border-box; cursor:pointer;" onchange="if(this.value==='custom') app.toggleCustomCategory(true);">
+                    <option value="读书清单📖">📖 读书清单</option>
+                    <option value="电影清单🎬">🎬 电影清单</option>
+                    <option value="休闲娱乐">🎮 休闲娱乐</option>
+                    <option value="身体健康">💪 身体健康</option>
+                    <option value="日常生活">🏠 日常生活</option>
+                    <option value="体验突破">🚀 体验突破</option>
+                    <option value="自我提升">📚 自我提升</option>
+                    <option value="custom">✨ 自定义分类...</option>
+                </select>
+                
+                <div id="custom-category-wrapper" style="display:none; margin-top:8px;">
+                    <input type="text" id="custom-category-input" placeholder="输入新分类名称" style="width:100%; padding:14px; border:2px solid var(--accent-pink); background:white; border-radius:12px; font-size:1rem; outline:none; box-sizing:border-box;">
+                    <button onclick="app.toggleCustomCategory(false)" style="margin-top:5px; font-size:0.8rem; background:none; border:none; color:var(--text-light); cursor:pointer; text-decoration:underline;">取消自定义，返回选择</button>
+                </div>
+            </div>
         </div>
         
         <div style="margin-bottom:15px;">
@@ -974,9 +989,12 @@ Object.assign(app, {
             // 检查是否展开
             const isExpanded = this.expandedCategories.has(category);
             
+            // 计算分类完成度百分比（用于背景进度条）
+            const categoryPercent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
             html += `
                 <div class="plan-category-group ${isExpanded ? 'active' : ''}" id="category-group-${category}">
-                    <div class="plan-category-header" onclick="app.toggleCategory('${category}')">
+                    <div class="plan-category-header" onclick="app.toggleCategory('${category}')" style="--progress-width: ${categoryPercent}%">
                         <div class="category-title-wrapper">
                             <span class="category-title">${category}</span>
                             <span class="category-progress-badge">${completed}/${total}</span>
@@ -1477,17 +1495,18 @@ Object.assign(app, {
         
         const percent = total > 0 ? Math.round(totalProgress / total) : 0;
         
-        const chart = document.getElementById('overall-progress-chart');
-        if (chart) {
-            chart.setAttribute('data-percent', `${percent}%`);
-            // conic-gradient 做环形进度
-            chart.style.background = `conic-gradient(white ${percent}%, rgba(255,255,255,0.2) ${percent}%)`;
+        // 更新 SVG 进度条
+        const circle = document.getElementById('overall-progress-path');
+        const textSvg = document.getElementById('overall-progress-text-svg');
+        const textMain = document.getElementById('overall-progress-text');
+        
+        if (circle) {
+            // stroke-dasharray: current, 100
+            circle.setAttribute('stroke-dasharray', `${percent}, 100`);
         }
         
-        const text = document.getElementById('overall-progress-text');
-        if (text) {
-            text.innerText = `${percent}%`;
-        }
+        if (textSvg) textSvg.textContent = `${percent}%`;
+        if (textMain) textMain.innerText = `${percent}%`;
     },
 
     // 显示新增计划弹窗
@@ -1518,12 +1537,39 @@ Object.assign(app, {
         document.getElementById('plan-name-input').focus();
     },
 
+    // 切换自定义分类输入
+    toggleCustomCategory(show) {
+        const select = document.getElementById('plan-category-select');
+        const wrapper = document.getElementById('custom-category-wrapper');
+        const input = document.getElementById('custom-category-input');
+        
+        if (show) {
+            select.style.display = 'none';
+            wrapper.style.display = 'block';
+            input.focus();
+        } else {
+            select.style.display = 'block';
+            wrapper.style.display = 'none';
+            select.value = "休闲娱乐"; // 重置为默认
+        }
+    },
+
     // 添加新计划
     addNewPlan() {
         const name = document.getElementById('plan-name-input').value.trim();
-        const category = document.getElementById('plan-category-select').value;
+        let category = document.getElementById('plan-category-select').value;
         const target = parseInt(document.getElementById('plan-target-input').value) || 1;
         const icon = document.getElementById('plan-icon-input').value.trim() || '📝';
+
+        // 检查是否是自定义分类
+        const wrapper = document.getElementById('custom-category-wrapper');
+        if (wrapper.style.display === 'block') {
+            category = document.getElementById('custom-category-input').value.trim();
+            if (!category) {
+                alert('请输入自定义分类名称！');
+                return;
+            }
+        }
 
         if (!name) {
             alert('请输入计划名称！');

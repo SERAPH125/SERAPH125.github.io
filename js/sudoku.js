@@ -215,9 +215,6 @@ class SudokuGame {
      * @param {string} difficulty - 难度：'hard', 'hell', 'extreme'
      */
     start(difficulty = 'hard') {
-        // #region agent log
-        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:start',message:'SudokuGame.start called',data:{difficulty},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-        // #endregion
         this.difficulty = difficulty;
         this.mistakes = 0;
         this.isGameOver = false;
@@ -253,9 +250,6 @@ class SudokuGame {
         try {
             this.generateBoard();
         } catch (e) {
-            // #region agent log
-            fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:start',message:'Error in generateBoard',data:{error:e.message, stack:e.stack},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-            // #endregion
             console.error(e);
         }
         this.render();
@@ -283,10 +277,6 @@ class SudokuGame {
      * @returns {boolean} 是否成功填充
      */
     fillBoard(board, countOnly = false, counter = { count: 0 }) {
-        // #region agent log
-        // logging sparingly to avoid spam, only log on first call or important branches if needed, but fillBoard is recursive
-        // fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:fillBoard',message:'fillBoard called',data:{countOnly},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-        // #endregion
         for(let r = 0; r < 9; r++) {
             for(let c = 0; c < 9; c++) {
                 if(board[r][c] === 0) {
@@ -443,16 +433,10 @@ class SudokuGame {
      * 生成数独题目 (确保唯一解)
      */
     generateBoard() {
-        // #region agent log
-        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:generateBoard',message:'generateBoard start',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-        // #endregion
         
         // Extreme难度：从内置题目库加载，避免实时生成的计算开销
         if (this.difficulty === 'extreme') {
             if (this.loadExtremePuzzle()) {
-                // #region agent log
-                fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:generateBoard',message:'Extreme puzzle loaded from library',data:{index:extremePuzzleIndex-1},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-                // #endregion
                 return; // 成功加载，直接返回
             }
             // 如果题目库为空或加载失败，回退到生成模式
@@ -513,9 +497,6 @@ class SudokuGame {
         
         // 初始化笔记
         this.marks = Array(9).fill().map(() => Array(9).fill().map(() => new Set()));
-        // #region agent log
-        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:generateBoard',message:'generateBoard end',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H1'})}).catch(()=>{});
-        // #endregion
     }
 
     /**
@@ -551,16 +532,10 @@ class SudokuGame {
      */
     render() {
         if(!this.boardEl) {
-            // #region agent log
-            fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:render',message:'boardEl not found',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
-            // #endregion
             return;
         }
         
         this.boardEl.innerHTML = '';
-        // #region agent log
-        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'js/sudoku.js:render',message:'render start',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H4'})}).catch(()=>{});
-        // #endregion
         
         for(let r = 0; r < 9; r++) {
             for(let c = 0; c < 9; c++) {

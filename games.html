@@ -274,6 +274,43 @@
         /* -----------------------
            数独游戏样式
            ----------------------- */
+        #minesweeper-board {
+            display: grid;
+            gap: 2px;
+            width: 96%;
+            max-width: 450px;
+            aspect-ratio: 1/1;
+            background: #bdbdbd;
+            border: 4px solid #7b7b7b;
+            padding: 5px;
+            margin: 10px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-sizing: border-box;
+            user-select: none;
+        }
+        .minesweeper-cell {
+            background: #c0c0c0;
+            border-top: 2px solid #fff;
+            border-left: 2px solid #fff;
+            border-bottom: 2px solid #808080;
+            border-right: 2px solid #808080;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        .minesweeper-cell:active { border: 1px solid #808080; }
+        .minesweeper-cell.revealed {
+            background: #dcdcdc;
+            border: 1px solid #999;
+            box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .minesweeper-cell.mine { background: red; }
+        .minesweeper-cell.flagged { color: red; }
+
         #sudoku-board {
             display: grid;
             grid-template-columns: repeat(9, 1fr);
@@ -500,6 +537,11 @@
             <div class="game-title">数独挑战</div>
             <div class="game-desc">逻辑推理填数字<br>完成即可获奖</div>
         </div>
+        <div class="game-card" onclick="startGame('minesweeper')">
+            <span class="game-icon">💣</span>
+            <div class="game-title">扫雷专家</div>
+            <div class="game-desc">找出所有地雷<br>考验逻辑与运气</div>
+        </div>
     </div>
 </div>
 
@@ -607,6 +649,27 @@
             点击灰色数字可高亮相同项 ✨
         </div>
     </div>
+
+    <!-- 扫雷游戏界面 -->
+    <div id="minesweeper-ui" style="display:none; width:100%; display:flex; flex-direction:column; align-items:center;">
+        <div class="game-header">
+            <div>剩余: <span id="mines-count">0</span></div>
+            <div>用时: <span id="mines-time">0</span>秒</div>
+        </div>
+        <div id="minesweeper-board"></div>
+        
+        <div class="game-controls-bar">
+            <button class="game-btn" onclick="minesweeperGameInstance && minesweeperGameInstance.start('easy')">🟢 简单</button>
+            <button class="game-btn" onclick="minesweeperGameInstance && minesweeperGameInstance.start('medium')">🟡 中等</button>
+            <button class="game-btn" onclick="minesweeperGameInstance && minesweeperGameInstance.start('hard')">🔴 困难</button>
+            <button class="game-btn" onclick="minesweeperGameInstance && minesweeperGameInstance.start(minesweeperGameInstance.difficulty)">🔄 重来</button>
+        </div>
+        
+        <div style="color:white; font-size:0.9rem; text-align:center; margin-top:15px; opacity: 0.9;">
+            点击翻开，长按插旗 🚩<br>
+            小心地雷，祝你好运！✨
+        </div>
+    </div>
 </div>
 
 <!-- 排行榜弹窗 -->
@@ -632,6 +695,8 @@
 <script src="js/game2048.js"></script>
 <script src="js/match3.js"></script>
 <script src="js/sudoku.js"></script>
+<script src="js/minesweeper.js"></script>
+
 <script>
     // 页面逻辑
     Object.assign(app, {
@@ -660,20 +725,16 @@
     let game2048Controller = null;
     let sudokuGameInstance = null;
     let sudokuTimer = null;
+    let minesweeperGameInstance = null;
+    let minesTimer = null;
 
     function startGame(type) {
-        // #region agent log
-        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'games.html:startGame',message:'startGame called',data:{type},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
-        // #endregion
         const container = document.getElementById('game-container');
         const match3UI = document.getElementById('match3-ui');
         const game2048UI = document.getElementById('game2048-ui');
         const sudokuUI = document.getElementById('sudoku-ui');
+        const minesweeperUI = document.getElementById('minesweeper-ui');
         
-        // #region agent log
-        fetch('http://127.0.0.1:7249/ingest/f8236772-43b2-4018-9a4f-91394a5b4352',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'games.html:startGame',message:'UI elements found',data:{container:!!container, match3UI:!!match3UI, game2048UI:!!game2048UI, sudokuUI:!!sudokuUI},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'H2'})}).catch(()=>{});
-        // #endregion
-
         container.style.display = 'flex';
         currentGameType = type;
         
@@ -681,6 +742,7 @@
         match3UI.style.display = 'none';
         game2048UI.style.display = 'none';
         sudokuUI.style.display = 'none';
+        minesweeperUI.style.display = 'none';
         
         if(type === 'match3') {
             // 显示消消乐界面
@@ -817,6 +879,53 @@
                     document.getElementById('sudoku-time').innerText = time;
                 }
             }, 1000);
+        } else if(type === 'minesweeper') {
+            // 显示扫雷界面
+            minesweeperUI.style.display = 'flex';
+            
+            if(!minesweeperGameInstance) {
+                minesweeperGameInstance = new MinesweeperGame('minesweeper-board', {
+                    onMineCountChange: (count) => {
+                        document.getElementById('mines-count').innerText = count;
+                    },
+                    onGameOver: (isWin, elapsedTime) => {
+                        // 停止计时器
+                        if(minesTimer) {
+                            clearInterval(minesTimer);
+                            minesTimer = null;
+                        }
+                        
+                        if(isWin) {
+                            // 上传分数（用时越短分数越高，类似数独）
+                            const score = Math.max(0, 3600 - elapsedTime);
+                            app.uploadGameScore('minesweeper', score);
+                            
+                            // 发放奖励
+                            const success = app.submitGameScore('minesweeper', score);
+                            if (success) {
+                                const unit = app.currentUser === 'girl' ? '甜度' : '积分';
+                                alert(`🎉🎉🎉 恭喜！扫雷成功！用时 ${elapsedTime} 秒\n获得 5 ${unit}奖励！🎉🎉🎉`);
+                            } else {
+                                alert(`🎉 恭喜！扫雷成功！用时 ${elapsedTime} 秒\n但今天的奖励已经领过啦，明天再来吧！❤️`);
+                            }
+                        } else {
+                            alert('BOOM！💥 你踩到地雷了！下次小心哦~');
+                        }
+                    }
+                });
+            }
+            
+            // 启动游戏（默认简单）
+            minesweeperGameInstance.start('easy');
+            
+            // 启动计时器
+            if(minesTimer) clearInterval(minesTimer);
+            minesTimer = setInterval(() => {
+                if(minesweeperGameInstance && !minesweeperGameInstance.isGameOver) {
+                    const time = minesweeperGameInstance.getElapsedTime();
+                    document.getElementById('mines-time').innerText = time;
+                }
+            }, 1000);
         }
     }
 
@@ -829,6 +938,11 @@
             if(sudokuTimer) {
                 clearInterval(sudokuTimer);
                 sudokuTimer = null;
+            }
+            // 停止扫雷计时器
+            if(minesTimer) {
+                clearInterval(minesTimer);
+                minesTimer = null;
             }
         }
     }
